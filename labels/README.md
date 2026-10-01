@@ -29,3 +29,16 @@ node generate.mjs --made 2026-10-01 large/75-dark-local-figs small/goats-milk
 ```
 
 Needs poppler (`pdftotext`, `pdftoppm`); on a Mac: `brew install poppler`.
+
+## Nutrition panel
+
+```bash
+node nutrition/calculate.mjs --weight 108 cacao-mass=75 rapadura-sugar=25
+```
+
+Builds an Australian nutrition information panel (per serving and per
+100 g) from the bar weight and ingredient percentages. Serving size
+defaults to `servingSizeG` in `labels.json` (20 g). Ingredient figures
+per 100 g are in `nutrition/ingredients.json`, each with its source
+(FSANZ Nutrition Panel Calculator or USDA FoodData Central); replace them
+with supplier spec sheets where available.

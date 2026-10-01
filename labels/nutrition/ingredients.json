@@ -1,0 +1,51 @@
+{
+  "_note": "Per 100 g. Energy uses the FSANZ Standard 1.2.8 factors (protein 17, fat 37, available carbohydrate 17, dietary fibre 8 kJ/g). Carbohydrate is available carbohydrate (fibre excluded), as Australian panels require. Replace any entry with your supplier's spec sheet when you have it.",
+  "cacao-mass": {
+    "name": "Cacao mass",
+    "energyKj": 2513,
+    "protein": 14.32,
+    "fat": 52.31,
+    "saturatedFat": 32.28,
+    "carbohydrate": 11.82,
+    "sugars": 0.91,
+    "fibre": 16.6,
+    "sodiumMg": 24,
+    "source": "USDA FoodData Central SR Legacy 167568, 'Baking chocolate, unsweetened, squares' (100% cacao mass). Carbohydrate = 28.42 by difference − 16.6 fibre; energy recalculated with FSANZ factors."
+  },
+  "cacao-butter": {
+    "name": "Cacao butter",
+    "energyKj": 3700,
+    "protein": 0,
+    "fat": 100,
+    "saturatedFat": 59.7,
+    "carbohydrate": 0,
+    "sugars": 0,
+    "fibre": 0,
+    "sodiumMg": 0,
+    "source": "USDA FoodData Central SR Legacy 171421, 'Oil, cocoa butter'; energy with FSANZ factor."
+  },
+  "rapadura-sugar": {
+    "name": "Organic rapadura sugar",
+    "energyKj": 1649,
+    "protein": 0.2,
+    "fat": 0,
+    "saturatedFat": 0,
+    "carbohydrate": 96.8,
+    "sugars": 96.8,
+    "fibre": 0,
+    "sodiumMg": 21,
+    "source": "FSANZ Nutrition Panel Calculator 2026, F008969 'Sugar, brown' (closest match to unrefined cane sugar; swap for supplier spec)."
+  },
+  "goat-milk-powder": {
+    "name": "Goat milk powder",
+    "energyKj": 2085,
+    "protein": 27.3,
+    "fat": 27.1,
+    "saturatedFat": 17.8,
+    "carbohydrate": 36.5,
+    "sugars": 36.5,
+    "fibre": 0,
+    "sodiumMg": 295,
+    "source": "FSANZ Nutrition Panel Calculator 2026, F005654 'Milk, goat, powder, regular fat'."
+  }
+}

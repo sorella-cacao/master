@@ -5,6 +5,7 @@ export default function Home() {
       <p className="max-w-md text-lg opacity-70">
         Our new website is under construction.
       </p>
+      <p className="text-sm opacity-50">Deployment check · Update 1</p>
     </main>
   );
 }

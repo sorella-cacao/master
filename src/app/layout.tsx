@@ -1,29 +1,47 @@
 import type { Metadata } from "next";
-import { Geist, Geist_Mono } from "next/font/google";
+import { Carattere, Cormorant_Garamond, Jost } from "next/font/google";
+import { CartProvider } from "@/components/cart";
+import { Footer } from "@/components/footer";
+import { Header } from "@/components/header";
+import { site } from "@/data";
 import "./globals.css";
 
-const geistSans = Geist({
-  variable: "--font-geist-sans",
+const cormorant = Cormorant_Garamond({
+  variable: "--font-cormorant",
+  subsets: ["latin"],
+  weight: ["400", "500", "600"],
+  style: ["normal", "italic"],
+});
+
+const jost = Jost({
+  variable: "--font-jost",
   subsets: ["latin"],
 });
 
-const geistMono = Geist_Mono({
-  variable: "--font-geist-mono",
+const carattere = Carattere({
+  variable: "--font-carattere",
   subsets: ["latin"],
+  weight: "400",
 });
 
 export const metadata: Metadata = {
-  title: "Sorella Cacao",
-  description: "Handcrafted chocolate from Sorella Cacao.",
+  title: { default: site.name, template: `%s — ${site.name}` },
+  description: site.tagline,
 };
 
 export default function RootLayout({ children }: LayoutProps<"/">) {
   return (
     <html
       lang="en-AU"
-      className={`${geistSans.variable} ${geistMono.variable} h-full antialiased`}
+      className={`${cormorant.variable} ${jost.variable} ${carattere.variable} antialiased`}
     >
-      <body className="min-h-full flex flex-col">{children}</body>
+      <body className="flex min-h-screen flex-col font-serif text-lg">
+        <CartProvider>
+          <Header />
+          <main className="flex-1">{children}</main>
+          <Footer />
+        </CartProvider>
+      </body>
     </html>
   );
 }

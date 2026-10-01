@@ -9,6 +9,8 @@
 // The back label must contain "Best Before <date>" and "Batch # <batch>";
 // the existing values are painted over and replaced. The flavour code is
 // taken from the template's existing batch number (e.g. 300926FIG -> FIG).
+// Every label is shrunk slightly and centred so nothing sits closer than
+// `safeMarginMm` to the edge (printers and cutters drift by a millimetre or two).
 // Output: output/<made date>/<size>-<flavour>-<front|back>.png
 //
 // Needs poppler (pdftotext, pdftoppm) on the PATH.
@@ -87,6 +89,66 @@ function fontMetrics(doc) {
   return { ascent: DEFAULT_ASCENT, descent: DEFAULT_DESCENT };
 }
 
+const MM = 72 / 25.4;
+
+/** Bounds of the non-white content, in points from the page's top-left. */
+function contentBounds(pdfPath) {
+  const dpi = 150;
+  const pgm = execFileSync("pdftoppm", ["-r", String(dpi), "-gray", "-singlefile", pdfPath]);
+  const header = pgm.toString("latin1", 0, 64).match(/^P5\s+(\d+)\s+(\d+)\s+(\d+)\s/);
+  const [, w, h] = header.map(Number);
+  const pixels = pgm.subarray(header[0].length);
+  let x0 = w, y0 = h, x1 = -1, y1 = -1;
+  for (let y = 0; y < h; y++) {
+    for (let x = 0; x < w; x++) {
+      if (pixels[y * w + x] < 235) {
+        if (x < x0) x0 = x;
+        if (x > x1) x1 = x;
+        if (y < y0) y0 = y;
+        if (y > y1) y1 = y;
+      }
+    }
+  }
+  const pt = (px) => (px * 72) / dpi;
+  return { x0: pt(x0), y0: pt(y0), x1: pt(x1 + 1), y1: pt(y1 + 1) };
+}
+
+/** Shrinks and centres the label so its content clears the safe margin. */
+async function withSafeMargin(pdfBytes, pdfPath) {
+  const src = await PDFDocument.load(pdfBytes);
+  const box = src.getPage(0).getMediaBox();
+  const margin = config.safeMarginMm * MM;
+  const c = contentBounds(pdfPath);
+  const scale = Math.min(1, (box.width - 2 * margin) / (c.x1 - c.x0), (box.height - 2 * margin) / (c.y1 - c.y0));
+
+  const compose = async (x, y) => {
+    const doc = await PDFDocument.create();
+    const page = doc.addPage([box.width, box.height]);
+    // Pass the media box explicitly: Canva offsets it from 0, and the default
+    // bounding box would clip the top of the label.
+    const embedded = await doc.embedPage(src.getPage(0), {
+      left: box.x,
+      bottom: box.y,
+      right: box.x + box.width,
+      top: box.y + box.height,
+    });
+    page.drawPage(embedded, { x, y, xScale: scale, yScale: scale });
+    return doc.save();
+  };
+
+  // First pass: scale about the centre, then measure where the content
+  // actually landed and shift it so the margins are even on every side.
+  let x = (box.width - box.width * scale) / 2;
+  let y = (box.height - box.height * scale) / 2;
+  const probe = pdfPath + ".probe.pdf";
+  fs.writeFileSync(probe, await compose(x, y));
+  const placed = contentBounds(probe);
+  fs.rmSync(probe);
+  x += (box.width - placed.x1 - placed.x0) / 2;
+  y -= (box.height - placed.y1 - placed.y0) / 2;
+  return compose(x, y);
+}
+
 async function stampBack(templatePath, made) {
   const words = wordBoxes(templatePath);
   const dateBox = valueAfter(words, "Before");
@@ -146,7 +208,9 @@ async function main() {
       const back = path.join(ROOT, "templates", size, "back", `${flavour}.pdf`);
 
       if (fs.existsSync(front)) {
-        renderPng(front, path.join(outDir, `${name}-front.png`));
+        const tmpFront = path.join(tmp, `${name}-front.pdf`);
+        fs.writeFileSync(tmpFront, await withSafeMargin(fs.readFileSync(front), front));
+        renderPng(tmpFront, path.join(outDir, `${name}-front.png`));
       } else {
         console.warn(`! no front template: ${path.relative(ROOT, front)}`);
       }
@@ -158,6 +222,7 @@ async function main() {
       const stamped = await stampBack(back, made);
       const tmpPdf = path.join(tmp, `${name}-back.pdf`);
       fs.writeFileSync(tmpPdf, stamped.bytes);
+      fs.writeFileSync(tmpPdf, await withSafeMargin(stamped.bytes, tmpPdf));
       renderPng(tmpPdf, path.join(outDir, `${name}-back.png`));
       console.log(`✓ ${name}: Best Before ${stamped.bestBefore}, Batch # ${stamped.batch}`);
     }

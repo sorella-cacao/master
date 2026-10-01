@@ -1,4 +1,5 @@
 {
   "shelfLifeMonths": 12,
+  "safeMarginMm": 2.5,
   "dpi": 300
 }

@@ -18,6 +18,9 @@ output/<made date>/<size>-<flavour>-<front|back>.png
 - Batch number = made-on date (DDMMYY) + the flavour code already on the
   template, e.g. `300926FIG`. Best before = made-on + `shelfLifeMonths`
   (`labels.json`, default 12).
+- Each label is shrunk slightly and centred so nothing sits closer than
+  `safeMarginMm` (default 2.5 mm) to the edge, which allows for printer and
+  cutter drift.
 - PNGs render at 300 DPI at the label's exact size.
 
 ```bash

@@ -5,6 +5,8 @@ export type Variant = {
   label: string;
   price: number;
   soldOut?: boolean;
+  /** Shown under the option menu once this option is chosen. */
+  ingredients?: string;
 };
 
 /** A bar's printed labels, used to preview a customer's personalised wording. */
@@ -28,6 +30,8 @@ export type Product = {
   subscription?: { discount: number; interval: string };
   /** Offered on the chocolate bars: customers can replace "Sorella Cacao" on the label. */
   personalisedLabel?: PersonalisedLabel;
+  /** Key to the asterisks in the variants' ingredients. */
+  ingredientsNote?: string;
   description: ContentBlock[];
 };
 

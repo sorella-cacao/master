@@ -18,6 +18,8 @@ type Props = {
   subscription?: { discount: number; interval: string };
   /** Ask whether the customer wants a personalised label, once a flavour is chosen. */
   personalisedLabel?: PersonalisedLabel;
+  /** Key to the asterisks in the chosen option's ingredients. */
+  ingredientsNote?: string;
   soldOut?: boolean;
   /** Original button wording, e.g. "Add To Cart" or "Register". */
   actionLabel: string;
@@ -31,6 +33,7 @@ export function PurchaseForm({
   variants,
   subscription,
   personalisedLabel,
+  ingredientsNote,
   soldOut,
   actionLabel,
 }: Props) {
@@ -87,26 +90,39 @@ export function PurchaseForm({
         {formatPrice(unitPrice)}
       </p>
 
-      <label className="block">
-        <span className="eyebrow mb-2 block text-cream/70">{optionName}:</span>
-        <select
-          required
-          value={variantIndex}
-          onChange={(e) => {
-            const index = e.target.value === "" ? "" : Number(e.target.value);
-            setVariantIndex(index);
-          }}
-          className="w-full appearance-none rounded-xl border border-white/15 bg-cacao-800 bg-[url('data:image/svg+xml;utf8,<svg xmlns=%22http://www.w3.org/2000/svg%22 width=%2212%22 height=%228%22><path d=%22M1 1l5 5 5-5%22 fill=%22none%22 stroke=%22%23d9ad68%22 stroke-width=%221.5%22/></svg>')] bg-[length:12px] bg-[right_1.1rem_center] bg-no-repeat px-4 py-3.5 pr-10 font-sans text-base text-cream focus:border-gold focus:outline-none"
-        >
-          <option value="">Select {optionName}</option>
-          {variants.map((v, i) => (
-            <option key={v.label} value={i} disabled={v.soldOut}>
-              {v.label}
-              {v.soldOut ? " (Sold Out)" : ""}
-            </option>
-          ))}
-        </select>
-      </label>
+      <div>
+        <label className="block">
+          <span className="eyebrow mb-2 block text-cream/70">{optionName}:</span>
+          <select
+            required
+            value={variantIndex}
+            onChange={(e) => {
+              const index = e.target.value === "" ? "" : Number(e.target.value);
+              setVariantIndex(index);
+            }}
+            className="w-full appearance-none rounded-xl border border-white/15 bg-cacao-800 bg-[url('data:image/svg+xml;utf8,<svg xmlns=%22http://www.w3.org/2000/svg%22 width=%2212%22 height=%228%22><path d=%22M1 1l5 5 5-5%22 fill=%22none%22 stroke=%22%23d9ad68%22 stroke-width=%221.5%22/></svg>')] bg-[length:12px] bg-[right_1.1rem_center] bg-no-repeat px-4 py-3.5 pr-10 font-sans text-base text-cream focus:border-gold focus:outline-none"
+          >
+            <option value="">Select {optionName}</option>
+            {variants.map((v, i) => (
+              <option key={v.label} value={i} disabled={v.soldOut}>
+                {v.label}
+                {v.soldOut ? " (Sold Out)" : ""}
+              </option>
+            ))}
+          </select>
+        </label>
+        <div aria-live="polite">
+          {variant?.ingredients && (
+            <div className="mt-3 text-base text-cream/75">
+              <p>
+                <span className="eyebrow mr-2 text-cream/60">Ingredients:</span>
+                {variant.ingredients}
+              </p>
+              {ingredientsNote && <p className="mt-1 text-sm text-cream/50">{ingredientsNote}</p>}
+            </div>
+          )}
+        </div>
+      </div>
 
       {personalisedLabel && variant && (
         <LabelFields

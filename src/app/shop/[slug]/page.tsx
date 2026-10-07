@@ -35,6 +35,7 @@ export default async function ProductPage({ params }: PageProps<"/shop/[slug]">)
           variants={product.variants}
           subscription={product.subscription}
           personalisedLabel={product.personalisedLabel}
+          ingredientsNote={product.ingredientsNote}
           actionLabel="Add To Cart"
         />
       }

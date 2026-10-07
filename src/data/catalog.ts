@@ -14,35 +14,43 @@ export const products: Product[] = [
     "variants": [
       {
         "label": "84% Dark",
-        "price": 14.0
+        "price": 14.0,
+        "ingredients": "Roasted Cacao**(84%), rapadura sugar*(16%)"
       },
       {
         "label": "75% Dark",
-        "price": 14.0
+        "price": 14.0,
+        "ingredients": "Roasted Cacao**(75%), rapadura sugar* (25%)"
       },
       {
         "label": "Goats Milk",
-        "price": 14.0
+        "price": 14.0,
+        "ingredients": "Roasted Cacao**(60%), cacao butter*, Australian goats milk*, rapadura sugar*(25%)"
       },
       {
         "label": "Local Roasted Hazelnut Gianduja & Salt",
-        "price": 14.0
+        "price": 14.0,
+        "ingredients": "Roasted Cacao**, cacao butter*, rapadura sugar*, homemade roasted local hazelnut butter (orange region), crushed & roasted local hazelnuts, sea salt*"
       },
       {
         "label": "65% Dark & Local Mandarins",
-        "price": 14.0
+        "price": 14.0,
+        "ingredients": "Roasted Cacao**, cacao butter*, rapadura sugar*, local dried mandarins (Bilpin region)"
       },
       {
         "label": "White Choc w/ Local Peaches",
-        "price": 14.0
+        "price": 14.0,
+        "ingredients": "Cacao butter*, goats milk*, rapadura sugar*, rapadura sugar*, local peaches (yung region)"
       },
       {
         "label": "75% Smokey Smokey Chilli",
-        "price": 14.0
+        "price": 14.0,
+        "ingredients": "Smoke dried Cacao**, rapadura sugar*, cayenne pepper*"
       },
       {
         "label": "75% Dark Native Salt & Pepper",
-        "price": 14.0
+        "price": 14.0,
+        "ingredients": "Roasted Cacao**, rapadura sugar*, Tasmanian pepper berries**, flaky sea salt*"
       }
     ],
     "personalisedLabel": {
@@ -59,6 +67,7 @@ export const products: Product[] = [
         "75% Dark Native Salt & Pepper": "/images/labels/large-salt-pepper.webp"
       }
     },
+    "ingredientsNote": "**Ethically Farmed *Organic",
     "description": [
       {
         "p": "108g"
@@ -79,36 +88,6 @@ export const products: Product[] = [
         "p": "Everything is sweetened by organic rapadura sugar!"
       },
       {
-        "p": "Flavour and ingredients list:"
-      },
-      {
-        "p": "• 84% Dark: Roasted Cacao**(84%), rapadura sugar*(16%)"
-      },
-      {
-        "p": "•75% Dark: Roasted Cacao**(75%), rapadura sugar* (25%)"
-      },
-      {
-        "p": "• 60% Goats Milk: Roasted Cacao**(60%), cacao butter*, Australian goats milk*, rapadura sugar*(25%)"
-      },
-      {
-        "p": "• Local Roasted Hazelnut Gianduja & Salt:Roasted Cacao**, cacao butter*, rapadura sugar*, homemade roasted local hazelnut butter (orange region), crushed & roasted local hazelnuts, sea salt*"
-      },
-      {
-        "p": "• 75% Dark & Local Mandarins: Roasted Cacao**, cacao butter*, rapadura sugar*, local dried mandarins (Bilpin region)"
-      },
-      {
-        "p": "• White Choc w/ Local Peaches: Cacao butter*, goats milk*, rapadura sugar*, rapadura sugar*, local peaches (yung region)"
-      },
-      {
-        "p": "• 75% Dark Native Salt & Pepper: Roasted Cacao**, rapadura sugar*, Tasmanian pepper berries**, flaky sea salt*"
-      },
-      {
-        "p": "• 75% Smokey Smokey Chilli: Smoke dried Cacao**, rapadura sugar*, cayenne pepper*"
-      },
-      {
-        "p": "**Ethically Farmed *Organic"
-      },
-      {
         "p": "PERSONALISED LABELS: Once you’ve chosen your flavour, choose “Yes” for a personalised label, then tap the label and write up to three words to print in place of “Sorella Cacao”. It’s $15 one-off for each wording, however many bars it goes on."
       }
     ]
@@ -122,27 +101,33 @@ export const products: Product[] = [
     "variants": [
       {
         "label": "84% Dark",
-        "price": 8.0
+        "price": 8.0,
+        "ingredients": "Cacao**(84%), rapadura sugar*(16%)"
       },
       {
         "label": "75% Dark",
-        "price": 8.0
+        "price": 8.0,
+        "ingredients": "Cacao**(75%), rapadura sugar* (25%)"
       },
       {
         "label": "60% Goats Milk",
-        "price": 8.0
+        "price": 8.0,
+        "ingredients": "Cacao**(60%), cacao butter*, goat milk*, rapadura sugar*(25%)"
       },
       {
         "label": "Local Roasted Hazelnut Gianduja",
-        "price": 8.0
+        "price": 8.0,
+        "ingredients": "Cacao**, cacao butter*, rapadura sugar*, homemade roasted hazelnut butter*, crushed & roasted hazelnuts*, sea salt*"
       },
       {
         "label": "75% Dark & Local Mandarins",
-        "price": 8.0
+        "price": 8.0,
+        "ingredients": "Cacao**, cacao butter*, rapadura sugar*, local dried mandarins"
       },
       {
         "label": "White Choc & Local Peaches",
-        "price": 8.0
+        "price": 8.0,
+        "ingredients": "Cacao butter*, goats milk*, rapadura sugar*, local peaches"
       }
     ],
     "personalisedLabel": {
@@ -157,6 +142,7 @@ export const products: Product[] = [
         "White Choc & Local Peaches": "/images/labels/small-white-peaches.webp"
       }
     },
+    "ingredientsNote": "**Ethically Farmed *Organic",
     "description": [
       {
         "p": "50g"
@@ -175,30 +161,6 @@ export const products: Product[] = [
       },
       {
         "p": "Everything is sweetened by organic rapadura sugar!"
-      },
-      {
-        "p": "Flavour and ingredients list:"
-      },
-      {
-        "p": "• 84% Dark: Cacao**(84%), rapadura sugar*(16%)"
-      },
-      {
-        "p": "•75% Dark: Cacao**(75%), rapadura sugar* (25%)"
-      },
-      {
-        "p": "• 60% Goats milk: Cacao**(60%), cacao butter*, goat milk*, rapadura sugar*(25%)"
-      },
-      {
-        "p": "• Local Roasted Hazelnut Gianduja & Salt: Cacao**, cacao butter*, rapadura sugar*, homemade roasted hazelnut butter*, crushed & roasted hazelnuts*, sea salt*"
-      },
-      {
-        "p": "• 75% Dark & Local Mandarins: Cacao**, cacao butter*, rapadura sugar*, local dried mandarins"
-      },
-      {
-        "p": "• White Choc w/ Local Peaches: Cacao butter*, goats milk*, rapadura sugar*, local peaches"
-      },
-      {
-        "p": "**Ethically Farmed *Organic"
       },
       {
         "p": "PERSONALISED LABELS: Once you’ve chosen your flavour, choose “Yes” for a personalised label, then tap the label and write up to three words to print in place of “Sorella Cacao”. It’s $15 one-off for each wording, however many bars it goes on."

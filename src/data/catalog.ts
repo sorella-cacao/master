@@ -200,15 +200,15 @@ export const products: Product[] = [
     "variants": [
       {
         "label": "250g",
-        "price": 29.0
+        "price": 35.0
       },
       {
         "label": "500g",
-        "price": 55.0
+        "price": 60.0
       },
       {
         "label": "1kg",
-        "price": 89.0
+        "price": 110.0
       }
     ],
     "description": [

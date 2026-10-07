@@ -30,17 +30,17 @@ export const products: Product[] = [
       {
         "label": "Local Roasted Hazelnut Gianduja & Salt",
         "price": 14.0,
-        "ingredients": "Roasted Cacao**, cacao butter*, rapadura sugar*, homemade roasted local hazelnut butter (orange region), crushed & roasted local hazelnuts, sea salt*"
+        "ingredients": "Roasted Cacao**, cacao butter*, rapadura sugar*, homemade roasted local hazelnut butter (Orange region), crushed & roasted local hazelnuts, sea salt*"
       },
       {
-        "label": "65% Dark & Local Mandarins",
+        "label": "75% Dark & Local Mandarins",
         "price": 14.0,
         "ingredients": "Roasted Cacao**, cacao butter*, rapadura sugar*, local dried mandarins (Bilpin region)"
       },
       {
         "label": "White Choc w/ Local Peaches",
         "price": 14.0,
-        "ingredients": "Cacao butter*, goats milk*, rapadura sugar*, rapadura sugar*, local peaches (yung region)"
+        "ingredients": "Cacao butter*, goats milk*, rapadura sugar*, local peaches (Young region)"
       },
       {
         "label": "75% Smokey Smokey Chilli",
@@ -61,7 +61,7 @@ export const products: Product[] = [
         "75% Dark": "/images/labels/large-75-dark.webp",
         "Goats Milk": "/images/labels/large-goats-milk.webp",
         "Local Roasted Hazelnut Gianduja & Salt": "/images/labels/large-hazelnut.webp",
-        "65% Dark & Local Mandarins": "/images/labels/large-mandarin.webp",
+        "75% Dark & Local Mandarins": "/images/labels/large-mandarin.webp",
         "White Choc w/ Local Peaches": "/images/labels/large-white-peaches.webp",
         "75% Smokey Smokey Chilli": "/images/labels/large-smoking-hot.webp",
         "75% Dark Native Salt & Pepper": "/images/labels/large-salt-pepper.webp"

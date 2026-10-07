@@ -109,7 +109,7 @@ export const products: Product[] = [
         "p": "**Ethically Farmed *Organic"
       },
       {
-        "p": "PERSONALISED LABELS: Choose “Yes” for a personalised label above, then tap the label and write up to three words to print in place of “Sorella Cacao”. It’s $15 one-off for each wording, however many bars it goes on."
+        "p": "PERSONALISED LABELS: Once you’ve chosen your flavour, choose “Yes” for a personalised label, then tap the label and write up to three words to print in place of “Sorella Cacao”. It’s $15 one-off for each wording, however many bars it goes on."
       }
     ]
   },
@@ -201,7 +201,7 @@ export const products: Product[] = [
         "p": "**Ethically Farmed *Organic"
       },
       {
-        "p": "PERSONALISED LABELS: Choose “Yes” for a personalised label above, then tap the label and write up to three words to print in place of “Sorella Cacao”. It’s $15 one-off for each wording, however many bars it goes on."
+        "p": "PERSONALISED LABELS: Once you’ve chosen your flavour, choose “Yes” for a personalised label, then tap the label and write up to three words to print in place of “Sorella Cacao”. It’s $15 one-off for each wording, however many bars it goes on."
       }
     ]
   },

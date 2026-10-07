@@ -6,15 +6,12 @@ export function DetailLayout({
   crumb,
   title,
   images,
-  media,
   purchase,
   children,
 }: {
   crumb: { label: string; href: string };
   title: string;
   images: string[];
-  /** Replaces the photo column, e.g. to swap in a live label preview. */
-  media?: React.ReactNode;
   purchase: React.ReactNode;
   children: React.ReactNode;
 }) {
@@ -31,7 +28,18 @@ export function DetailLayout({
 
         <div className="mt-8 grid gap-12 lg:grid-cols-2 lg:gap-20">
           <div className="space-y-4 lg:sticky lg:top-28 lg:self-start">
-            {media ?? <DetailImages title={title} images={images} />}
+            {images.map((src, i) => (
+              <div key={src} className="relative aspect-[4/5] overflow-hidden rounded-2xl bg-cacao-800">
+                <Image
+                  src={src}
+                  alt={i === 0 ? title : ""}
+                  fill
+                  priority={i === 0}
+                  sizes="(min-width: 1024px) 45vw, 100vw"
+                  className="object-cover"
+                />
+              </div>
+            ))}
           </div>
 
           <div>
@@ -45,19 +53,4 @@ export function DetailLayout({
       </div>
     </section>
   );
-}
-
-export function DetailImages({ title, images }: { title: string; images: string[] }) {
-  return images.map((src, i) => (
-    <div key={src} className="relative aspect-[4/5] overflow-hidden rounded-2xl bg-cacao-800">
-      <Image
-        src={src}
-        alt={i === 0 ? title : ""}
-        fill
-        priority={i === 0}
-        sizes="(min-width: 1024px) 45vw, 100vw"
-        className="object-cover"
-      />
-    </div>
-  ));
 }

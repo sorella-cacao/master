@@ -2,7 +2,6 @@
 
 import { Cinzel_Decorative } from "next/font/google";
 import Image from "next/image";
-import { createContext, useContext, useMemo, useState } from "react";
 import type { PersonalisedLabel } from "@/data/types";
 import { MAX_LABEL_WORDS, cleanLabel, limitWords } from "@/lib/labels";
 
@@ -16,67 +15,27 @@ const LABEL_LAYOUT = {
   small: { aspectRatio: "1600 / 1024", headingTop: "3%", headingHeight: "19.5%", centreX: "47.8%", fontSize: 9 },
 } as const;
 
-export type LabelChoice = {
-  /** null until the customer answers Yes or No. */
-  wanted: boolean | null;
-  text: string;
-  flavour?: string;
-  setWanted: (wanted: boolean) => void;
-  setText: (text: string) => void;
-  setFlavour: (flavour?: string) => void;
-};
-
-const LabelChoiceContext = createContext<LabelChoice | null>(null);
-
-/** Shares the label choice between the purchase form and the image column. */
-export function LabelChoiceProvider({ children }: { children: React.ReactNode }) {
-  const [wanted, setWanted] = useState<boolean | null>(null);
-  const [text, setText] = useState("");
-  const [flavour, setFlavour] = useState<string>();
-  const value = useMemo(
-    () => ({ wanted, text, flavour, setWanted, setText, setFlavour }),
-    [wanted, text, flavour],
-  );
-  return <LabelChoiceContext value={value}>{children}</LabelChoiceContext>;
-}
-
-/** The label choice, or null on pages that don't offer personalised labels. */
-export function useLabelChoice() {
-  return useContext(LabelChoiceContext);
-}
-
-/** On wide screens, swaps the product photo for the label once "Yes" is chosen. */
-export function LabelEditorSwitch({
+/** The bar's real label artwork; customers type their words straight onto the heading. */
+export function LabelEditor({
   label,
-  children,
+  flavour,
+  text,
+  onTextChange,
 }: {
   label: PersonalisedLabel;
-  children: React.ReactNode;
+  flavour?: string;
+  text: string;
+  onTextChange: (text: string) => void;
 }) {
-  const choice = useLabelChoice();
-  if (!choice?.wanted) return children;
-  return (
-    <>
-      {/* Phones show the label under the question instead, so keep the photo here. */}
-      <div className="space-y-4 lg:hidden">{children}</div>
-      <div className="hidden aspect-[4/5] items-center justify-center rounded-2xl bg-cacao-800 p-10 lg:flex">
-        <LabelEditor label={label} choice={choice} />
-      </div>
-    </>
-  );
-}
-
-/** The bar's real label artwork; customers tap the heading and type their words onto it. */
-export function LabelEditor({ label, choice }: { label: PersonalisedLabel; choice: LabelChoice }) {
   const layout = LABEL_LAYOUT[label.size];
-  const src = (choice.flavour && label.images[choice.flavour]) || label.images[label.defaultFlavour];
-  const text = cleanLabel(choice.text);
-  const words = text ? text.split(" ").length : 0;
+  const src = (flavour && label.images[flavour]) || label.images[label.defaultFlavour];
+  const wording = cleanLabel(text);
+  const words = wording ? wording.split(" ").length : 0;
   // Shrink long wording so it stays on the label.
-  const fontSize = Math.min(layout.fontSize, 86 / (Math.max(text.length, 10) * 0.68));
+  const fontSize = Math.min(layout.fontSize, 86 / (Math.max(wording.length, 10) * 0.68));
 
   return (
-    <figure className="w-full">
+    <figure>
       <div
         className="relative w-full overflow-hidden rounded-sm bg-white shadow-2xl shadow-black/40 [container-type:inline-size]"
         style={{ aspectRatio: layout.aspectRatio }}
@@ -90,10 +49,10 @@ export function LabelEditor({ label, choice }: { label: PersonalisedLabel; choic
           aria-label={`Your label words (up to ${MAX_LABEL_WORDS})`}
           placeholder="Your words here"
           maxLength={40}
-          value={choice.text}
-          onChange={(e) => choice.setText(limitWords(e.target.value))}
+          value={text}
+          onChange={(e) => onTextChange(limitWords(e.target.value))}
           className={`${labelFont.className} absolute w-[90%] -translate-x-1/2 rounded-md border-2 border-dashed px-2 text-center leading-none text-black outline-none placeholder:text-black/30 focus:border-caramel ${
-            text ? "border-transparent bg-transparent hover:border-black/15" : "border-caramel/80 bg-caramel/10"
+            wording ? "border-transparent bg-transparent hover:border-black/15" : "border-caramel/80 bg-caramel/10"
           }`}
           style={{
             top: layout.headingTop,
@@ -115,8 +74,7 @@ export function LabelEditor({ label, choice }: { label: PersonalisedLabel; choic
   );
 }
 
-/** Puts the cursor in whichever label is showing (beside the form on wide screens, inside it on phones). */
+/** Puts the cursor back on the label, e.g. when Add to Cart is pressed with no words. */
 export function focusLabelInput() {
-  const inputs = document.querySelectorAll<HTMLInputElement>("input[data-label-input]");
-  Array.from(inputs).find((el) => el.offsetParent !== null)?.focus();
+  document.querySelector<HTMLInputElement>("input[data-label-input]")?.focus();
 }

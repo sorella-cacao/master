@@ -1,7 +1,6 @@
 import type { Metadata } from "next";
 import { notFound } from "next/navigation";
-import { DetailImages, DetailLayout } from "@/components/detail-layout";
-import { LabelChoiceProvider, LabelEditorSwitch } from "@/components/personalised-label";
+import { DetailLayout } from "@/components/detail-layout";
 import { PurchaseForm } from "@/components/purchase-form";
 import { RichText } from "@/components/rich-text";
 import { getProduct, getProducts, site } from "@/data";
@@ -22,36 +21,25 @@ export default async function ProductPage({ params }: PageProps<"/shop/[slug]">)
   const product = await getProduct((await params).slug);
   if (!product) notFound();
 
-  const label = product.personalisedLabel;
-
   return (
-    <LabelChoiceProvider>
-      <DetailLayout
-        crumb={{ label: site.shop.title, href: "/shop" }}
-        title={product.title}
-        images={[product.image]}
-        media={
-          label && (
-            <LabelEditorSwitch label={label}>
-              <DetailImages title={product.title} images={[product.image]} />
-            </LabelEditorSwitch>
-          )
-        }
-        purchase={
-          <PurchaseForm
-            href={`/shop/${product.slug}`}
-            title={product.title}
-            image={product.image}
-            optionName={product.optionName}
-            variants={product.variants}
-            subscription={product.subscription}
-            personalisedLabel={label}
-            actionLabel="Add To Cart"
-          />
-        }
-      >
-        <RichText blocks={product.description} />
-      </DetailLayout>
-    </LabelChoiceProvider>
+    <DetailLayout
+      crumb={{ label: site.shop.title, href: "/shop" }}
+      title={product.title}
+      images={[product.image]}
+      purchase={
+        <PurchaseForm
+          href={`/shop/${product.slug}`}
+          title={product.title}
+          image={product.image}
+          optionName={product.optionName}
+          variants={product.variants}
+          subscription={product.subscription}
+          personalisedLabel={product.personalisedLabel}
+          actionLabel="Add To Cart"
+        />
+      }
+    >
+      <RichText blocks={product.description} />
+    </DetailLayout>
   );
 }

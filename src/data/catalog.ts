@@ -43,7 +43,7 @@ export const products: Product[] = [
         "ingredients": "Cacao butter*, goats milk*, rapadura sugar*, local peaches (Young region)"
       },
       {
-        "label": "75% Smokey Smokey Chilli",
+        "label": "75% Smokey Chilli",
         "price": 14.0,
         "ingredients": "Smoke dried Cacao**, rapadura sugar*, cayenne pepper*"
       },
@@ -63,7 +63,7 @@ export const products: Product[] = [
         "Local Roasted Hazelnut Gianduja & Salt": "/images/labels/large-hazelnut.webp",
         "75% Dark & Local Mandarins": "/images/labels/large-mandarin.webp",
         "White Choc w/ Local Peaches": "/images/labels/large-white-peaches.webp",
-        "75% Smokey Smokey Chilli": "/images/labels/large-smoking-hot.webp",
+        "75% Smokey Chilli": "/images/labels/large-smoking-hot.webp",
         "75% Dark Native Salt & Pepper": "/images/labels/large-salt-pepper.webp"
       }
     },

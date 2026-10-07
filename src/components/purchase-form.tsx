@@ -4,10 +4,10 @@ import Link from "next/link";
 import { useState } from "react";
 import type { PersonalisedLabel, Variant } from "@/data/types";
 import { formatPrice, fromPrice } from "@/lib/format";
-import { LABEL_FEE, MAX_LABEL_WORDS, cleanLabel, limitWords } from "@/lib/labels";
+import { LABEL_FEE, MAX_LABEL_WORDS, cleanLabel } from "@/lib/labels";
 import { buttonClass } from "./button";
 import { useCart } from "./cart";
-import { type LabelChoice, LabelPreview, useLabelChoice } from "./personalised-label";
+import { type LabelChoice, LabelEditor, focusLabelInput, useLabelChoice } from "./personalised-label";
 
 type Props = {
   href: string;
@@ -34,13 +34,14 @@ export function PurchaseForm({
   soldOut,
   actionLabel,
 }: Props) {
-  const { addItem } = useCart();
+  const { items, addItem } = useCart();
   const labelChoice = useLabelChoice();
   const offerLabel = personalisedLabel && labelChoice ? { label: personalisedLabel, choice: labelChoice } : undefined;
   const [variantIndex, setVariantIndex] = useState<number | "">("");
   const [quantity, setQuantity] = useState(1);
   const [subscribe, setSubscribe] = useState(false);
-  const [added, setAdded] = useState(false);
+  const [addedKey, setAddedKey] = useState<string>();
+  const [missingWords, setMissingWords] = useState(false);
 
   const variant = variantIndex === "" ? undefined : variants[variantIndex];
   const basePrice = variant?.price ?? fromPrice(variants);
@@ -49,22 +50,34 @@ export function PurchaseForm({
   const unitPrice = subscribe ? subscribePrice(basePrice) : basePrice;
   const unavailable = soldOut || variant?.soldOut;
 
+  const wantsLabel = !!offerLabel?.choice.wanted;
+  const labelText = offerLabel?.choice.wanted ? cleanLabel(offerLabel.choice.text) : "";
+  // The fee is charged once per wording, so it's already covered if the cart has it.
+  const labelInCart = !!labelText && items.some((i) => i.label?.toLowerCase() === labelText.toLowerCase());
+  const total = unitPrice * quantity + (labelText && !labelInCart ? LABEL_FEE : 0);
+  // "Added to cart" shows only while the form still matches what was added.
+  const formKey = [variantIndex, quantity, subscribe, labelText].join("|");
+  const added = addedKey === formKey;
+
   function submit(e: React.FormEvent) {
     e.preventDefault();
     if (!variant || unavailable) return;
-    const label = offerLabel?.choice.wanted ? cleanLabel(offerLabel.choice.text) : undefined;
-    if (offerLabel?.choice.wanted && !label) return;
+    if (wantsLabel && !labelText) {
+      setMissingWords(true);
+      focusLabelInput();
+      return;
+    }
     addItem({
       href,
       title,
       image,
       variant: variant.label,
       frequency: subscribe && subscription ? subscription.interval : undefined,
-      label,
+      label: labelText || undefined,
       unitPrice,
       quantity,
     });
-    setAdded(true);
+    setAddedKey(formKey);
   }
 
   return (
@@ -83,7 +96,6 @@ export function PurchaseForm({
             const index = e.target.value === "" ? "" : Number(e.target.value);
             setVariantIndex(index);
             labelChoice?.setFlavour(index === "" ? undefined : variants[index].label);
-            setAdded(false);
           }}
           className="w-full appearance-none rounded-xl border border-white/15 bg-cacao-800 bg-[url('data:image/svg+xml;utf8,<svg xmlns=%22http://www.w3.org/2000/svg%22 width=%2212%22 height=%228%22><path d=%22M1 1l5 5 5-5%22 fill=%22none%22 stroke=%22%23d9ad68%22 stroke-width=%221.5%22/></svg>')] bg-[length:12px] bg-[right_1.1rem_center] bg-no-repeat px-4 py-3.5 pr-10 font-sans text-base text-cream focus:border-gold focus:outline-none"
         >
@@ -98,7 +110,11 @@ export function PurchaseForm({
       </label>
 
       {offerLabel && (
-        <LabelFields label={offerLabel.label} choice={offerLabel.choice} onChange={() => setAdded(false)} />
+        <LabelFields
+          label={offerLabel.label}
+          choice={offerLabel.choice}
+          missingWords={missingWords && wantsLabel && !labelText}
+        />
       )}
 
       {subscription && (
@@ -153,12 +169,29 @@ export function PurchaseForm({
         </label>
       )}
 
+      {offerLabel && variant && !unavailable && (
+        <dl className="space-y-2 rounded-xl bg-cacao-950/50 px-5 py-4">
+          <div className="flex justify-between gap-4">
+            <dt>
+              {title} · {variant.label} × {quantity}
+            </dt>
+            <dd className="shrink-0">{formatPrice(unitPrice * quantity)}</dd>
+          </div>
+          {labelText && (
+            <div className="flex justify-between gap-4 text-cream/85">
+              <dt>Personalised label “{labelText}”</dt>
+              <dd className="shrink-0">{labelInCart ? "Already in cart" : formatPrice(LABEL_FEE)}</dd>
+            </div>
+          )}
+        </dl>
+      )}
+
       <button
         type="submit"
         disabled={!!unavailable}
         className={`${buttonClass()} w-full disabled:cursor-not-allowed disabled:bg-cacao-700 disabled:text-cream/50`}
       >
-        {unavailable ? "Sold Out" : actionLabel}
+        {unavailable ? "Sold Out" : offerLabel && variant ? `${actionLabel} · ${formatPrice(total)}` : actionLabel}
       </button>
 
       {added && (
@@ -176,11 +209,11 @@ export function PurchaseForm({
 function LabelFields({
   label,
   choice,
-  onChange,
+  missingWords,
 }: {
   label: PersonalisedLabel;
   choice: LabelChoice;
-  onChange: () => void;
+  missingWords: boolean;
 }) {
   return (
     <fieldset>
@@ -190,54 +223,36 @@ function LabelFields({
           name="personalised-label"
           required
           checked={choice.wanted === true}
-          onChange={() => {
-            choice.setWanted(true);
-            onChange();
-          }}
-          label="Yes please"
-          price={`+ ${formatPrice(LABEL_FEE)} per label`}
-          detail="One-off, however many bars"
+          onChange={() => choice.setWanted(true)}
+          label="Yes, personalise it"
+          price={`+${formatPrice(LABEL_FEE)} one-off, any number of bars`}
         />
         <ChoiceCard
           name="personalised-label"
           required
           checked={choice.wanted === false}
-          onChange={() => {
-            choice.setWanted(false);
-            onChange();
-          }}
+          onChange={() => choice.setWanted(false)}
           label="No thanks"
-          price="Sorella Cacao label"
+          price="Keep the Sorella Cacao label"
         />
       </div>
 
       {choice.wanted && (
-        <div className="mt-6 space-y-6">
-          <label className="block">
-            <span className="eyebrow mb-2 block text-cream/70">
-              Your label (up to {MAX_LABEL_WORDS} words):
-            </span>
-            <input
-              type="text"
-              required
-              maxLength={40}
-              value={choice.text}
-              onChange={(e) => {
-                choice.setText(limitWords(e.target.value));
-                onChange();
-              }}
-              placeholder="e.g. Happy Birthday Mum"
-              className="w-full rounded-xl border border-white/15 bg-cacao-800 px-4 py-3.5 font-sans text-base text-cream placeholder:text-cream/40 focus:border-gold focus:outline-none"
-            />
-            <span className="mt-2 block text-base text-cream/60">
-              Printed in place of “Sorella Cacao” at the top of the label.
-            </span>
-          </label>
-          {/* On wide screens the preview replaces the product photo instead. */}
-          <div className="lg:hidden">
-            <LabelPreview label={label} text={choice.text} flavour={choice.flavour} />
+        <>
+          {/* Wide screens show the label in place of the product photo; phones show it here. */}
+          <p className="mt-3 hidden text-base text-cream/70 lg:block">
+            Click the label on the left and type up to {MAX_LABEL_WORDS} words.
+          </p>
+          <div className="mt-6 lg:hidden">
+            <LabelEditor label={label} choice={choice} />
           </div>
-        </div>
+        </>
+      )}
+
+      {missingWords && (
+        <p role="alert" className="mt-3 text-base text-gold">
+          Add your words to the label first, or choose “No thanks”.
+        </p>
       )}
     </fieldset>
   );

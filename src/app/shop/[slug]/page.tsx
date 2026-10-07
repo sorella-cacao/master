@@ -1,7 +1,7 @@
 import type { Metadata } from "next";
 import { notFound } from "next/navigation";
 import { DetailImages, DetailLayout } from "@/components/detail-layout";
-import { LabelChoiceProvider, LabelPreviewSwitch } from "@/components/personalised-label";
+import { LabelChoiceProvider, LabelEditorSwitch } from "@/components/personalised-label";
 import { PurchaseForm } from "@/components/purchase-form";
 import { RichText } from "@/components/rich-text";
 import { getProduct, getProducts, site } from "@/data";
@@ -32,9 +32,9 @@ export default async function ProductPage({ params }: PageProps<"/shop/[slug]">)
         images={[product.image]}
         media={
           label && (
-            <LabelPreviewSwitch label={label}>
+            <LabelEditorSwitch label={label}>
               <DetailImages title={product.title} images={[product.image]} />
-            </LabelPreviewSwitch>
+            </LabelEditorSwitch>
           )
         }
         purchase={

@@ -67,7 +67,7 @@ export const products: Product[] = [
         "75% Dark Native Salt & Pepper": "/images/labels/large-salt-pepper.webp"
       }
     },
-    "ingredientsNote": "**Ethically Farmed *Organic",
+    "ingredientsNote": "*Certified organic ingredients **Ethically sourced",
     "description": [
       {
         "p": "108g"
@@ -142,7 +142,7 @@ export const products: Product[] = [
         "White Choc & Local Peaches": "/images/labels/small-white-peaches.webp"
       }
     },
-    "ingredientsNote": "**Ethically Farmed *Organic",
+    "ingredientsNote": "*Certified organic ingredients **Ethically sourced",
     "description": [
       {
         "p": "50g"

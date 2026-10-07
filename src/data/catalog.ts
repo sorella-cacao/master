@@ -40,7 +40,7 @@ export const products: Product[] = [
       {
         "label": "White Choc w/ Local Peaches",
         "price": 14.0,
-        "ingredients": "Cacao butter*, goats milk*, rapadura sugar*, local peaches (Young region)"
+        "ingredients": "Cacao butter*, goats milk*, rapadura sugar*, local peaches* (Young region)"
       },
       {
         "label": "75% Smokey Chilli",
@@ -127,7 +127,7 @@ export const products: Product[] = [
       {
         "label": "White Choc & Local Peaches",
         "price": 8.0,
-        "ingredients": "Cacao butter*, goats milk*, rapadura sugar*, local peaches"
+        "ingredients": "Cacao butter*, goats milk*, rapadura sugar*, local peaches*"
       }
     ],
     "personalisedLabel": {

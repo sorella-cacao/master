@@ -8,14 +8,17 @@ import {
   useMemo,
   useState,
 } from "react";
+import { LABEL_FEE, distinctLabels } from "@/lib/labels";
 
 export type CartItem = {
-  /** Unique per product + variant + purchase frequency. */
+  /** Unique per product + variant + purchase frequency + label wording. */
   key: string;
   href: string;
   title: string;
   variant: string;
   frequency?: string;
+  /** Personalised label wording, printed in place of "Sorella Cacao". */
+  label?: string;
   image: string;
   unitPrice: number;
   quantity: number;
@@ -24,6 +27,8 @@ export type CartItem = {
 type CartContextValue = {
   items: CartItem[];
   count: number;
+  /** One-off fee for each distinct personalised label wording. */
+  labelFees: { label: string; amount: number }[];
   subtotal: number;
   addItem: (item: Omit<CartItem, "key">) => void;
   setQuantity: (key: string, quantity: number) => void;
@@ -34,7 +39,7 @@ const CartContext = createContext<CartContextValue | null>(null);
 const STORAGE_KEY = "sorella-cart";
 
 function itemKey(item: Omit<CartItem, "key">) {
-  return [item.href, item.variant, item.frequency ?? ""].join("|");
+  return [item.href, item.variant, item.frequency ?? "", item.label ?? ""].join("|");
 }
 
 export function CartProvider({ children }: { children: React.ReactNode }) {
@@ -82,17 +87,23 @@ export function CartProvider({ children }: { children: React.ReactNode }) {
     setItems((current) => current.filter((i) => i.key !== key));
   }, []);
 
-  const value = useMemo(
-    () => ({
+  const value = useMemo(() => {
+    const labelFees = distinctLabels(items.map((i) => i.label)).map((label) => ({
+      label,
+      amount: LABEL_FEE,
+    }));
+    return {
       items,
       count: items.reduce((n, i) => n + i.quantity, 0),
-      subtotal: items.reduce((n, i) => n + i.unitPrice * i.quantity, 0),
+      labelFees,
+      subtotal:
+        items.reduce((n, i) => n + i.unitPrice * i.quantity, 0) +
+        labelFees.reduce((n, f) => n + f.amount, 0),
       addItem,
       setQuantity,
       removeItem,
-    }),
-    [items, addItem, setQuantity, removeItem],
-  );
+    };
+  }, [items, addItem, setQuantity, removeItem]);
 
   return <CartContext value={value}>{children}</CartContext>;
 }

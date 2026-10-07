@@ -43,12 +43,22 @@ export const products: Product[] = [
       {
         "label": "75% Dark Native Salt & Pepper",
         "price": 14.0
-      },
-      {
-        "label": "Personalised Label",
-        "price": 1.0
       }
     ],
+    "personalisedLabel": {
+      "size": "large",
+      "defaultFlavour": "75% Dark",
+      "images": {
+        "84% Dark": "/images/labels/large-84-dark.webp",
+        "75% Dark": "/images/labels/large-75-dark.webp",
+        "Goats Milk": "/images/labels/large-goats-milk.webp",
+        "Local Roasted Hazelnut Gianduja & Salt": "/images/labels/large-hazelnut.webp",
+        "65% Dark & Local Mandarins": "/images/labels/large-mandarin.webp",
+        "White Choc w/ Local Peaches": "/images/labels/large-white-peaches.webp",
+        "75% Smokey Smokey Chilli": "/images/labels/large-smoking-hot.webp",
+        "75% Dark Native Salt & Pepper": "/images/labels/large-salt-pepper.webp"
+      }
+    },
     "description": [
       {
         "p": "108g"
@@ -99,7 +109,7 @@ export const products: Product[] = [
         "p": "**Ethically Farmed *Organic"
       },
       {
-        "p": "PERSONALISED LABELS: If you’d like to have a personalised label on your chocolate, please add it to the chart. Add as many personalised labels as you have chocolates, e.g. add to the cart 14x personalised labels for 14x chocolates."
+        "p": "PERSONALISED LABELS: Choose “Yes” for a personalised label above, then write up to three words to print in place of “Sorella Cacao” at the top of your label."
       }
     ]
   },
@@ -133,12 +143,20 @@ export const products: Product[] = [
       {
         "label": "White Choc & Local Peaches",
         "price": 8.0
-      },
-      {
-        "label": "Personalised Labels",
-        "price": 1.0
       }
     ],
+    "personalisedLabel": {
+      "size": "small",
+      "defaultFlavour": "75% Dark",
+      "images": {
+        "84% Dark": "/images/labels/small-84-dark.webp",
+        "75% Dark": "/images/labels/small-75-dark.webp",
+        "60% Goats Milk": "/images/labels/small-goats-milk.webp",
+        "Local Roasted Hazelnut Gianduja": "/images/labels/small-hazelnut.webp",
+        "75% Dark & Local Mandarins": "/images/labels/small-mandarin.webp",
+        "White Choc & Local Peaches": "/images/labels/small-white-peaches.webp"
+      }
+    },
     "description": [
       {
         "p": "50g"
@@ -183,7 +201,7 @@ export const products: Product[] = [
         "p": "**Ethically Farmed *Organic"
       },
       {
-        "p": "PERSONALISED LABELS: If you’d like to have a personalised label on your chocolate, please add it to the chart. Add as many personalised labels as you have chocolates, e.g. add to the cart 14x personalised labels for 14x chocolates."
+        "p": "PERSONALISED LABELS: Choose “Yes” for a personalised label above, then write up to three words to print in place of “Sorella Cacao” at the top of your label."
       }
     ]
   },

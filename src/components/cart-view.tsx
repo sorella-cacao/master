@@ -7,7 +7,7 @@ import { ButtonLink, buttonClass } from "./button";
 import { useCart } from "./cart";
 
 export function CartView() {
-  const { items, subtotal, setQuantity, removeItem } = useCart();
+  const { items, labelFees, subtotal, setQuantity, removeItem } = useCart();
 
   if (items.length === 0) {
     return (
@@ -34,6 +34,7 @@ export function CartView() {
                   {item.title}
                 </Link>
                 <p className="text-cream/70">{item.variant}</p>
+                {item.label && <p className="text-cream/70">Personalised label: “{item.label}”</p>}
                 {item.frequency && <p className="text-cream/70">Subscribe · {item.frequency}</p>}
                 <button
                   type="button"
@@ -69,6 +70,20 @@ export function CartView() {
           </li>
         ))}
       </ul>
+
+      {labelFees.length > 0 && (
+        <ul className="divide-y divide-white/10 border-b border-white/10">
+          {labelFees.map((fee) => (
+            <li key={fee.label} className="flex items-baseline justify-between gap-5 py-4">
+              <p className="text-cream/80">
+                Personalised label “{fee.label}”
+                <span className="block text-base text-cream/50">One-off, for every bar with this wording</span>
+              </p>
+              <p className="text-xl">{formatPrice(fee.amount)}</p>
+            </li>
+          ))}
+        </ul>
+      )}
 
       <div className="mt-8 flex flex-col items-end gap-6">
         <p className="text-2xl">

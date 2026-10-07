@@ -40,7 +40,7 @@ export default async function Home() {
       {/* Welcome */}
       <section className="bg-cream text-cacao-900">
         <div className="mx-auto grid max-w-7xl items-center gap-12 px-5 py-24 sm:px-8 md:grid-cols-2 md:gap-20 md:py-32">
-          <div className="relative mx-auto aspect-[2/3] w-full max-w-md overflow-hidden rounded-t-full">
+          <div className="relative mx-auto aspect-[2/3] w-full max-w-md overflow-hidden rounded-2xl">
             <Image
               src="/images/home-bowl.webp"
               alt=""

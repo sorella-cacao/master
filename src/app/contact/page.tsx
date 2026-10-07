@@ -37,7 +37,7 @@ export default function ContactPage() {
           </div>
         </div>
 
-        <div className="relative hidden aspect-[3/4] overflow-hidden rounded-t-full lg:block lg:sticky lg:top-28 lg:self-start">
+        <div className="relative hidden aspect-[3/4] overflow-hidden rounded-2xl lg:block lg:sticky lg:top-28 lg:self-start">
           <Image src="/images/contact.webp" alt="" fill sizes="45vw" className="object-cover" />
         </div>
       </div>

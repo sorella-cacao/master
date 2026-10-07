@@ -58,7 +58,7 @@ export default function AboutPage() {
 
       <section className="grain bg-cacao-900">
         <div className="mx-auto grid max-w-7xl gap-14 px-5 py-24 sm:px-8 md:grid-cols-[0.9fr_1.1fr] md:gap-20 md:py-32">
-          <div className="relative aspect-[3/4] overflow-hidden rounded-t-full md:sticky md:top-28 md:self-start">
+          <div className="relative aspect-[3/4] overflow-hidden rounded-2xl md:sticky md:top-28 md:self-start">
             <Image src="/images/workshop-2.webp" alt="" fill sizes="(min-width: 768px) 40vw, 100vw" className="object-cover" />
           </div>
           <div>

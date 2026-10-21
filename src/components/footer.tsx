@@ -1,6 +1,7 @@
 import Image from "next/image";
 import Link from "next/link";
 import { site } from "@/data/site";
+import { Wordmark } from "./wordmark";
 
 export function Footer() {
   const { contact } = site;
@@ -8,7 +9,7 @@ export function Footer() {
     <footer className="grain bg-cacao-950 text-cream/80">
       <div className="mx-auto grid max-w-7xl gap-12 px-5 py-16 sm:px-8 md:grid-cols-[1.4fr_1fr_1fr_1fr]">
         <div>
-          <Link href="/" className="inline-flex items-center gap-3">
+          <Link href="/" className="inline-flex items-center gap-3" aria-label={site.name}>
             <Image
               src="/images/logo.webp"
               alt=""
@@ -16,7 +17,7 @@ export function Footer() {
               height={53}
               className="rounded-full"
             />
-            <span className="font-script text-4xl text-gold">{site.name}</span>
+            <Wordmark className="h-7 w-auto text-gold" />
           </Link>
           <p className="mt-4 max-w-xs italic text-cream/60">{site.tagline}</p>
         </div>

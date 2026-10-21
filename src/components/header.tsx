@@ -6,6 +6,7 @@ import { usePathname } from "next/navigation";
 import { useEffect, useState } from "react";
 import { site } from "@/data/site";
 import { useCart } from "./cart";
+import { Wordmark } from "./wordmark";
 
 export function Header() {
   const pathname = usePathname();
@@ -46,9 +47,7 @@ export function Header() {
             className="rounded-full"
             priority
           />
-          <span className="font-script text-3xl leading-none text-gold">
-            {site.name}
-          </span>
+          <Wordmark className="h-[22px] w-auto text-gold sm:h-6" />
         </Link>
 
         <nav className="hidden items-center gap-9 md:flex" aria-label="Main">

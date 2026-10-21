@@ -47,7 +47,7 @@ export function Header() {
             className="rounded-full"
             priority
           />
-          <Wordmark className="h-[22px] w-auto text-gold sm:h-6" />
+          <Wordmark className="h-[22px] w-auto text-toffee sm:h-6" />
         </Link>
 
         <nav className="hidden items-center gap-9 md:flex" aria-label="Main">

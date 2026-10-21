@@ -23,7 +23,7 @@ export default async function Home() {
         />
         <div className="absolute inset-0 bg-gradient-to-b from-cacao-950/70 via-cacao-950/45 to-cacao-900" />
         <div className="relative px-5 pt-20 text-center">
-          <h1 className="text-gold drop-shadow-lg">
+          <h1 className="text-toffee drop-shadow-lg">
             <span className="sr-only">{site.name}</span>
             <Wordmark className="mx-auto w-[min(88vw,46rem)]" />
           </h1>

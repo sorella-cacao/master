@@ -17,7 +17,7 @@ export function Footer() {
               height={53}
               className="rounded-full"
             />
-            <Wordmark className="h-7 w-auto text-gold" />
+            <Wordmark className="h-7 w-auto text-toffee" />
           </Link>
           <p className="mt-4 max-w-xs italic text-cream/60">{site.tagline}</p>
         </div>

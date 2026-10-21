@@ -2,6 +2,7 @@ import Image from "next/image";
 import Link from "next/link";
 import { ButtonLink } from "@/components/button";
 import { ProductCard } from "@/components/product-card";
+import { Wordmark } from "@/components/wordmark";
 import { fromPrice, getProducts, getWorkshops, site, workshopWhen } from "@/data";
 
 export default async function Home() {
@@ -22,8 +23,9 @@ export default async function Home() {
         />
         <div className="absolute inset-0 bg-gradient-to-b from-cacao-950/70 via-cacao-950/45 to-cacao-900" />
         <div className="relative px-5 pt-20 text-center">
-          <h1 className="font-script text-7xl leading-none text-gold drop-shadow-lg sm:text-8xl md:text-9xl">
-            {site.name}
+          <h1 className="text-gold drop-shadow-lg">
+            <span className="sr-only">{site.name}</span>
+            <Wordmark className="mx-auto w-[min(88vw,46rem)]" />
           </h1>
           <p className="mx-auto mt-6 max-w-xl text-xl italic text-cream/90 sm:text-2xl">
             {site.tagline}

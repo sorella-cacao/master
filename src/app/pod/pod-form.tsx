@@ -15,8 +15,8 @@ type Props = {
   className?: string;
 };
 
-/** A form for one admin change, with its own saving / saved / error message. */
-export function AdminForm({
+/** A form for one change in the Pod, with its own saving / saved / error message. */
+export function PodForm({
   action,
   submitLabel,
   children,

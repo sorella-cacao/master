@@ -67,13 +67,13 @@ function message(error: PostgrestError) {
   return "Couldn't save. Please try again.";
 }
 
-/** Checks admin access, runs the change, and refreshes the shop pages. */
+/** Checks Pod access, runs the change, and refreshes the shop pages. */
 async function run(
   change: (supabase: Db) => PromiseLike<{ error: PostgrestError | null }>,
   ok: string,
 ): Promise<SaveState> {
   const { supabase, isAdmin } = await getSession();
-  if (!isAdmin) return { error: "This account doesn't have admin access." };
+  if (!isAdmin) return { error: "This account doesn't have access to the Pod." };
   try {
     const { error } = await change(supabase);
     if (error) return { error: message(error) };

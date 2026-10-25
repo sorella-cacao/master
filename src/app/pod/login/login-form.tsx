@@ -23,11 +23,11 @@ export function LoginForm() {
       )}
       <label className="block">
         <span className="eyebrow mb-2 block text-cream/70">Email</span>
-        <input type="email" name="email" required autoComplete="email" className="admin-input" />
+        <input type="email" name="email" required autoComplete="email" className="pod-input" />
       </label>
       <label className="block">
         <span className="eyebrow mb-2 block text-cream/70">Password</span>
-        <input type="password" name="password" required autoComplete="current-password" className="admin-input" />
+        <input type="password" name="password" required autoComplete="current-password" className="pod-input" />
       </label>
       <button type="submit" disabled={pending} className={`${buttonClass()} w-full disabled:opacity-60`}>
         {pending ? "Signing in…" : "Sign in"}

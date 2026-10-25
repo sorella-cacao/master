@@ -24,7 +24,7 @@ const carattere = Carattere({
   weight: "400",
 });
 
-// Shop pages are pre-built; /admin refreshes them on every save, and this hourly
+// Shop pages are pre-built; the Pod (/pod) refreshes them on every save, and this hourly
 // refresh is a fallback that also keeps the free Supabase project active.
 export const revalidate = 3600;
 

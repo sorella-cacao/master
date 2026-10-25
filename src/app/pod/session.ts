@@ -3,15 +3,15 @@ import { redirect } from "next/navigation";
 import { createClient } from "@/lib/supabase/server";
 
 /**
- * The signed-in visitor and whether they're on the admin list. Server Functions
- * are public endpoints, so every admin action checks this again (and row level
- * security refuses changes from anyone who isn't an admin).
+ * The signed-in visitor and whether they're on the admins list (who may use the
+ * Pod). Server Functions are public endpoints, so every Pod action checks this
+ * again (and row level security refuses changes from anyone not on that list).
  */
 export async function getSession() {
   const supabase = await createClient();
   const { data } = await supabase.auth.getClaims();
   const claims = data?.claims;
-  if (!claims) redirect("/admin/login");
+  if (!claims) redirect("/pod/login");
 
   const { data: admin } = await supabase
     .from("admins")

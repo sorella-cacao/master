@@ -1,5 +1,5 @@
 // Data access layer. Pages only call these functions; products and workshops
-// live in Supabase and are edited from /admin.
+// live in Supabase and are edited in the Pod (/pod).
 
 import { cache } from "react";
 import { createPublicClient } from "@/lib/supabase/public";

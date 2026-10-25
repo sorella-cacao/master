@@ -13,21 +13,21 @@ import {
   saveVariant,
   saveWorkshop,
 } from "./actions";
-import { AdminForm } from "./admin-form";
+import { PodForm } from "./pod-form";
 import { logOut } from "./login/actions";
 import { getSession } from "./session";
 
 const byPosition = <T extends { position: number }>(rows: T[]) => [...rows].sort((a, b) => a.position - b.position);
 
-export default async function AdminPage() {
+export default async function PodPage() {
   const { supabase, email, isAdmin } = await getSession();
 
   if (!isAdmin) {
     return (
       <div className="max-w-xl">
-        <h1 className="font-script text-6xl text-gold">Admin</h1>
+        <h1 className="font-script text-6xl text-gold">The Pod</h1>
         <p className="mt-6 text-xl">
-          {email ?? "This account"} doesn’t have admin access yet.
+          {email ?? "This account"} doesn’t have access to the Pod yet.
         </p>
         <SignOut />
       </div>
@@ -56,7 +56,7 @@ export default async function AdminPage() {
     <div className="space-y-16">
       <header className="flex flex-wrap items-end justify-between gap-6">
         <div>
-          <h1 className="font-script text-6xl text-gold sm:text-7xl">Admin</h1>
+          <h1 className="font-script text-6xl text-gold sm:text-7xl">The Pod</h1>
           <p className="mt-2 text-cream/70">
             Changes appear on the website as soon as you save. Signed in as {email}.
           </p>
@@ -78,29 +78,29 @@ export default async function AdminPage() {
                 <ViewLink href={`/shop/${product.slug}`} />
               </div>
 
-              <AdminForm action={saveProduct} submitLabel="Save product">
+              <PodForm action={saveProduct} submitLabel="Save product">
                 <input type="hidden" name="id" value={product.id} />
                 <div className="space-y-4">
                   <Field label="Name">
-                    <input name="title" defaultValue={product.title} required className="admin-input" />
+                    <input name="title" defaultValue={product.title} required className="pod-input" />
                   </Field>
                   <Field label="Description" hint="Leave a blank line between paragraphs.">
                     <textarea
                       name="description"
                       defaultValue={blocksToText(product.description as ContentBlock[])}
                       rows={8}
-                      className="admin-input"
+                      className="pod-input"
                     />
                   </Field>
                   <Checkbox name="is_published" label="Show on the website" defaultChecked={product.is_published} />
                 </div>
-              </AdminForm>
+              </PodForm>
 
               <div className="space-y-4">
                 <h4 className="eyebrow text-cream/70">{product.option_name}s</h4>
                 {byPosition(product.options).map((option) => (
                   <div key={option.id} className="rounded-xl border border-white/10 p-4 sm:p-5">
-                    <AdminForm action={saveVariant} submitLabel="Save">
+                    <PodForm action={saveVariant} submitLabel="Save">
                       <input type="hidden" name="id" value={option.id} />
                       <OptionFields
                         optionName={optionName}
@@ -109,8 +109,8 @@ export default async function AdminPage() {
                         ingredients={hasIngredients ? (option.ingredients ?? "") : undefined}
                         soldOut={option.sold_out}
                       />
-                    </AdminForm>
-                    <AdminForm
+                    </PodForm>
+                    <PodForm
                       action={deleteVariant}
                       submitLabel={`Delete ${optionName}`}
                       variant="quiet"
@@ -118,16 +118,16 @@ export default async function AdminPage() {
                       className="-mt-1"
                     >
                       <input type="hidden" name="id" value={option.id} />
-                    </AdminForm>
+                    </PodForm>
                   </div>
                 ))}
 
                 <div className="rounded-xl border border-dashed border-white/20 p-4 sm:p-5">
                   <p className="eyebrow mb-4 text-cream/70">Add a {optionName}</p>
-                  <AdminForm action={addVariant} submitLabel={`Add ${optionName}`} resetOnSuccess>
+                  <PodForm action={addVariant} submitLabel={`Add ${optionName}`} resetOnSuccess>
                     <input type="hidden" name="product_id" value={product.id} />
                     <OptionFields optionName={optionName} ingredients={hasIngredients ? "" : undefined} />
-                  </AdminForm>
+                  </PodForm>
                 </div>
               </div>
             </article>
@@ -154,21 +154,21 @@ export default async function AdminPage() {
               {workshop.is_published && <ViewLink href={`/workshops/${workshop.slug}`} />}
             </div>
 
-            <AdminForm action={saveWorkshop} submitLabel="Save workshop">
+            <PodForm action={saveWorkshop} submitLabel="Save workshop">
               <input type="hidden" name="id" value={workshop.id} />
               <div className="space-y-4">
                 <Field label="Name">
-                  <input name="title" defaultValue={workshop.title} required className="admin-input" />
+                  <input name="title" defaultValue={workshop.title} required className="pod-input" />
                 </Field>
                 <Field label="Date">
-                  <input type="date" name="event_date" defaultValue={workshop.event_date ?? ""} className="admin-input sm:max-w-xs" />
+                  <input type="date" name="event_date" defaultValue={workshop.event_date ?? ""} className="pod-input sm:max-w-xs" />
                 </Field>
                 <Field label="Description" hint="Leave a blank line between paragraphs. Start lines with “- ” for bullet points.">
                   <textarea
                     name="description"
                     defaultValue={blocksToText(workshop.description as ContentBlock[])}
                     rows={12}
-                    className="admin-input"
+                    className="pod-input"
                   />
                 </Field>
                 <div className="flex flex-wrap gap-x-8 gap-y-3">
@@ -176,17 +176,17 @@ export default async function AdminPage() {
                   <Checkbox name="is_published" label="Show on the website" defaultChecked={workshop.is_published} />
                 </div>
               </div>
-            </AdminForm>
+            </PodForm>
 
             <div className="space-y-4">
               <h4 className="eyebrow text-cream/70">{workshop.option_name}s</h4>
               {byPosition(workshop.tickets).map((ticket) => (
                 <div key={ticket.id} className="rounded-xl border border-white/10 p-4 sm:p-5">
-                  <AdminForm action={saveTicket} submitLabel="Save">
+                  <PodForm action={saveTicket} submitLabel="Save">
                     <input type="hidden" name="id" value={ticket.id} />
                     <OptionFields optionName="ticket" label={ticket.label} price={ticket.price} soldOut={ticket.sold_out} />
-                  </AdminForm>
-                  <AdminForm
+                  </PodForm>
+                  <PodForm
                     action={deleteTicket}
                     submitLabel="Delete ticket"
                     variant="quiet"
@@ -194,30 +194,30 @@ export default async function AdminPage() {
                     className="-mt-1"
                   >
                     <input type="hidden" name="id" value={ticket.id} />
-                  </AdminForm>
+                  </PodForm>
                 </div>
               ))}
               <div className="rounded-xl border border-dashed border-white/20 p-4 sm:p-5">
                 <p className="eyebrow mb-4 text-cream/70">Add a ticket</p>
-                <AdminForm action={addTicket} submitLabel="Add ticket" resetOnSuccess>
+                <PodForm action={addTicket} submitLabel="Add ticket" resetOnSuccess>
                   <input type="hidden" name="workshop_id" value={workshop.id} />
                   <OptionFields optionName="ticket" />
-                </AdminForm>
+                </PodForm>
               </div>
             </div>
 
             <div className="flex flex-wrap gap-x-6 border-t border-white/10 pt-2">
-              <AdminForm action={duplicateWorkshop} submitLabel="Copy as a new workshop" variant="quiet">
+              <PodForm action={duplicateWorkshop} submitLabel="Copy as a new workshop" variant="quiet">
                 <input type="hidden" name="id" value={workshop.id} />
-              </AdminForm>
-              <AdminForm
+              </PodForm>
+              <PodForm
                 action={deleteWorkshop}
                 submitLabel="Delete workshop"
                 variant="quiet"
                 confirmMessage={`Delete “${workshop.title}” and its tickets? This can’t be undone.`}
               >
                 <input type="hidden" name="id" value={workshop.id} />
-              </AdminForm>
+              </PodForm>
             </div>
           </article>
         ))}
@@ -264,7 +264,7 @@ function OptionFields({
     <div className="space-y-4">
       <div className="grid gap-4 sm:grid-cols-[1fr_10rem]">
         <Field label={`${optionName[0].toUpperCase()}${optionName.slice(1)} name`}>
-          <input name="label" defaultValue={label} required className="admin-input" />
+          <input name="label" defaultValue={label} required className="pod-input" />
         </Field>
         <Field label="Price ($)">
           <input
@@ -275,13 +275,13 @@ function OptionFields({
             inputMode="decimal"
             defaultValue={price?.toFixed(2) ?? ""}
             required
-            className="admin-input"
+            className="pod-input"
           />
         </Field>
       </div>
       {ingredients !== undefined && (
         <Field label="Ingredients" hint="Use * for certified organic and ** for ethically sourced.">
-          <textarea name="ingredients" defaultValue={ingredients} rows={2} className="admin-input" />
+          <textarea name="ingredients" defaultValue={ingredients} rows={2} className="pod-input" />
         </Field>
       )}
       {soldOut !== undefined && <Checkbox name="sold_out" label="Sold out" defaultChecked={soldOut} />}

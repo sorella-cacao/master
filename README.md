@@ -18,9 +18,9 @@ npm run build
 ## Content
 
 Products and workshops live in Supabase (project "sorella", Sydney) and are
-edited at `/admin`. Pages read them only through the functions in
-`src/data/index.ts`; shop pages are pre-built and refreshed whenever the admin
-saves, plus hourly. Page copy lives in `src/data/site.ts`. Old Squarespace URLs
+edited in the Pod at `/pod` (the shop admin area). Pages read them only through
+the functions in `src/data/index.ts`; shop pages are pre-built and refreshed
+whenever the Pod saves, plus hourly. Page copy lives in `src/data/site.ts`. Old Squarespace URLs
 redirect to the new ones (see `next.config.ts`).
 
 Copy `.env.local` settings from the Supabase dashboard (Project Settings → API):

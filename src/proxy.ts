@@ -5,7 +5,7 @@ export async function proxy(request: NextRequest) {
   return updateSession(request);
 }
 
-// Only the admin area uses logins; shop pages stay static.
+// Only the Pod (the shop admin area) uses logins; shop pages stay static.
 export const config = {
-  matcher: ["/admin/:path*"],
+  matcher: ["/pod/:path*"],
 };

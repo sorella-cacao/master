@@ -20,11 +20,11 @@ export async function logIn(_: LoginState, formData: FormData): Promise<LoginSta
           : `Couldn't sign in: ${error.message}`,
     };
   }
-  redirect("/admin");
+  redirect("/pod");
 }
 
 export async function logOut() {
   const supabase = await createClient();
   await supabase.auth.signOut();
-  redirect("/admin/login");
+  redirect("/pod/login");
 }

@@ -2,7 +2,7 @@ import { createServerClient } from "@supabase/ssr";
 import { NextResponse, type NextRequest } from "next/server";
 import { supabaseEnv } from "./env";
 
-/** Refreshes the admin's login cookie and sends signed-out visitors to the login page. */
+/** Refreshes the Pod login cookie and sends signed-out visitors to the login page. */
 export async function updateSession(request: NextRequest) {
   let response = NextResponse.next({ request });
   const { url, key } = supabaseEnv();
@@ -24,9 +24,9 @@ export async function updateSession(request: NextRequest) {
   // Nothing may run between creating the client and getClaims(), or sessions can drop.
   const { data } = await supabase.auth.getClaims();
 
-  if (!data?.claims && request.nextUrl.pathname !== "/admin/login") {
+  if (!data?.claims && request.nextUrl.pathname !== "/pod/login") {
     const login = request.nextUrl.clone();
-    login.pathname = "/admin/login";
+    login.pathname = "/pod/login";
     login.search = "";
     return NextResponse.redirect(login);
   }

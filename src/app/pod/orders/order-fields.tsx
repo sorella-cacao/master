@@ -2,6 +2,7 @@
 
 import { useEffect, useId, useRef, useState } from "react";
 import { formatPrice } from "@/lib/format";
+import { ItemRow, ItemTable } from "../item-table";
 
 export type OrderGroup = { title: string; items: { id: string; name: string; price: number }[] };
 
@@ -66,33 +67,38 @@ export function OrderFields({
         </label>
       </div>
 
-      {groups.map((group) => (
-        <fieldset key={group.title}>
-          <legend className="eyebrow mb-3 text-cream/70">{group.title}</legend>
-          <div className="grid gap-x-6 gap-y-3 sm:grid-cols-2">
+      <div className="grid gap-6 lg:grid-cols-2">
+        {groups.map((group) => (
+          <ItemTable
+            key={group.title}
+            caption={group.title}
+            headings={[group.title === "Pure Cacao" ? "Size" : "Flavour", "Price", "Qty"]}
+          >
             {group.items.map((item) => (
-              <label key={item.id} className="flex items-center justify-between gap-4">
-                <span>
-                  {item.name}{" "}
-                  <span className="text-base text-cream/70">· {formatPrice(priceOf.get(item.id) ?? item.price)}</span>
-                </span>
-                <input
-                  type="number"
-                  name={`qty:${item.id}`}
-                  data-qty={item.id}
-                  min="0"
-                  step="1"
-                  inputMode="numeric"
-                  placeholder="0"
-                  defaultValue={initial?.quantities[item.id] || undefined}
-                  aria-label={`${group.title} ${item.name}`}
-                  className="pod-input w-24 shrink-0 text-right"
-                />
-              </label>
+              <ItemRow
+                key={item.id}
+                name={item.name}
+                cells={[
+                  formatPrice(priceOf.get(item.id) ?? item.price),
+                  <input
+                    key="qty"
+                    type="number"
+                    name={`qty:${item.id}`}
+                    data-qty={item.id}
+                    min="0"
+                    step="1"
+                    inputMode="numeric"
+                    placeholder="0"
+                    defaultValue={initial?.quantities[item.id] || undefined}
+                    aria-label={`${group.title} ${item.name}`}
+                    className="pod-input w-24 py-2 text-right"
+                  />,
+                ]}
+              />
             ))}
-          </div>
-        </fieldset>
-      ))}
+          </ItemTable>
+        ))}
+      </div>
 
       <label className="block">
         <span className="eyebrow mb-2 block text-cream/70">Note</span>

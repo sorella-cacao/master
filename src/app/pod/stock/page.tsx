@@ -1,5 +1,6 @@
 import type { Metadata } from "next";
 import { formatPrice } from "@/lib/format";
+import { ItemRow, ItemTable } from "../item-table";
 import { PodForm } from "../pod-form";
 import { PodNav } from "../pod-nav";
 import { getSession } from "../session";
@@ -95,27 +96,28 @@ export default async function StockPage() {
 
       <Panel title="Add what I made this week" hint="Type how many of each you made. They’re added to the stock above." open>
         <PodForm action={addMade} submitLabel="Add to stock" resetOnSuccess>
-          <CountGrid groups={groups} name="made" placeholder="0" />
+          <CountTables groups={groups} name="made" />
         </PodForm>
       </Panel>
 
       <Panel title="Full stock take" hint="Count everything on the shelf. These numbers replace the stock above.">
         <PodForm action={saveStockTake} submitLabel="Save stock take" confirmMessage="Replace your stock levels with these counts?">
-          <CountGrid groups={groups} name="count" useCurrent />
+          <CountTables groups={groups} name="count" />
         </PodForm>
       </Panel>
 
       <Panel title="Wholesale prices" hint="New orders use these prices. Orders already entered keep theirs.">
         <PodForm action={savePrices} submitLabel="Save prices">
-          <div className="space-y-6">
+          <div className="grid gap-6 lg:grid-cols-2">
             {groups.map((group) => (
-              <fieldset key={group.productId}>
-                <legend className="eyebrow mb-3 text-cream/70">{group.title}</legend>
-                <div className="grid gap-x-6 gap-y-3 sm:grid-cols-2">
-                  {group.items.map((item) => (
-                    <label key={item.id} className="flex items-center justify-between gap-4">
-                      <span>{item.name}</span>
+              <ItemTable key={group.productId} caption={group.title} headings={[itemHeading(group), "Wholesale ($)"]}>
+                {group.items.map((item) => (
+                  <ItemRow
+                    key={item.id}
+                    name={item.name}
+                    cells={[
                       <input
+                        key="price"
                         type="number"
                         name={`price:${item.id}`}
                         min="0"
@@ -124,12 +126,12 @@ export default async function StockPage() {
                         defaultValue={item.wholesalePrice.toFixed(2)}
                         required
                         aria-label={`${group.title} ${item.name} wholesale price`}
-                        className="pod-input w-28 shrink-0 text-right"
-                      />
-                    </label>
-                  ))}
-                </div>
-              </fieldset>
+                        className="pod-input w-28 py-2 text-right"
+                      />,
+                    ]}
+                  />
+                ))}
+              </ItemTable>
             ))}
           </div>
         </PodForm>
@@ -216,42 +218,41 @@ function Panel({ title, hint, open, children }: { title: string; hint: string; o
   );
 }
 
-/** A number box for every stock item, grouped by size. */
-function CountGrid({
-  groups,
-  name,
-  placeholder,
-  useCurrent,
-}: {
-  groups: StockGroup[];
-  name: string;
-  placeholder?: string;
-  useCurrent?: boolean;
-}) {
+const itemHeading = (group: StockGroup) => (group.title === "Pure Cacao" ? "Size" : "Flavour");
+
+/** A table per size with a number box on every item's row. */
+function CountTables({ groups, name }: { groups: StockGroup[]; name: "made" | "count" }) {
+  const isCount = name === "count";
   return (
-    <div className="space-y-6">
+    <div className="grid gap-6 lg:grid-cols-2">
       {groups.map((group) => (
-        <fieldset key={group.productId}>
-          <legend className="eyebrow mb-3 text-cream/70">{group.title}</legend>
-          <div className="grid gap-x-6 gap-y-3 sm:grid-cols-2">
-            {group.items.map((item) => (
-              <label key={item.id} className="flex items-center justify-between gap-4">
-                <span>{item.name}</span>
+        <ItemTable
+          key={group.productId}
+          caption={group.title}
+          headings={[itemHeading(group), isCount ? "Was" : "In stock", isCount ? "Count now" : "Made"]}
+        >
+          {group.items.map((item) => (
+            <ItemRow
+              key={item.id}
+              name={item.name}
+              cells={[
+                item.quantity,
                 <input
+                  key="box"
                   type="number"
                   name={`${name}:${item.id}`}
                   min="0"
                   step="1"
                   inputMode="numeric"
-                  placeholder={placeholder}
-                  defaultValue={useCurrent ? Math.max(item.quantity, 0) : undefined}
+                  placeholder={isCount ? undefined : "0"}
+                  defaultValue={isCount ? Math.max(item.quantity, 0) : undefined}
                   aria-label={`${group.title} ${item.name}`}
-                  className="pod-input w-24 shrink-0 text-right"
-                />
-              </label>
-            ))}
-          </div>
-        </fieldset>
+                  className="pod-input w-24 py-2 text-right"
+                />,
+              ]}
+            />
+          ))}
+        </ItemTable>
       ))}
     </div>
   );

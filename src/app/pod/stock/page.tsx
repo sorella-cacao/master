@@ -1,0 +1,258 @@
+import type { Metadata } from "next";
+import { formatPrice } from "@/lib/format";
+import { PodForm } from "../pod-form";
+import { PodNav } from "../pod-nav";
+import { getSession } from "../session";
+import { type StockGroup, getStockGroups } from "../stock-items";
+import { addMade, addOneOffFlavour, saveStockTake, savePrices, setFlavourHidden } from "./actions";
+
+export const metadata: Metadata = { title: "Stock" };
+
+function when(iso: string | undefined) {
+  if (!iso) return "never";
+  return new Date(iso).toLocaleDateString("en-AU", {
+    timeZone: "Australia/Sydney",
+    weekday: "short",
+    day: "numeric",
+    month: "short",
+  });
+}
+
+export default async function StockPage() {
+  const { supabase, email, isAdmin } = await getSession();
+  if (!isAdmin) {
+    return (
+      <div className="max-w-xl">
+        <h1 className="font-script text-6xl text-gold">The Pod</h1>
+        <p className="mt-6 text-xl">{email ?? "This account"} doesn’t have access to the Pod yet.</p>
+      </div>
+    );
+  }
+
+  const [allGroups, lastTake, lastMade] = await Promise.all([
+    getStockGroups(supabase, { includeHidden: true }),
+    supabase.from("stock_movements").select("created_at").eq("reason", "stock_take").order("created_at", { ascending: false }).limit(1).maybeSingle(),
+    supabase.from("stock_movements").select("created_at").eq("reason", "made").order("created_at", { ascending: false }).limit(1).maybeSingle(),
+  ]);
+  const groups = allGroups
+    .map((g) => ({ ...g, items: g.items.filter((i) => i.isActive) }))
+    .filter((g) => g.items.length);
+  const hidden = allGroups.flatMap((g) => g.items.filter((i) => !i.isActive).map((i) => ({ ...i, title: g.title })));
+
+  return (
+    <div className="space-y-12">
+      <header className="space-y-6">
+        <h1 className="font-script text-6xl text-gold sm:text-7xl">The Pod</h1>
+        <PodNav current="/pod/stock" />
+      </header>
+
+      <section className="space-y-6">
+        <div>
+          <h2 className="text-4xl">Stock</h2>
+          <p className="mt-2 text-cream/70">
+            Last stock take: {when(lastTake.data?.created_at)} · Last batch added: {when(lastMade.data?.created_at)}.
+            Orders marked Sent come off automatically.
+          </p>
+        </div>
+
+        <div className="grid gap-6 lg:grid-cols-2">
+          {groups.map((group) => (
+            <article key={group.productId} className="rounded-2xl border border-white/10 bg-cacao-950/40 p-5 sm:p-6">
+              <h3 className="text-2xl text-gold">{group.title}</h3>
+              <div className="mt-3 overflow-x-auto">
+                <table className="w-full font-sans text-base">
+                  <thead>
+                    <tr className="eyebrow text-left text-cream/70">
+                      <th className="py-2 pr-4 font-normal">{group.title === "Pure Cacao" ? "Size" : "Flavour"}</th>
+                      <th className="py-2 pr-4 text-right font-normal">In stock</th>
+                      <th className="py-2 text-right font-normal">Wholesale</th>
+                    </tr>
+                  </thead>
+                  <tbody>
+                    {group.items.map((item) => (
+                      <tr key={item.id} className="border-t border-white/10">
+                        <td className="py-2.5 pr-4">
+                          {item.name}
+                          {item.isExtra && (
+                            <span className="eyebrow ml-2 rounded-full border border-white/20 px-2 py-0.5 text-[0.65rem] text-cream/70">
+                              One-off
+                            </span>
+                          )}
+                        </td>
+                        <td className={`py-2.5 pr-4 text-right text-lg tabular-nums ${item.quantity < 0 ? "text-gold" : ""}`}>
+                          {item.quantity}
+                        </td>
+                        <td className="py-2.5 text-right tabular-nums text-cream/80">{formatPrice(item.wholesalePrice)}</td>
+                      </tr>
+                    ))}
+                  </tbody>
+                </table>
+              </div>
+            </article>
+          ))}
+        </div>
+      </section>
+
+      <Panel title="Add what I made this week" hint="Type how many of each you made. They’re added to the stock above." open>
+        <PodForm action={addMade} submitLabel="Add to stock" resetOnSuccess>
+          <CountGrid groups={groups} name="made" placeholder="0" />
+        </PodForm>
+      </Panel>
+
+      <Panel title="Full stock take" hint="Count everything on the shelf. These numbers replace the stock above.">
+        <PodForm action={saveStockTake} submitLabel="Save stock take" confirmMessage="Replace your stock levels with these counts?">
+          <CountGrid groups={groups} name="count" useCurrent />
+        </PodForm>
+      </Panel>
+
+      <Panel title="Wholesale prices" hint="New orders use these prices. Orders already entered keep theirs.">
+        <PodForm action={savePrices} submitLabel="Save prices">
+          <div className="space-y-6">
+            {groups.map((group) => (
+              <fieldset key={group.productId}>
+                <legend className="eyebrow mb-3 text-cream/70">{group.title}</legend>
+                <div className="grid gap-x-6 gap-y-3 sm:grid-cols-2">
+                  {group.items.map((item) => (
+                    <label key={item.id} className="flex items-center justify-between gap-4">
+                      <span>{item.name}</span>
+                      <input
+                        type="number"
+                        name={`price:${item.id}`}
+                        min="0"
+                        step="0.01"
+                        inputMode="decimal"
+                        defaultValue={item.wholesalePrice.toFixed(2)}
+                        required
+                        aria-label={`${group.title} ${item.name} wholesale price`}
+                        className="pod-input w-28 shrink-0 text-right"
+                      />
+                    </label>
+                  ))}
+                </div>
+              </fieldset>
+            ))}
+          </div>
+        </PodForm>
+      </Panel>
+
+      <Panel
+        title="Add a one-off flavour"
+        hint="For a flavour you’re making that isn’t on the website. It appears in stock and orders, never in the shop."
+      >
+        <PodForm action={addOneOffFlavour} submitLabel="Add flavour" resetOnSuccess>
+          <div className="grid gap-4 sm:grid-cols-[12rem_1fr_9rem]">
+            <label className="block">
+              <span className="eyebrow mb-2 block text-cream/70">Size</span>
+              <select name="product_id" className="pod-input">
+                {groups.map((g) => (
+                  <option key={g.productId} value={g.productId}>
+                    {g.title}
+                  </option>
+                ))}
+              </select>
+            </label>
+            <label className="block">
+              <span className="eyebrow mb-2 block text-cream/70">Flavour</span>
+              <input name="name" required placeholder="e.g. 75% Dark & Local Figs" className="pod-input" />
+            </label>
+            <label className="block">
+              <span className="eyebrow mb-2 block text-cream/70">Wholesale ($)</span>
+              <input type="number" name="price" min="0" step="0.01" inputMode="decimal" required className="pod-input" />
+            </label>
+          </div>
+        </PodForm>
+
+        {groups.some((g) => g.items.some((i) => i.isExtra)) && (
+          <div className="mt-8 space-y-2">
+            <p className="eyebrow text-cream/70">One-off flavours</p>
+            {groups.flatMap((g) =>
+              g.items
+                .filter((i) => i.isExtra)
+                .map((item) => (
+                  <div key={item.id} className="flex flex-wrap items-center justify-between gap-x-4 border-t border-white/10 pt-2">
+                    <span>
+                      {item.name} <span className="text-cream/70">· {g.title}</span>
+                    </span>
+                    <PodForm action={setFlavourHidden} submitLabel="Hide" variant="quiet" className="-mt-4">
+                      <input type="hidden" name="id" value={item.id} />
+                      <input type="hidden" name="hidden" value="true" />
+                    </PodForm>
+                  </div>
+                )),
+            )}
+          </div>
+        )}
+
+        {hidden.length > 0 && (
+          <div className="mt-8 space-y-2">
+            <p className="eyebrow text-cream/70">Hidden flavours</p>
+            {hidden.map((item) => (
+              <div key={item.id} className="flex flex-wrap items-center justify-between gap-x-4 border-t border-white/10 pt-2">
+                <span className="text-cream/70">
+                  {item.name} · {item.title}
+                </span>
+                <PodForm action={setFlavourHidden} submitLabel="Show again" variant="quiet" className="-mt-4">
+                  <input type="hidden" name="id" value={item.id} />
+                  <input type="hidden" name="hidden" value="false" />
+                </PodForm>
+              </div>
+            ))}
+          </div>
+        )}
+      </Panel>
+    </div>
+  );
+}
+
+function Panel({ title, hint, open, children }: { title: string; hint: string; open?: boolean; children: React.ReactNode }) {
+  return (
+    <details open={open} className="rounded-2xl border border-white/10 bg-cacao-950/40">
+      <summary className="cursor-pointer p-6 sm:px-8">
+        <span className="text-3xl">{title}</span>
+        <span className="mt-1 block text-base text-cream/70">{hint}</span>
+      </summary>
+      <div className="px-6 pb-6 sm:px-8 sm:pb-8">{children}</div>
+    </details>
+  );
+}
+
+/** A number box for every stock item, grouped by size. */
+function CountGrid({
+  groups,
+  name,
+  placeholder,
+  useCurrent,
+}: {
+  groups: StockGroup[];
+  name: string;
+  placeholder?: string;
+  useCurrent?: boolean;
+}) {
+  return (
+    <div className="space-y-6">
+      {groups.map((group) => (
+        <fieldset key={group.productId}>
+          <legend className="eyebrow mb-3 text-cream/70">{group.title}</legend>
+          <div className="grid gap-x-6 gap-y-3 sm:grid-cols-2">
+            {group.items.map((item) => (
+              <label key={item.id} className="flex items-center justify-between gap-4">
+                <span>{item.name}</span>
+                <input
+                  type="number"
+                  name={`${name}:${item.id}`}
+                  min="0"
+                  step="1"
+                  inputMode="numeric"
+                  placeholder={placeholder}
+                  defaultValue={useCurrent ? Math.max(item.quantity, 0) : undefined}
+                  aria-label={`${group.title} ${item.name}`}
+                  className="pod-input w-24 shrink-0 text-right"
+                />
+              </label>
+            ))}
+          </div>
+        </fieldset>
+      ))}
+    </div>
+  );
+}

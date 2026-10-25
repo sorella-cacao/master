@@ -3,6 +3,8 @@ import { logOut } from "./login/actions";
 
 const sections = [
   { href: "/pod", label: "Shop" },
+  { href: "/pod/orders", label: "Orders" },
+  { href: "/pod/stock", label: "Stock" },
   { href: "/pod/receipts", label: "Receipts" },
 ] as const;
 
@@ -10,7 +12,7 @@ const sections = [
 export function PodNav({ current }: { current: (typeof sections)[number]["href"] }) {
   return (
     <div className="flex flex-wrap items-center justify-between gap-4">
-      <nav aria-label="The Pod" className="flex gap-2">
+      <nav aria-label="The Pod" className="flex flex-wrap gap-2">
         {sections.map((s) => (
           <Link
             key={s.href}

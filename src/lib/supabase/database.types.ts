@@ -31,6 +31,78 @@ export type Database = {
         }
         Relationships: []
       }
+      order_lines: {
+        Row: {
+          id: string
+          order_id: string
+          quantity: number
+          stock_item_id: string
+          unit_price: number
+        }
+        Insert: {
+          id?: string
+          order_id: string
+          quantity: number
+          stock_item_id: string
+          unit_price: number
+        }
+        Update: {
+          id?: string
+          order_id?: string
+          quantity?: number
+          stock_item_id?: string
+          unit_price?: number
+        }
+        Relationships: [
+          {
+            foreignKeyName: "order_lines_order_id_fkey"
+            columns: ["order_id"]
+            isOneToOne: false
+            referencedRelation: "orders"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "order_lines_stock_item_id_fkey"
+            columns: ["stock_item_id"]
+            isOneToOne: false
+            referencedRelation: "stock_items"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      orders: {
+        Row: {
+          created_at: string
+          customer: string
+          id: string
+          needed_by: string | null
+          note: string | null
+          sent_at: string | null
+          status: string
+          updated_at: string
+        }
+        Insert: {
+          created_at?: string
+          customer: string
+          id?: string
+          needed_by?: string | null
+          note?: string | null
+          sent_at?: string | null
+          status?: string
+          updated_at?: string
+        }
+        Update: {
+          created_at?: string
+          customer?: string
+          id?: string
+          needed_by?: string | null
+          note?: string | null
+          sent_at?: string | null
+          status?: string
+          updated_at?: string
+        }
+        Relationships: []
+      }
       product_variants: {
         Row: {
           created_at: string
@@ -177,6 +249,105 @@ export type Database = {
         }
         Relationships: []
       }
+      stock_items: {
+        Row: {
+          created_at: string
+          id: string
+          is_active: boolean
+          is_extra: boolean
+          name: string
+          position: number
+          product_id: string
+          quantity: number
+          updated_at: string
+          variant_id: string | null
+          wholesale_price: number
+        }
+        Insert: {
+          created_at?: string
+          id?: string
+          is_active?: boolean
+          is_extra?: boolean
+          name: string
+          position?: number
+          product_id: string
+          quantity?: number
+          updated_at?: string
+          variant_id?: string | null
+          wholesale_price?: number
+        }
+        Update: {
+          created_at?: string
+          id?: string
+          is_active?: boolean
+          is_extra?: boolean
+          name?: string
+          position?: number
+          product_id?: string
+          quantity?: number
+          updated_at?: string
+          variant_id?: string | null
+          wholesale_price?: number
+        }
+        Relationships: [
+          {
+            foreignKeyName: "stock_items_product_id_fkey"
+            columns: ["product_id"]
+            isOneToOne: false
+            referencedRelation: "products"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "stock_items_variant_id_fkey"
+            columns: ["variant_id"]
+            isOneToOne: true
+            referencedRelation: "product_variants"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      stock_movements: {
+        Row: {
+          change: number
+          created_at: string
+          id: number
+          order_id: string | null
+          reason: string
+          stock_item_id: string
+        }
+        Insert: {
+          change: number
+          created_at?: string
+          id?: number
+          order_id?: string | null
+          reason: string
+          stock_item_id: string
+        }
+        Update: {
+          change?: number
+          created_at?: string
+          id?: number
+          order_id?: string | null
+          reason?: string
+          stock_item_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "stock_movements_order_id_fkey"
+            columns: ["order_id"]
+            isOneToOne: false
+            referencedRelation: "orders"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "stock_movements_stock_item_id_fkey"
+            columns: ["stock_item_id"]
+            isOneToOne: false
+            referencedRelation: "stock_items"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       workshop_variants: {
         Row: {
           created_at: string
@@ -271,6 +442,13 @@ export type Database = {
       [_ in never]: never
     }
     Functions: {
+      pod_add_made: { Args: { counts: Json }; Returns: undefined }
+      pod_save_order: {
+        Args: { customer: string; lines: Json; needed_by: string | null; note: string | null; order_id: string | null }
+        Returns: string
+      }
+      pod_save_stock_take: { Args: { counts: Json }; Returns: undefined }
+      pod_set_order_status: { Args: { order_id: string; status: string }; Returns: undefined }
       receipts_cron_secret_matches: { Args: { secret: string }; Returns: boolean }
     }
     Enums: {

@@ -12,7 +12,14 @@ export async function logIn(_: LoginState, formData: FormData): Promise<LoginSta
 
   const supabase = await createClient();
   const { error } = await supabase.auth.signInWithPassword({ email, password });
-  if (error) return { error: "That email and password don't match." };
+  if (error) {
+    return {
+      error:
+        error.code === "invalid_credentials"
+          ? "Supabase didn't accept that email and password. Check both and try again."
+          : `Couldn't sign in: ${error.message}`,
+    };
+  }
   redirect("/admin");
 }
 

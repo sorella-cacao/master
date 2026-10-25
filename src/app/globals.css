@@ -54,9 +54,12 @@ body {
   margin-top: 1.1em;
 }
 
-/* Form fields in the Pod (the shop admin area). */
-.pod-input {
-  @apply w-full rounded-xl border border-white/15 bg-cacao-800 px-4 py-3 font-sans text-base text-cream placeholder:text-cream/40 focus:border-gold focus:outline-none;
+/* Form fields in the Pod (the shop admin area). In the components layer so
+   utilities on a field (e.g. w-24 for a number box) can override it. */
+@layer components {
+  .pod-input {
+    @apply w-full rounded-xl border border-white/15 bg-cacao-800 px-4 py-3 font-sans text-base text-cream placeholder:text-cream/40 focus:border-gold focus:outline-none;
+  }
 }
 
 /*

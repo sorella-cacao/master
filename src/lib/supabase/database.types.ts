@@ -135,6 +135,48 @@ export type Database = {
         }
         Relationships: []
       }
+      receipts: {
+        Row: {
+          amount: number | null
+          created_at: string
+          email_id: string
+          files: Json
+          gst: number | null
+          id: string
+          note: string | null
+          received_at: string
+          sender: string | null
+          subject: string
+          updated_at: string
+        }
+        Insert: {
+          amount?: number | null
+          created_at?: string
+          email_id: string
+          files?: Json
+          gst?: number | null
+          id?: string
+          note?: string | null
+          received_at: string
+          sender?: string | null
+          subject?: string
+          updated_at?: string
+        }
+        Update: {
+          amount?: number | null
+          created_at?: string
+          email_id?: string
+          files?: Json
+          gst?: number | null
+          id?: string
+          note?: string | null
+          received_at?: string
+          sender?: string | null
+          subject?: string
+          updated_at?: string
+        }
+        Relationships: []
+      }
       workshop_variants: {
         Row: {
           created_at: string
@@ -229,7 +271,7 @@ export type Database = {
       [_ in never]: never
     }
     Functions: {
-      [_ in never]: never
+      receipts_cron_secret_matches: { Args: { secret: string }; Returns: boolean }
     }
     Enums: {
       [_ in never]: never

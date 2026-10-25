@@ -14,6 +14,7 @@ import {
   saveWorkshop,
 } from "./actions";
 import { PodForm } from "./pod-form";
+import { PodNav } from "./pod-nav";
 import { logOut } from "./login/actions";
 import { getSession } from "./session";
 
@@ -54,14 +55,14 @@ export default async function PodPage() {
 
   return (
     <div className="space-y-16">
-      <header className="flex flex-wrap items-end justify-between gap-6">
+      <header className="space-y-6">
         <div>
           <h1 className="font-script text-6xl text-gold sm:text-7xl">The Pod</h1>
           <p className="mt-2 text-cream/70">
             Changes appear on the website as soon as you save. Signed in as {email}.
           </p>
         </div>
-        <SignOut />
+        <PodNav current="/pod" />
       </header>
 
       <section aria-labelledby="products-heading" className="space-y-8">

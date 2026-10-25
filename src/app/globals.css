@@ -73,4 +73,6 @@ body {
   --color-gold: #8a5226;
   --color-caramel: #7a4520;
   --color-white: #1f1208;
+  /* Text without its own colour inherits this, not the shop's light cream. */
+  color: var(--color-cream);
 }

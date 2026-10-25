@@ -20,8 +20,6 @@ export type PersonalisedLabel = {
 
 export type Product = {
   slug: string;
-  /** Squarespace URL id, used to redirect old /shop/p/... links. */
-  legacyUrlId: string;
   title: string;
   image: string;
   optionName: string;
@@ -37,7 +35,6 @@ export type Product = {
 
 export type Workshop = {
   slug: string;
-  legacyUrlId: string;
   title: string;
   images: string[];
   soldOut: boolean;

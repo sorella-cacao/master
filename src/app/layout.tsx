@@ -24,6 +24,10 @@ const carattere = Carattere({
   weight: "400",
 });
 
+// Shop pages are pre-built; /admin refreshes them on every save, and this hourly
+// refresh is a fallback that also keeps the free Supabase project active.
+export const revalidate = 3600;
+
 export const metadata: Metadata = {
   title: { default: site.name, template: `%s — ${site.name}` },
   description: site.tagline,

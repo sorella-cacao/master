@@ -150,7 +150,7 @@ export default async function PodPage() {
             <div className="flex flex-wrap items-baseline justify-between gap-4">
               <h3 className="text-3xl text-gold">
                 {workshop.title}
-                {!workshop.is_published && <span className="eyebrow ml-3 align-middle text-cream/60">Hidden</span>}
+                {!workshop.is_published && <span className="eyebrow ml-3 align-middle text-cream/70">Hidden</span>}
               </h3>
               {workshop.is_published && <ViewLink href={`/workshops/${workshop.slug}`} />}
             </div>
@@ -232,7 +232,7 @@ function Field({ label, hint, children }: { label: string; hint?: string; childr
     <label className="block">
       <span className="eyebrow mb-2 block text-cream/70">{label}</span>
       {children}
-      {hint && <span className="mt-1.5 block text-base text-cream/60">{hint}</span>}
+      {hint && <span className="mt-1.5 block text-base text-cream/70">{hint}</span>}
     </label>
   );
 }

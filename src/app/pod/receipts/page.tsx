@@ -96,7 +96,7 @@ export default async function ReceiptsPage() {
                   <summary className="flex cursor-pointer flex-wrap items-baseline justify-between gap-4 p-6 sm:px-8">
                     <span className="text-3xl text-gold">
                       {monthLabel(month)}
-                      <span className="eyebrow ml-3 align-middle text-cream/60">
+                      <span className="eyebrow ml-3 align-middle text-cream/70">
                         {monthReceipts.length} {monthReceipts.length === 1 ? "receipt" : "receipts"}
                       </span>
                     </span>
@@ -106,7 +106,7 @@ export default async function ReceiptsPage() {
                   <ul className="space-y-4 px-6 pb-6 sm:px-8 sm:pb-8">
                     {monthReceipts.map((r) => (
                       <li key={r.id} className="rounded-xl border border-white/10 p-4 sm:p-5">
-                        <p className="eyebrow text-cream/60">{receiptDate(r.received_at)}</p>
+                        <p className="eyebrow text-cream/70">{receiptDate(r.received_at)}</p>
                         <p className="mt-1 text-2xl">{r.subject || "(no subject)"}</p>
                         <ul className="mt-3 flex flex-wrap gap-2">
                           {r.files.map((f) => (

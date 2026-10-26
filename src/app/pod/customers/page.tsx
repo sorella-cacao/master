@@ -51,66 +51,70 @@ export default async function CustomersPage() {
         <PodNav current="/pod/customers" />
       </header>
 
-      {customers.map((customer) => {
-        const prices = pricesFor(customer.id);
-        return (
-          <PodPanel
-            key={customer.id}
-            title={customer.name}
-            hint={`${prices.size ? `Their own prices on ${prices.size} items` : "Standard wholesale prices"}${customer.address ? ` · ${customer.address.split("\n")[0].replace(/,\s*$/, "")}` : ""}`}
-          >
-            <PodForm action={saveCustomer} submitLabel="Save customer">
-              <input type="hidden" name="id" value={customer.id} />
-              <div className="space-y-6">
-                <CustomerFields customer={customer} />
-                <div className="space-y-3">
-                  <p className="text-base text-cream/70">
-                    Their prices. Leave a box empty to use your standard wholesale price.
-                  </p>
-                  {groups.map((group) => (
-                    <ItemTable
-                      key={group.productId}
-                      caption={group.title}
-                      headings={[group.title === "Pure Cacao" ? "Size" : "Flavour", "Standard", "Their price"]}
-                      columnWidth="w-28"
-                      collapsible
-                    >
-                      {group.items.map((item) => (
-                        <ItemRow
-                          key={item.id}
-                          name={item.name}
-                          cells={[
-                            <span key="standard" className="text-cream/70">
-                              {formatPrice(item.wholesalePrice)}
-                            </span>,
-                            <input
-                              key="price"
-                              name={`price:${item.id}`}
-                              inputMode="decimal"
-                              defaultValue={prices.has(item.id) ? prices.get(item.id)!.toFixed(2) : ""}
-                              placeholder={item.wholesalePrice.toFixed(2)}
-                              aria-label={`${customer.name} price for ${group.title} ${item.name}`}
-                              className="pod-input w-20 px-2 py-1 text-right text-sm"
-                            />,
-                          ]}
-                        />
-                      ))}
-                    </ItemTable>
-                  ))}
-                </div>
-              </div>
-            </PodForm>
-            <PodForm
-              action={deleteCustomer}
-              submitLabel="Delete customer"
-              variant="quiet"
-              confirmMessage={`Delete ${customer.name}? Their orders and invoices stay, but their prices are removed.`}
+      <div className="space-y-2">
+        {customers.map((customer) => {
+          const prices = pricesFor(customer.id);
+          return (
+            <PodPanel
+              key={customer.id}
+              title={customer.name}
+              small
+              hint={`${prices.size ? `Their own prices on ${prices.size} items` : "Standard wholesale prices"}${customer.address ? ` · ${customer.address.split("\n")[0].replace(/,\s*$/, "")}` : ""}`}
             >
-              <input type="hidden" name="id" value={customer.id} />
-            </PodForm>
-          </PodPanel>
-        );
-      })}
+              <PodForm action={saveCustomer} submitLabel="Save customer">
+                <input type="hidden" name="id" value={customer.id} />
+                <div className="space-y-6">
+                  <CustomerFields customer={customer} />
+                  <div className="space-y-3">
+                    <p className="text-base text-cream/70">
+                      Their prices. Leave a box empty to use your standard wholesale price.
+                    </p>
+                    {groups.map((group) => (
+                      <ItemTable
+                        key={group.productId}
+                        caption={group.title}
+                        headings={[group.title === "Pure Cacao" ? "Size" : "Flavour", "Standard", "Their price"]}
+                        columnWidth="w-28"
+                        collapsible
+                      >
+                        {group.items.map((item) => (
+                          <ItemRow
+                            key={item.id}
+                            name={item.name}
+                            cells={[
+                              <span key="standard" className="text-cream/70">
+                                {formatPrice(item.wholesalePrice)}
+                              </span>,
+                              <input
+                                key="price"
+                                name={`price:${item.id}`}
+                                inputMode="decimal"
+                                defaultValue={prices.has(item.id) ? prices.get(item.id)!.toFixed(2) : ""}
+                                placeholder={item.wholesalePrice.toFixed(2)}
+                                aria-label={`${customer.name} price for ${group.title} ${item.name}`}
+                                className="pod-input w-20 px-2 py-1 text-right text-sm"
+                              />,
+                            ]}
+                          />
+                        ))}
+                      </ItemTable>
+                    ))}
+                  </div>
+                </div>
+              </PodForm>
+              <PodForm
+                action={deleteCustomer}
+                submitLabel="Delete customer"
+                variant="quiet"
+                confirmMessage={`Delete ${customer.name}? Their orders and invoices stay, but their prices are removed.`}
+              >
+                <input type="hidden" name="id" value={customer.id} />
+              </PodForm>
+            </PodPanel>
+          );
+        })}
+
+      </div>
 
       <PodPanel title="Add a customer" hint="A shop you sell to wholesale. You can set their prices once they’re added." open={customers.length === 0}>
         <PodForm action={addCustomer} submitLabel="Add customer" resetOnSuccess>

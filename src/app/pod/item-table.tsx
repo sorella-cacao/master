@@ -6,9 +6,12 @@ export function ItemTable({
   caption,
   headings,
   highlight = [],
+  columnWidth = "w-28",
   children,
 }: {
   caption?: string;
+  /** Width of every column after the item name, so tables stacked together line up. */
+  columnWidth?: string;
   /** Column positions (0 = item name) to shade so they stand out. */
   highlight?: number[];
   /** Column headings; the first is the item name, the rest are right-aligned. */
@@ -17,7 +20,7 @@ export function ItemTable({
 }) {
   return (
     <div className="overflow-x-auto rounded-xl border border-white/15">
-      <table className="w-full font-sans text-base">
+      <table className="w-full table-fixed font-sans text-base">
         {caption && (
           <caption className="eyebrow border-b border-white/15 bg-white/5 px-4 py-2.5 text-left text-cream/80">
             {caption}
@@ -29,7 +32,7 @@ export function ItemTable({
               <th
                 key={heading}
                 scope="col"
-                className={`px-4 py-2 ${i === 0 ? "text-left" : "text-right"} ${
+                className={`px-4 py-2 ${i === 0 ? "text-left" : `${columnWidth} text-right`} ${
                   highlight.includes(i) ? "bg-[#efb94f] font-semibold text-cream" : "font-normal"
                 }`}
               >

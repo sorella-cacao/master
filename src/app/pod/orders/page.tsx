@@ -139,7 +139,7 @@ export default async function OrdersPage(props: PageProps<"/pod/orders">) {
           <p className="text-xl text-cream/80">Nothing ordered for this week yet.</p>
         ) : (
           <>
-            <div className="grid gap-6 lg:grid-cols-2">
+            <div className="space-y-6">
               {plan.map((g) => (
                 <ItemTable
                   key={g.title}

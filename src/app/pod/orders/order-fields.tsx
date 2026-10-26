@@ -67,12 +67,13 @@ export function OrderFields({
         </label>
       </div>
 
-      <div className="grid gap-6 lg:grid-cols-2">
+      <div className="space-y-6">
         {groups.map((group) => (
           <ItemTable
             key={group.title}
             caption={group.title}
             headings={[group.title === "Pure Cacao" ? "Size" : "Flavour", "Price", "Qty"]}
+            columnWidth="w-36"
           >
             {group.items.map((item) => (
               <ItemRow

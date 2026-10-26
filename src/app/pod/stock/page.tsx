@@ -56,7 +56,7 @@ export default async function StockPage() {
           </p>
         </div>
 
-        <div className="grid gap-6 lg:grid-cols-2">
+        <div className="space-y-6">
           {groups.map((group) => (
             <ItemTable key={group.productId} caption={group.title} headings={[itemHeading(group), "In stock", "Wholesale"]}>
               {group.items.map((item) => (
@@ -101,9 +101,9 @@ export default async function StockPage() {
 
       <Panel title="Wholesale prices" hint="New orders use these prices. Orders already entered keep theirs.">
         <PodForm action={savePrices} submitLabel="Save prices">
-          <div className="grid gap-6 lg:grid-cols-2">
+          <div className="space-y-6">
             {groups.map((group) => (
-              <ItemTable key={group.productId} caption={group.title} headings={[itemHeading(group), "Wholesale ($)"]}>
+              <ItemTable key={group.productId} caption={group.title} headings={[itemHeading(group), "Wholesale ($)"]} columnWidth="w-40">
                 {group.items.map((item) => (
                   <ItemRow
                     key={item.id}
@@ -217,12 +217,13 @@ const itemHeading = (group: StockGroup) => (group.title === "Pure Cacao" ? "Size
 function CountTables({ groups, name }: { groups: StockGroup[]; name: "made" | "count" }) {
   const isCount = name === "count";
   return (
-    <div className="grid gap-6 lg:grid-cols-2">
+    <div className="space-y-6">
       {groups.map((group) => (
         <ItemTable
           key={group.productId}
           caption={group.title}
           headings={[itemHeading(group), isCount ? "Was" : "In stock", isCount ? "Count now" : "Made"]}
+          columnWidth="w-36"
         >
           {group.items.map((item) => (
             <ItemRow

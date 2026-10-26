@@ -2,6 +2,7 @@
 
 import { startTransition, useActionState, useEffect, useRef, useState } from "react";
 import type { SaveState } from "./actions";
+import { useConfirm } from "./confirm-dialog";
 
 type Props = {
   action: (state: SaveState, data: FormData) => Promise<SaveState>;
@@ -28,12 +29,13 @@ export function PodForm({
   const [state, formAction, pending] = useActionState(action, undefined);
   const [edited, setEdited] = useState(false);
   const formRef = useRef<HTMLFormElement>(null);
+  const { confirm, dialog } = useConfirm();
 
-  function submit(e: React.FormEvent<HTMLFormElement>) {
+  async function submit(e: React.FormEvent<HTMLFormElement>) {
     // Submit manually so React doesn't reset the fields back to their old values.
     e.preventDefault();
-    if (confirmMessage && !window.confirm(confirmMessage)) return;
     const data = new FormData(e.currentTarget);
+    if (confirmMessage && !(await confirm(confirmMessage))) return;
     setEdited(false);
     startTransition(() => formAction(data));
   }
@@ -63,6 +65,7 @@ export function PodForm({
           {status}
         </p>
       </div>
+      {dialog}
     </form>
   );
 }

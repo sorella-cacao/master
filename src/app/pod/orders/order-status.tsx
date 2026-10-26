@@ -2,6 +2,7 @@
 
 import { startTransition, useActionState, useState } from "react";
 import type { SaveState } from "../actions";
+import { useConfirm } from "../confirm-dialog";
 import { setOrderStatus } from "./actions";
 
 const STATUSES = [
@@ -14,11 +15,12 @@ const STATUSES = [
 export function OrderStatus({ orderId, status, itemCount }: { orderId: string; status: string; itemCount: number }) {
   const [state, formAction, pending] = useActionState(setOrderStatus, undefined as SaveState);
   const [invoiceNote, setInvoiceNote] = useState(false);
+  const { confirm, dialog } = useConfirm();
 
-  function choose(next: string) {
+  async function choose(next: string) {
     if (next === status) return;
-    if (next === "sent" && !window.confirm(`Mark as sent? This takes ${itemCount} items off your stock.`)) return;
-    if (status === "sent" && !window.confirm("Un-send this order? Its items go back into stock.")) return;
+    if (next === "sent" && !(await confirm(`Mark as sent? This takes ${itemCount} items off your stock.`))) return;
+    if (status === "sent" && !(await confirm("Un-send this order? Its items go back into stock."))) return;
     const data = new FormData();
     data.set("order_id", orderId);
     data.set("status", next);
@@ -54,6 +56,7 @@ export function OrderStatus({ orderId, status, itemCount }: { orderId: string; s
       <p role="status" className={`font-sans text-sm ${state?.error ? "text-gold" : "text-cream/70"}`}>
         {pending ? "Saving…" : (state?.error ?? state?.ok ?? (invoiceNote ? "Invoices are coming soon." : ""))}
       </p>
+      {dialog}
     </div>
   );
 }

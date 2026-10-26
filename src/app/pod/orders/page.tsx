@@ -126,9 +126,8 @@ export default async function OrdersPage(props: PageProps<"/pod/orders">) {
   for (const r of plan.flatMap((g) => g.rows)) {
     if (r.base) baseKg.set(r.base, (baseKg.get(r.base) ?? 0) + r.kg);
   }
-  // Just what still needs making, for the bars.
+  // Just what still needs making.
   const makeList = plan
-    .filter((g) => g.title !== "Pure Cacao")
     .map((g) => ({ ...g, rows: g.rows.filter((r) => r.toMake > 0) }))
     .filter((g) => g.rows.length);
   const laterOrders = openOrders.filter((o) => o.needed_by && o.needed_by > weekEnd).length;
@@ -237,7 +236,7 @@ export default async function OrdersPage(props: PageProps<"/pod/orders">) {
           <h2 id="make-heading" className="text-4xl">
             {weekStart === thisMonday ? "To make this week" : "To make"}
           </h2>
-          <div className="grid gap-8 md:grid-cols-2">
+          <div className="grid gap-8 md:grid-cols-2 xl:grid-cols-3">
             {makeList.map((g) => (
               <div key={g.title}>
                 <h3 className="eyebrow mb-2 text-cream/70">{g.title}</h3>

@@ -139,11 +139,11 @@ export default async function OrdersPage(props: PageProps<"/pod/orders">) {
         <PodNav current="/pod/orders" />
       </header>
 
-      <section aria-labelledby="plan-heading" className="space-y-5 rounded-2xl border border-white/10 bg-cacao-950/40 p-6 sm:p-8">
+      <section aria-labelledby="make-heading" className="space-y-5 rounded-2xl border-2 border-[#efb94f] bg-cacao-950/40 p-6 sm:p-8">
         <div className="flex flex-wrap items-end justify-between gap-4">
           <div>
-            <h2 id="plan-heading" className="text-4xl">
-              {weekStart === thisMonday ? "This week’s orders" : "Orders for the week"}
+            <h2 id="make-heading" className="text-4xl">
+              {weekStart === thisMonday ? "To make this week" : "To make"}
             </h2>
             <p className="mt-1 text-cream/70">
               Week of {shortDate(weekStart)} to {shortDate(weekEnd)}
@@ -158,70 +158,48 @@ export default async function OrdersPage(props: PageProps<"/pod/orders">) {
 
         {plan.length === 0 ? (
           <p className="text-xl text-cream/80">Nothing ordered for this week yet.</p>
+        ) : makeList.length === 0 ? (
+          <p className="text-xl text-cream/80">You have enough stock for everything ordered.</p>
         ) : (
           <>
             <div className="space-y-3">
-              {plan.map((g) => (
+              {makeList.map((g) => (
                 <ItemTable
                   key={g.title}
                   caption={g.title}
-                  headings={[g.title === "Pure Cacao" ? "Size" : "Flavour", "Ordered", "In stock", "To make", "kg"]}
-                  highlight={[3, 4]}
-                  columnWidth="w-20"
+                  headings={[g.title === "Pure Cacao" ? "Size" : "Flavour", "To make", "Weight"]}
+                  highlight={[1, 2]}
+                  columnWidth="w-24"
                   compact
                 >
-                  {g.rows.map((r, index) => {
-                    const lastOfBase = r.base && g.rows[index + 1]?.base !== r.base;
-                    const baseTotal = g.rows.filter((x) => x.base === r.base).reduce((n, x) => n + x.kg, 0);
-                    return (
-                      <Fragment key={r.id}>
-                        <ItemRow
-                          name={r.name}
-                          highlight={[3, 4]}
-                          compact
-                          cells={[
-                            r.ordered,
-                            r.inStock,
-                            <span key="make" className={r.toMake ? "" : "text-cream/70"}>
-                              {r.toMake}
-                            </span>,
-                            <span key="kg" className={r.kg ? "" : "text-cream/70"}>
-                              {formatKg(r.kg)}
-                            </span>,
-                          ]}
-                        />
-                        {lastOfBase && (
-                          <tr className="border-t-2 border-[#efb94f]">
-                            <th scope="row" colSpan={4} className="px-3 py-1 text-right font-sans font-semibold">
-                              {r.base} total
-                            </th>
-                            <td className="bg-[#efb94f] px-3 py-1 text-right font-semibold tabular-nums">
-                              {formatKg(baseTotal)}
-                            </td>
-                          </tr>
-                        )}
-                      </Fragment>
-                    );
-                  })}
+                  {g.rows.map((r, index) => (
+                    <Fragment key={r.id}>
+                      <ItemRow name={r.name} highlight={[1, 2]} compact cells={[r.toMake, formatGrams(r.kg)]} />
+                      {r.base && g.rows[index + 1]?.base !== r.base && (
+                        <tr className="border-t-2 border-[#efb94f]">
+                          <th scope="row" colSpan={2} className="px-3 py-1 text-right font-sans font-semibold">
+                            {r.base} total
+                          </th>
+                          <td className="bg-[#efb94f] px-3 py-1 text-right font-semibold tabular-nums">
+                            {formatGrams(g.rows.filter((x) => x.base === r.base).reduce((n, x) => n + x.kg, 0))}
+                          </td>
+                        </tr>
+                      )}
+                    </Fragment>
+                  ))}
                 </ItemTable>
               ))}
             </div>
             <p className="font-sans text-lg">
-              {totalToMake ? (
-                <>
-                  Make <strong className="text-gold">{totalToMake}</strong> in total, which is{" "}
-                  <strong className="text-gold">{formatKg(totalKg)} kg</strong> of chocolate
-                  {[...baseKg].map(([base, kg], i) => (
-                    <Fragment key={base}>
-                      {i === 0 ? ", including " : " and "}
-                      <strong className="text-gold">{formatKg(kg)} kg</strong> of {base}
-                    </Fragment>
-                  ))}
-                  .
-                </>
-              ) : (
-                "You have enough stock for everything ordered."
-              )}
+              Make <strong className="text-gold">{totalToMake}</strong> in total, which is{" "}
+              <strong className="text-gold">{formatKg(totalKg)} kg</strong> of chocolate
+              {[...baseKg].map(([base, kg], i) => (
+                <Fragment key={base}>
+                  {i === 0 ? ", including " : " and "}
+                  <strong className="text-gold">{formatKg(kg)} kg</strong> of {base}
+                </Fragment>
+              ))}
+              .
             </p>
           </>
         )}
@@ -231,37 +209,24 @@ export default async function OrdersPage(props: PageProps<"/pod/orders">) {
         </p>
       </section>
 
-      {makeList.length > 0 && (
-        <section aria-labelledby="make-heading" className="space-y-5 rounded-2xl border-2 border-[#efb94f] bg-cacao-950/40 p-6 sm:p-8">
-          <h2 id="make-heading" className="text-4xl">
-            {weekStart === thisMonday ? "To make this week" : "To make"}
+      {plan.length > 0 && (
+        <section aria-labelledby="plan-heading" className="space-y-5 rounded-2xl border border-white/10 bg-cacao-950/40 p-6 sm:p-8">
+          <h2 id="plan-heading" className="text-4xl">
+            {weekStart === thisMonday ? "This week’s orders" : "Orders for the week"}
           </h2>
-          <div className="grid gap-8 md:grid-cols-2 xl:grid-cols-3">
-            {makeList.map((g) => (
-              <div key={g.title}>
-                <h3 className="eyebrow mb-2 text-cream/70">{g.title}</h3>
-                <ul className="divide-y divide-white/10 font-sans text-lg">
-                  {g.rows.map((r, index) => (
-                    <Fragment key={r.id}>
-                      <li className="flex items-baseline justify-between gap-4 py-2">
-                        <span>{r.name}</span>
-                        <span className="shrink-0 tabular-nums">
-                          <strong className="font-semibold">{r.toMake}</strong>
-                          <span className="text-cream/70"> · {formatGrams(r.kg)}</span>
-                        </span>
-                      </li>
-                      {r.base && g.rows[index + 1]?.base !== r.base && (
-                        <li className="flex items-baseline justify-between gap-4 bg-[#f6cf7a] px-3 py-2 font-semibold">
-                          <span>{r.base} total</span>
-                          <span className="tabular-nums">
-                            {formatGrams(g.rows.filter((x) => x.base === r.base).reduce((n, x) => n + x.kg, 0))}
-                          </span>
-                        </li>
-                      )}
-                    </Fragment>
-                  ))}
-                </ul>
-              </div>
+          <div className="space-y-3">
+            {plan.map((g) => (
+              <ItemTable
+                key={g.title}
+                caption={g.title}
+                headings={[g.title === "Pure Cacao" ? "Size" : "Flavour", "Ordered", "In stock"]}
+                columnWidth="w-24"
+                compact
+              >
+                {g.rows.map((r) => (
+                  <ItemRow key={r.id} name={r.name} compact cells={[r.ordered, r.inStock]} />
+                ))}
+              </ItemTable>
             ))}
           </div>
         </section>

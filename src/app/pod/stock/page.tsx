@@ -51,7 +51,6 @@ export default async function StockPage() {
       <PodPanel small
         title="Stock"
         hint={`Last stock take: ${when(lastTake.data?.created_at)} · Last batch added: ${when(lastMade.data?.created_at)}. Orders marked Sent come off automatically.`}
-        open
       >
         <div className="space-y-3">
           {groups.map((group) => (
@@ -81,7 +80,7 @@ export default async function StockPage() {
         </div>
       </PodPanel>
 
-      <PodPanel small title="Add what I made this week" hint="Type how many of each you made. They’re added to the stock above." open>
+      <PodPanel small title="Add what I made this week" hint="Type how many of each you made. They’re added to the stock above.">
         <PodForm action={addMade} submitLabel="Add to stock" resetOnSuccess>
           <CountTables groups={groups} name="made" />
         </PodForm>

@@ -68,7 +68,6 @@ export default async function InvoicesPage() {
               ? `${unpaid.length} unpaid, ${formatPrice(owing(invoices))} owing. Tap a customer to see their invoices.`
               : "Everything’s paid. Tap a customer to see their invoices."
         }
-        open
       >
         {customers.length > 0 && (
           <div className="overflow-hidden rounded-xl border border-white/15 font-sans text-sm">

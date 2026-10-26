@@ -92,7 +92,7 @@ export default async function ReceiptsPage() {
               </div>
 
               {[...months].map(([month, monthReceipts]) => (
-                <details key={month} open={month === sydneyMonth(new Date().toISOString())} className="group rounded-2xl border border-white/10 bg-cacao-950/40">
+                <details key={month} className="group rounded-2xl border border-white/10 bg-cacao-950/40">
                   <summary className="flex cursor-pointer flex-wrap items-baseline justify-between gap-4 p-6 sm:px-8">
                     <span className="text-3xl text-gold">
                       {monthLabel(month)}

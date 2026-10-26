@@ -116,7 +116,7 @@ export default async function CustomersPage() {
 
       </div>
 
-      <PodPanel title="Add a customer" hint="A shop you sell to wholesale. You can set their prices once they’re added." open={customers.length === 0}>
+      <PodPanel title="Add a customer" hint="A shop you sell to wholesale. You can set their prices once they’re added.">
         <PodForm action={addCustomer} submitLabel="Add customer" resetOnSuccess>
           <CustomerFields />
         </PodForm>

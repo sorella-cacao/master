@@ -155,7 +155,6 @@ export default async function OrdersPage(props: PageProps<"/pod/orders">) {
       <PodPanel small
         title={weekStart === thisMonday ? "To make this week" : "To make"}
         hint={`Week of ${shortDate(weekStart)} to ${shortDate(weekEnd)}`}
-        open
       >
         <div className="space-y-5">
           <nav aria-label="Choose a week" className="flex flex-wrap gap-2">
@@ -228,7 +227,6 @@ export default async function OrdersPage(props: PageProps<"/pod/orders">) {
         <PodPanel small
           title={weekStart === thisMonday ? "This week’s orders" : "Orders for the week"}
           hint="How many of each are ordered, and how many you have."
-          open
         >
           <div className="space-y-3">
             {plan.map((g) => (
@@ -247,7 +245,7 @@ export default async function OrdersPage(props: PageProps<"/pod/orders">) {
         </PodPanel>
       )}
 
-      <PodPanel small title="New order" hint="Copy in an order from your email." open={openOrders.length === 0}>
+      <PodPanel small title="New order" hint="Copy in an order from your email.">
         <PodForm action={saveOrder} submitLabel="Save order" resetOnSuccess>
           <OrderFields groups={formGroups(groups)} customers={customers} />
         </PodForm>
@@ -255,13 +253,12 @@ export default async function OrdersPage(props: PageProps<"/pod/orders">) {
 
       <PodPanel small
         title="Orders"
-        hint={openOrders.length === 1 ? "1 order waiting. Tap an order to fold it away." : `${openOrders.length} orders waiting. Tap an order to fold it away.`}
-        open
+        hint={openOrders.length === 1 ? "1 order waiting. Tap an order to open it." : `${openOrders.length} orders waiting. Tap an order to open it.`}
       >
         <div className="space-y-5">
           {openOrders.length === 0 && <p className="text-xl text-cream/70">No orders waiting.</p>}
           {openOrders.map((order) => (
-            <OrderCard key={order.id} order={order} items={items} today={today} open>
+            <OrderCard key={order.id} order={order} items={items} today={today}>
               <details className="mt-5 border-t border-white/10 pt-4">
                 <summary className="eyebrow cursor-pointer text-cream/70 hover:text-gold">Edit order</summary>
                 <div className="mt-4">
@@ -317,20 +314,17 @@ function OrderCard({
   order,
   items,
   today,
-  open,
   children,
 }: {
   order: Order;
   items: Map<string, { name: string; group: string }>;
   today: string;
-  /** Start unfolded (open orders); history starts folded. */
-  open?: boolean;
   children?: React.ReactNode;
 }) {
   const overdue = order.status !== "sent" && order.needed_by && order.needed_by < today;
   const sale = SALE_KINDS[order.kind];
   return (
-    <details open={open} className="group rounded-2xl border border-white/15 bg-cacao-800/60">
+    <details className="group rounded-2xl border border-white/15 bg-cacao-800/60">
       <summary className="cursor-pointer list-none px-4 py-3 sm:px-5 [&::-webkit-details-marker]:hidden">
         <div className="flex flex-wrap items-baseline justify-between gap-4">
           <h3 className="text-xl text-gold">

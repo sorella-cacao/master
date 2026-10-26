@@ -1,5 +1,6 @@
 import type { Metadata } from "next";
 import Link from "next/link";
+import { Fragment } from "react";
 import { formatPrice } from "@/lib/format";
 import { addDays, isDate, mondayOf, shortDate, sydneyToday } from "@/lib/weeks";
 import { ItemRow, ItemTable } from "../item-table";
@@ -108,21 +109,19 @@ export default async function OrdersPage(props: PageProps<"/pod/orders">) {
           const need = ordered.get(i.id)!;
           const toMake = Math.max(0, need - Math.max(i.quantity, 0));
           const kg = toMake * itemKg(g.title, i.name, i.chocolateGrams);
-          return { id: i.id, name: i.name, size: g.title, base: i.baseChocolate, ordered: need, inStock: i.quantity, toMake, kg };
-        }),
+          return { id: i.id, name: i.name, base: i.baseChocolate, ordered: need, inStock: i.quantity, toMake, kg };
+        })
+        // Flavours made from a shared chocolate (e.g. 75% Dark) go last, so they can be totalled together.
+        .sort((a, b) => Number(!!a.base) - Number(!!b.base) || (a.base ?? "").localeCompare(b.base ?? "")),
     }))
     .filter((g) => g.rows.length);
   const totalToMake = plan.reduce((n, g) => n + g.rows.reduce((m, r) => m + r.toMake, 0), 0);
   const totalKg = plan.reduce((n, g) => n + g.rows.reduce((m, r) => m + r.kg, 0), 0);
 
-  // Flavours made from the same chocolate (e.g. 75% Dark), totalled so you know how much to temper.
-  const bases = new Map<string, { kg: number; rows: { id: string; label: string; kg: number }[] }>();
+  // Total chocolate per base (e.g. 75% Dark) across all sizes, for the summary line.
+  const baseKg = new Map<string, number>();
   for (const r of plan.flatMap((g) => g.rows)) {
-    if (!r.base || !r.kg) continue;
-    if (!bases.has(r.base)) bases.set(r.base, { kg: 0, rows: [] });
-    const base = bases.get(r.base)!;
-    base.kg += r.kg;
-    base.rows.push({ id: r.id, label: `${r.name} · ${r.size}`, kg: r.kg });
+    if (r.base) baseKg.set(r.base, (baseKg.get(r.base) ?? 0) + r.kg);
   }
   const laterOrders = openOrders.filter((o) => o.needed_by && o.needed_by > weekEnd).length;
 
@@ -162,47 +161,53 @@ export default async function OrdersPage(props: PageProps<"/pod/orders">) {
                   headings={[g.title === "Pure Cacao" ? "Size" : "Flavour", "Ordered", "In stock", "To make", "kg"]}
                   highlight={[3, 4]}
                 >
-                  {g.rows.map((r) => (
-                    <ItemRow
-                      key={r.id}
-                      name={r.name}
-                      highlight={[3, 4]}
-                      cells={[
-                        r.ordered,
-                        r.inStock,
-                        <span key="make" className={`text-lg ${r.toMake ? "" : "text-cream/70"}`}>
-                          {r.toMake}
-                        </span>,
-                        <span key="kg" className={`text-lg ${r.kg ? "" : "text-cream/70"}`}>
-                          {formatKg(r.kg)}
-                        </span>,
-                      ]}
-                    />
-                  ))}
+                  {g.rows.map((r, index) => {
+                    const lastOfBase = r.base && g.rows[index + 1]?.base !== r.base;
+                    const baseTotal = g.rows.filter((x) => x.base === r.base).reduce((n, x) => n + x.kg, 0);
+                    return (
+                      <Fragment key={r.id}>
+                        <ItemRow
+                          name={r.name}
+                          highlight={[3, 4]}
+                          cells={[
+                            r.ordered,
+                            r.inStock,
+                            <span key="make" className={`text-lg ${r.toMake ? "" : "text-cream/70"}`}>
+                              {r.toMake}
+                            </span>,
+                            <span key="kg" className={`text-lg ${r.kg ? "" : "text-cream/70"}`}>
+                              {formatKg(r.kg)}
+                            </span>,
+                          ]}
+                        />
+                        {lastOfBase && (
+                          <tr className="border-t-2 border-[#efb94f]">
+                            <th scope="row" colSpan={4} className="px-4 py-2.5 text-right font-sans font-semibold">
+                              {r.base} total
+                            </th>
+                            <td className="bg-[#efb94f] px-4 py-2.5 text-right text-xl font-semibold tabular-nums">
+                              {formatKg(baseTotal)}
+                            </td>
+                          </tr>
+                        )}
+                      </Fragment>
+                    );
+                  })}
                 </ItemTable>
               ))}
             </div>
-            {[...bases].map(([name, base]) => (
-              <div key={name} className="overflow-hidden rounded-xl border-2 border-[#efb94f]">
-                <div className="flex flex-wrap items-baseline justify-between gap-2 bg-[#efb94f] px-4 py-3 font-sans">
-                  <span className="text-lg font-semibold">{name} chocolate needed</span>
-                  <span className="text-2xl font-semibold tabular-nums">{formatKg(base.kg)} kg</span>
-                </div>
-                <ul className="bg-[#fbe7b8] px-4 py-2 font-sans text-base">
-                  {base.rows.map((row) => (
-                    <li key={row.id} className="flex justify-between gap-4 py-1">
-                      <span>{row.label}</span>
-                      <span className="tabular-nums">{formatKg(row.kg)} kg</span>
-                    </li>
-                  ))}
-                </ul>
-              </div>
-            ))}
             <p className="font-sans text-lg">
               {totalToMake ? (
                 <>
                   Make <strong className="text-gold">{totalToMake}</strong> in total, which is{" "}
-                  <strong className="text-gold">{formatKg(totalKg)} kg</strong> of chocolate.
+                  <strong className="text-gold">{formatKg(totalKg)} kg</strong> of chocolate
+                  {[...baseKg].map(([base, kg], i) => (
+                    <Fragment key={base}>
+                      {i === 0 ? ", including " : " and "}
+                      <strong className="text-gold">{formatKg(kg)} kg</strong> of {base}
+                    </Fragment>
+                  ))}
+                  .
                 </>
               ) : (
                 "You have enough stock for everything ordered."

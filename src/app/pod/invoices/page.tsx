@@ -27,7 +27,7 @@ export default async function InvoicesPage() {
   const [list, settings] = await Promise.all([
     supabase
       .from("invoices")
-      .select("id, number, bill_to, issued_on, due_on, paid_on, lines:invoice_lines(description, quantity, unit_price)")
+      .select("id, number, bill_to, issued_on, due_on, paid_on, customer:customers(name), lines:invoice_lines(description, quantity, unit_price)")
       .order("number", { ascending: false }),
     supabase.from("invoice_settings").select("*").eq("id", true).single(),
   ]);
@@ -37,13 +37,19 @@ export default async function InvoicesPage() {
   const invoices = list.data.map((i) => ({
     id: i.id,
     number: i.number,
-    name: billToName(i.bill_to),
+    name: i.customer?.name ?? billToName(i.bill_to),
     issuedOn: i.issued_on,
     dueOn: i.due_on,
     paidOn: i.paid_on,
     total: invoiceTotal(i.lines.map((l) => ({ ...l, quantity: Number(l.quantity), unit_price: l.unit_price === null ? null : Number(l.unit_price) }))),
   }));
   const unpaid = invoices.filter((i) => !i.paidOn);
+  const owing = (list: typeof invoices) => list.filter((i) => !i.paidOn).reduce((n, i) => n + i.total, 0);
+
+  // One group per customer, in name order, each newest invoice first.
+  const groups = new Map<string, typeof invoices>();
+  for (const invoice of invoices) groups.set(invoice.name, [...(groups.get(invoice.name) ?? []), invoice]);
+  const customers = [...groups].sort(([a], [b]) => a.localeCompare(b));
   const s = settings.data;
 
   return (
@@ -53,38 +59,48 @@ export default async function InvoicesPage() {
         <PodNav current="/pod/invoices" />
       </header>
 
-      <PodPanel
-        title="Invoices"
-        hint={
-          unpaid.length
-            ? `${unpaid.length} unpaid, ${formatPrice(unpaid.reduce((n, i) => n + i.total, 0))} owing. Make a new one from an order on the Orders page.`
-            : "Everything’s paid. Make a new invoice from an order on the Orders page."
-        }
-        open
-      >
-        {invoices.length === 0 ? (
-          <p className="text-xl text-cream/70">No invoices yet.</p>
-        ) : (
-          <ItemTable headings={["Invoice", "Date", "Due", "Total", "Status"]} columnWidth="w-28">
-            {invoices.map((i) => (
-              <ItemRow
-                key={i.id}
-                name={
-                  <Link href={`/pod/invoices/${i.id}`} className="underline decoration-white/30 underline-offset-2 hover:text-gold">
-                    #{invoiceNumber(i.number)} · {i.name}
-                  </Link>
-                }
-                cells={[
-                  dayMonth(i.issuedOn),
-                  dayMonth(i.dueOn),
-                  formatPrice(i.total),
-                  <StatusChip key="status" status={invoiceStatus(i, today)} />,
-                ]}
-              />
-            ))}
-          </ItemTable>
-        )}
-      </PodPanel>
+      <section className="pod-card space-y-2 p-6 sm:p-8">
+        <h2 className="text-3xl">Invoices</h2>
+        <p className="text-cream/70">
+          {invoices.length === 0
+            ? "No invoices yet. Make one from an order on the Orders page."
+            : unpaid.length
+              ? `${unpaid.length} unpaid, ${formatPrice(owing(invoices))} owing. Tap a customer to see their invoices. Make new ones from an order on the Orders page.`
+              : "Everything’s paid. Tap a customer to see their invoices. Make new ones from an order on the Orders page."}
+        </p>
+      </section>
+
+      {customers.map(([name, theirs]) => {
+        const theirUnpaid = theirs.filter((i) => !i.paidOn).length;
+        return (
+          <PodPanel
+            key={name}
+            title={name}
+            hint={`${theirs.length} ${theirs.length === 1 ? "invoice" : "invoices"}${
+              theirUnpaid ? ` · ${theirUnpaid} unpaid, ${formatPrice(owing(theirs))} owing` : " · all paid"
+            }`}
+          >
+            <ItemTable headings={["Invoice", "Date", "Due", "Total", "Status"]} columnWidth="w-28">
+              {theirs.map((i) => (
+                <ItemRow
+                  key={i.id}
+                  name={
+                    <Link href={`/pod/invoices/${i.id}`} className="underline decoration-white/30 underline-offset-2 hover:text-gold">
+                      #{invoiceNumber(i.number)}
+                    </Link>
+                  }
+                  cells={[
+                    dayMonth(i.issuedOn),
+                    dayMonth(i.dueOn),
+                    formatPrice(i.total),
+                    <StatusChip key="status" status={invoiceStatus(i, today)} />,
+                  ]}
+                />
+              ))}
+            </ItemTable>
+          </PodPanel>
+        );
+      })}
 
       <PodPanel title="Your business details" hint="What goes on every new invoice. Invoices already made keep the details they were made with.">
         <PodForm action={saveInvoiceSettings} submitLabel="Save details">

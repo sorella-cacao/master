@@ -162,6 +162,12 @@ export default async function OrdersPage(props: PageProps<"/pod/orders">) {
           <p className="text-xl text-cream/80">You have enough stock for everything ordered.</p>
         ) : (
           <>
+            {baseKg.size > 0 && (
+              <p className="flex flex-wrap items-center gap-2 font-sans text-sm text-cream/80">
+                <span aria-hidden className="inline-block h-4 w-6 rounded border border-[#c98557] bg-[#e7b28e]" />
+                Made from {[...baseKg.keys()].join(" and ")} chocolate
+              </p>
+            )}
             <div className="space-y-3">
               {makeList.map((g) => (
                 <ItemTable
@@ -174,13 +180,14 @@ export default async function OrdersPage(props: PageProps<"/pod/orders">) {
                 >
                   {g.rows.map((r, index) => (
                     <Fragment key={r.id}>
-                      <ItemRow name={r.name} highlight={[1, 2]} compact cells={[r.toMake, formatGrams(r.kg)]} />
+                      <ItemRow name={r.name} highlight={[1, 2]} compact accent={!!r.base} cells={[r.toMake, formatGrams(r.kg)]} />
                       {r.base && g.rows[index + 1]?.base !== r.base && (
-                        <tr className="border-t-2 border-[#efb94f]">
-                          <th scope="row" colSpan={2} className="px-3 py-1 text-right font-sans font-semibold">
+                        <tr className="border-t-2 border-[#c98557]">
+                          <td aria-hidden />
+                          <th scope="row" className="whitespace-nowrap bg-[#e7b28e] px-2 py-1 text-right font-sans text-[0.7rem] font-semibold">
                             {r.base} total
                           </th>
-                          <td className="bg-[#efb94f] px-3 py-1 text-right font-semibold tabular-nums">
+                          <td className="bg-[#d9966a] px-3 py-1 text-right font-semibold tabular-nums">
                             {formatGrams(g.rows.filter((x) => x.base === r.base).reduce((n, x) => n + x.kg, 0))}
                           </td>
                         </tr>

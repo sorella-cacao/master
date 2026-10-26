@@ -58,10 +58,13 @@ export function ItemRow({
   cells,
   highlight = [],
   compact = false,
+  accent = false,
 }: {
   name: React.ReactNode;
   cells: React.ReactNode[];
   compact?: boolean;
+  /** Colour the highlighted boxes terracotta instead of honey, e.g. flavours made from 75% Dark. */
+  accent?: boolean;
   /** Column positions (0 = item name) to shade, matching the table's. */
   highlight?: number[];
 }) {
@@ -73,7 +76,7 @@ export function ItemRow({
       {cells.map((cell, i) => (
         <td
           key={i}
-          className={`${compact ? "px-3 py-1" : "px-4 py-2"} text-right tabular-nums ${highlight.includes(i + 1) ? "bg-[#f6cf7a] font-semibold text-cream" : ""}`}
+          className={`${compact ? "px-3 py-1" : "px-4 py-2"} text-right tabular-nums ${highlight.includes(i + 1) ? `${accent ? "bg-[#e7b28e]" : "bg-[#f6cf7a] font-semibold"} text-cream` : ""}`}
         >
           {cell}
         </td>

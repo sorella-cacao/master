@@ -59,48 +59,61 @@ export default async function InvoicesPage() {
         <PodNav current="/pod/invoices" />
       </header>
 
-      <section className="pod-card space-y-2 p-6 sm:p-8">
-        <h2 className="text-3xl">Invoices</h2>
-        <p className="text-cream/70">
-          {invoices.length === 0
+      <PodPanel
+        title="Invoices"
+        hint={
+          invoices.length === 0
             ? "No invoices yet. Make one from an order on the Orders page."
             : unpaid.length
-              ? `${unpaid.length} unpaid, ${formatPrice(owing(invoices))} owing. Tap a customer to see their invoices. Make new ones from an order on the Orders page.`
-              : "Everything’s paid. Tap a customer to see their invoices. Make new ones from an order on the Orders page."}
-        </p>
-      </section>
-
-      {customers.map(([name, theirs]) => {
-        const theirUnpaid = theirs.filter((i) => !i.paidOn).length;
-        return (
-          <PodPanel
-            key={name}
-            title={name}
-            hint={`${theirs.length} ${theirs.length === 1 ? "invoice" : "invoices"}${
-              theirUnpaid ? ` · ${theirUnpaid} unpaid, ${formatPrice(owing(theirs))} owing` : " · all paid"
-            }`}
-          >
-            <ItemTable headings={["Invoice", "Date", "Due", "Total", "Status"]} columnWidth="w-28">
-              {theirs.map((i) => (
-                <ItemRow
-                  key={i.id}
-                  name={
-                    <Link href={`/pod/invoices/${i.id}`} className="underline decoration-white/30 underline-offset-2 hover:text-gold">
-                      #{invoiceNumber(i.number)}
-                    </Link>
-                  }
-                  cells={[
-                    dayMonth(i.issuedOn),
-                    dayMonth(i.dueOn),
-                    formatPrice(i.total),
-                    <StatusChip key="status" status={invoiceStatus(i, today)} />,
-                  ]}
-                />
-              ))}
-            </ItemTable>
-          </PodPanel>
-        );
-      })}
+              ? `${unpaid.length} unpaid, ${formatPrice(owing(invoices))} owing. Tap a customer to see their invoices.`
+              : "Everything’s paid. Tap a customer to see their invoices."
+        }
+        open
+      >
+        {customers.length > 0 && (
+          <div className="overflow-hidden rounded-xl border border-white/15 font-sans text-sm">
+            <div className="grid grid-cols-[1fr_6rem_7rem] gap-3 bg-white/5 px-3 py-1.5 text-xs text-cream/70">
+              <span>Customer</span>
+              <span className="text-right">Invoices</span>
+              <span className="text-right">Owing</span>
+            </div>
+            {customers.map(([name, theirs]) => (
+              <details key={name} className="group border-t border-white/10 odd:bg-cacao-950/60">
+                <summary className="grid cursor-pointer list-none grid-cols-[1fr_6rem_7rem] gap-3 px-3 py-2 hover:text-gold [&::-webkit-details-marker]:hidden">
+                  <span className="flex items-center gap-2">
+                    <span aria-hidden className="text-xs text-cream/60 transition-transform group-open:rotate-90">
+                      ▸
+                    </span>
+                    {name}
+                  </span>
+                  <span className="text-right tabular-nums">{theirs.length}</span>
+                  <span className="text-right tabular-nums">{owing(theirs) ? formatPrice(owing(theirs)) : "—"}</span>
+                </summary>
+                <div className="px-3 pb-3 pl-8">
+                  <ItemTable headings={["Invoice", "Date", "Due", "Total", "Status"]} columnWidth="w-24">
+                    {theirs.map((i) => (
+                      <ItemRow
+                        key={i.id}
+                        name={
+                          <Link href={`/pod/invoices/${i.id}`} className="underline decoration-white/30 underline-offset-2 hover:text-gold">
+                            #{invoiceNumber(i.number)}
+                          </Link>
+                        }
+                        cells={[
+                          dayMonth(i.issuedOn),
+                          dayMonth(i.dueOn),
+                          formatPrice(i.total),
+                          <StatusChip key="status" status={invoiceStatus(i, today)} />,
+                        ]}
+                      />
+                    ))}
+                  </ItemTable>
+                </div>
+              </details>
+            ))}
+          </div>
+        )}
+      </PodPanel>
 
       <PodPanel title="Your business details" hint="What goes on every new invoice. Invoices already made keep the details they were made with.">
         <PodForm action={saveInvoiceSettings} submitLabel="Save details">

@@ -145,18 +145,20 @@ export default async function OrdersPage(props: PageProps<"/pod/orders">) {
                   key={g.title}
                   caption={g.title}
                   headings={[g.title === "Pure Cacao" ? "Size" : "Flavour", "Ordered", "In stock", "To make", "kg"]}
+                  highlight={[3, 4]}
                 >
                   {g.rows.map((r) => (
                     <ItemRow
                       key={r.id}
                       name={r.name}
+                      highlight={[3, 4]}
                       cells={[
                         r.ordered,
                         r.inStock,
-                        <span key="make" className={`text-lg ${r.toMake ? "font-medium text-gold" : "text-cream/70"}`}>
+                        <span key="make" className={`text-lg ${r.toMake ? "text-gold" : "text-cream/70"}`}>
                           {r.toMake}
                         </span>,
-                        <span key="kg" className={r.kg ? "" : "text-cream/70"}>
+                        <span key="kg" className={`text-lg ${r.kg ? "text-gold" : "text-cream/70"}`}>
                           {formatKg(r.kg)}
                         </span>,
                       ]}

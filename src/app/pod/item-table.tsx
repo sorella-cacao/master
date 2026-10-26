@@ -5,9 +5,12 @@
 export function ItemTable({
   caption,
   headings,
+  highlight = [],
   children,
 }: {
   caption?: string;
+  /** Column positions (0 = item name) to shade so they stand out. */
+  highlight?: number[];
   /** Column headings; the first is the item name, the rest are right-aligned. */
   headings: string[];
   children: React.ReactNode;
@@ -23,7 +26,13 @@ export function ItemTable({
         <thead>
           <tr className="text-sm text-cream/70">
             {headings.map((heading, i) => (
-              <th key={heading} scope="col" className={`px-4 py-2 font-normal ${i === 0 ? "text-left" : "text-right"}`}>
+              <th
+                key={heading}
+                scope="col"
+                className={`px-4 py-2 ${i === 0 ? "text-left" : "text-right"} ${
+                  highlight.includes(i) ? "bg-gold/15 font-medium text-gold" : "font-normal"
+                }`}
+              >
                 {heading}
               </th>
             ))}
@@ -36,14 +45,26 @@ export function ItemTable({
 }
 
 /** One item's row: its name, then a cell for each further column. */
-export function ItemRow({ name, cells }: { name: React.ReactNode; cells: React.ReactNode[] }) {
+export function ItemRow({
+  name,
+  cells,
+  highlight = [],
+}: {
+  name: React.ReactNode;
+  cells: React.ReactNode[];
+  /** Column positions (0 = item name) to shade, matching the table's. */
+  highlight?: number[];
+}) {
   return (
     <tr className="border-t border-white/10 odd:bg-cacao-950/60">
       <th scope="row" className="px-4 py-2 text-left font-normal">
         {name}
       </th>
       {cells.map((cell, i) => (
-        <td key={i} className="px-4 py-2 text-right tabular-nums">
+        <td
+          key={i}
+          className={`px-4 py-2 text-right tabular-nums ${highlight.includes(i + 1) ? "bg-gold/15 font-semibold" : ""}`}
+        >
           {cell}
         </td>
       ))}

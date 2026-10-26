@@ -16,7 +16,7 @@ function refresh() {
 /** Messages raised by the database functions are written for people; show them as-is. */
 function failed(error: { message?: string; code?: string }): SaveState {
   if (error.code === "P0001" && error.message) return { error: error.message };
-  if (error.code === "23505") return { error: "Another invoice already has that number." };
+  if (error.code === "23505") return { error: "This customer already has an invoice with that number." };
   console.error(error);
   return { error: "Couldn't save. Please try again." };
 }
@@ -99,9 +99,7 @@ export async function saveInvoiceSettings(_: SaveState, data: FormData): Promise
   const { supabase, isAdmin } = await getSession();
   if (!isAdmin) return NO_ACCESS;
   const terms = Number(text(data, "payment_terms_days"));
-  const next = Number(text(data, "next_number"));
   if (!Number.isInteger(terms) || terms < 0) return { error: "Enter payment terms in days, e.g. 7." };
-  if (!Number.isInteger(next) || next <= 0) return { error: "Enter the next invoice number, e.g. 12." };
 
   const { error } = await supabase
     .from("invoice_settings")
@@ -116,7 +114,6 @@ export async function saveInvoiceSettings(_: SaveState, data: FormData): Promise
       bank_bsb: text(data, "bank_bsb"),
       bank_account_number: text(data, "bank_account_number"),
       payment_terms_days: terms,
-      next_number: next,
     })
     .eq("id", true);
   if (error) return failed(error);

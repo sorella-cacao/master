@@ -29,12 +29,20 @@ const details = (data: FormData) => ({
   invoice_postage: data.get("invoice_postage") === "on",
 });
 
+/** "Next invoice #" from the form, or a message if it isn't a whole number from 1. */
+function nextInvoiceNumber(data: FormData) {
+  const value = Number(text(data, "next_invoice_number") || "1");
+  return Number.isInteger(value) && value > 0 ? value : null;
+}
+
 export async function addCustomer(_: SaveState, data: FormData): Promise<SaveState> {
   const { supabase, isAdmin } = await getSession();
   if (!isAdmin) return NO_ACCESS;
   const customer = details(data);
   if (!customer.name) return { error: "Enter the customer’s name." };
-  const { error } = await supabase.from("customers").insert(customer);
+  const next = nextInvoiceNumber(data);
+  if (!next) return { error: "Enter the next invoice number as a whole number, e.g. 1." };
+  const { error } = await supabase.from("customers").insert({ ...customer, next_invoice_number: next });
   if (error) return failed(error);
   refresh();
   return { ok: `Added ${customer.name}. Open them below to set their prices.` };
@@ -62,7 +70,9 @@ export async function saveCustomer(_: SaveState, data: FormData): Promise<SaveSt
     prices.push({ customer_id: id, stock_item_id: key.slice(6), price: Math.round(price * 100) / 100 });
   }
 
-  const saved = await supabase.from("customers").update(customer).eq("id", id);
+  const next = nextInvoiceNumber(data);
+  if (!next) return { error: "Enter the next invoice number as a whole number, e.g. 13." };
+  const saved = await supabase.from("customers").update({ ...customer, next_invoice_number: next }).eq("id", id);
   if (saved.error) return failed(saved.error);
   if (prices.length) {
     const { error } = await supabase.from("customer_prices").upsert(prices);

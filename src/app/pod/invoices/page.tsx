@@ -127,10 +127,7 @@ export default async function InvoicesPage() {
             <Field label="Bank account name" name="bank_account_name" value={s.bank_account_name} />
             <Field label="BSB" name="bank_bsb" value={s.bank_bsb} />
             <Field label="Account number" name="bank_account_number" value={s.bank_account_number} />
-            <div className="grid grid-cols-2 gap-4">
-              <Field label="Pay within (days)" name="payment_terms_days" value={String(s.payment_terms_days)} type="number" />
-              <Field label="Next invoice #" name="next_number" value={String(s.next_number)} type="number" />
-            </div>
+            <Field label="Pay within (days)" name="payment_terms_days" value={String(s.payment_terms_days)} type="number" />
           </div>
         </PodForm>
       </PodPanel>

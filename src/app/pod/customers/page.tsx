@@ -19,6 +19,7 @@ type Customer = {
   address: string | null;
   notes: string | null;
   invoice_postage: boolean;
+  next_invoice_number: number;
 };
 
 export default async function CustomersPage() {
@@ -34,7 +35,7 @@ export default async function CustomersPage() {
 
   const [groups, list, priceRows] = await Promise.all([
     getStockGroups(supabase),
-    supabase.from("customers").select("id, name, contact, email, phone, address, notes, invoice_postage").order("name"),
+    supabase.from("customers").select("id, name, contact, email, phone, address, notes, invoice_postage, next_invoice_number").order("name"),
     supabase.from("customer_prices").select("customer_id, stock_item_id, price"),
   ]);
   if (list.error) throw list.error;
@@ -127,6 +128,7 @@ function CustomerFields({ customer }: { customer?: Customer }) {
       <Field label="Contact name" name="contact" value={customer?.contact} />
       <Field label="Email" name="email" value={customer?.email} />
       <Field label="Phone" name="phone" value={customer?.phone} />
+      <Field label="Next invoice #" name="next_invoice_number" value={String(customer?.next_invoice_number ?? 1)} />
       <label className="block">
         <span className="eyebrow mb-1 block text-xs text-cream/70">Address (as on invoices)</span>
         <textarea name="address" rows={3} defaultValue={customer?.address ?? ""} className="pod-input py-2 text-sm" />

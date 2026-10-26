@@ -73,6 +73,7 @@ export type Database = {
           id: string
           invoice_postage: boolean
           name: string
+          next_invoice_number: number
           notes: string | null
           phone: string | null
           updated_at: string
@@ -85,6 +86,7 @@ export type Database = {
           id?: string
           invoice_postage?: boolean
           name: string
+          next_invoice_number?: number
           notes?: string | null
           phone?: string | null
           updated_at?: string
@@ -97,6 +99,7 @@ export type Database = {
           id?: string
           invoice_postage?: boolean
           name?: string
+          next_invoice_number?: number
           notes?: string | null
           phone?: string | null
           updated_at?: string
@@ -148,7 +151,6 @@ export type Database = {
           business_name: string
           email: string
           id: boolean
-          next_number: number
           payable_to: string
           payment_terms_days: number
           phone: string
@@ -163,7 +165,6 @@ export type Database = {
           business_name?: string
           email?: string
           id?: boolean
-          next_number?: number
           payable_to?: string
           payment_terms_days?: number
           phone?: string
@@ -178,7 +179,6 @@ export type Database = {
           business_name?: string
           email?: string
           id?: boolean
-          next_number?: number
           payable_to?: string
           payment_terms_days?: number
           phone?: string

@@ -10,7 +10,7 @@ import { PodPanel } from "../pod-panel";
 import { getSession } from "../session";
 import { type StockGroup, getStockGroups } from "../stock-items";
 import { deleteOrder, saveOrder, undoSale } from "./actions";
-import { type OrderGroup, OrderFields } from "./order-fields";
+import { type OrderCustomer, type OrderGroup, OrderFields } from "./order-fields";
 import { OrderStatus } from "./order-status";
 
 export const metadata: Metadata = { title: "Orders" };
@@ -25,9 +25,10 @@ type Order = {
   note: string | null;
   sent_at: string | null;
   lines: Line[];
+  invoice: { id: string; number: number } | null;
 };
 
-const ORDER_COLUMNS = "id, customer, kind, needed_by, status, note, sent_at, lines:order_lines(stock_item_id, quantity, unit_price)";
+const ORDER_COLUMNS = "id, customer, kind, needed_by, status, note, sent_at, lines:order_lines(stock_item_id, quantity, unit_price), invoice:invoices(id, number)";
 
 /**
  * Chocolate in one item, in kg: its own amount when set (e.g. 90g of 75% Dark in a mandarin bar),
@@ -80,7 +81,7 @@ export default async function OrdersPage(props: PageProps<"/pod/orders">) {
   const weekStart = mondayOf(typeof week === "string" && isDate(week) ? week : today);
   const weekEnd = addDays(weekStart, 6);
 
-  const [groups, open, sent, customerRows] = await Promise.all([
+  const [groups, open, sent, customerRows, customerList, priceRows] = await Promise.all([
     getStockGroups(supabase, { includeHidden: true }),
     supabase
       .from("orders")
@@ -90,12 +91,22 @@ export default async function OrdersPage(props: PageProps<"/pod/orders">) {
       .order("created_at"),
     supabase.from("orders").select(ORDER_COLUMNS).eq("status", "sent").order("sent_at", { ascending: false }).limit(30),
     supabase.from("orders").select("customer").eq("kind", "order").order("created_at", { ascending: false }).limit(500),
+    supabase.from("customers").select("id, name").order("name"),
+    supabase.from("customer_prices").select("customer_id, stock_item_id, price"),
   ]);
   if (open.error) throw open.error;
   if (sent.error) throw sent.error;
   const openOrders = open.data as Order[];
   const sentOrders = sent.data as Order[];
-  const customers = [...new Set((customerRows.data ?? []).map((r) => r.customer))].sort();
+  // Saved customers (with their own prices), then anyone else orders have been for.
+  const customers: OrderCustomer[] = (customerList.data ?? []).map((c) => ({
+    name: c.name,
+    prices: Object.fromEntries((priceRows.data ?? []).filter((p) => p.customer_id === c.id).map((p) => [p.stock_item_id, Number(p.price)])),
+  }));
+  const saved = new Set(customers.map((c) => c.name.toLowerCase()));
+  for (const name of new Set((customerRows.data ?? []).map((r) => r.customer))) {
+    if (!saved.has(name.toLowerCase())) customers.push({ name, prices: {} });
+  }
 
   const items = new Map(groups.flatMap((g) => g.items.map((i) => [i.id, { ...i, group: g.title }] as const)));
 
@@ -349,7 +360,7 @@ function OrderCard({
       <div className="px-4 pb-4 sm:px-6 sm:pb-6">
         {!sale && (
           <div>
-            <OrderStatus orderId={order.id} status={order.status} itemCount={itemCount(order)} />
+            <OrderStatus orderId={order.id} status={order.status} itemCount={itemCount(order)} invoice={order.invoice} />
           </div>
         )}
 

@@ -1,8 +1,10 @@
 "use client";
 
-import { startTransition, useActionState, useState } from "react";
+import Link from "next/link";
+import { startTransition, useActionState } from "react";
 import type { SaveState } from "../actions";
 import { useConfirm } from "../confirm-dialog";
+import { createInvoice } from "../invoices/actions";
 import { setOrderStatus } from "./actions";
 
 const STATUSES = [
@@ -11,10 +13,19 @@ const STATUSES = [
   { value: "sent", label: "Sent" },
 ] as const;
 
-/** One-tap status buttons (marking an order Sent takes its items off stock), and the invoice button. */
-export function OrderStatus({ orderId, status, itemCount }: { orderId: string; status: string; itemCount: number }) {
+/** One-tap status buttons (marking an order Sent takes its items off stock), and the order's invoice. */
+export function OrderStatus({
+  orderId,
+  status,
+  itemCount,
+  invoice,
+}: {
+  orderId: string;
+  status: string;
+  itemCount: number;
+  invoice: { id: string; number: number } | null;
+}) {
   const [state, formAction, pending] = useActionState(setOrderStatus, undefined as SaveState);
-  const [invoiceNote, setInvoiceNote] = useState(false);
   const { confirm, dialog } = useConfirm();
 
   async function choose(next: string) {
@@ -45,16 +56,26 @@ export function OrderStatus({ orderId, status, itemCount }: { orderId: string; s
           </button>
         ))}
       </div>
-      {/* Placeholder until invoices are set up. */}
-      <button
-        type="button"
-        onClick={() => setInvoiceNote(true)}
-        className="eyebrow rounded-full border border-white/20 px-4 py-2 text-cream/70 transition-colors hover:border-gold hover:text-gold"
-      >
-        Generate invoice
-      </button>
+      {invoice ? (
+        <Link
+          href={`/pod/invoices/${invoice.id}`}
+          className="eyebrow rounded-full border border-white/20 px-4 py-2 text-cream/70 transition-colors hover:border-gold hover:text-gold"
+        >
+          View invoice #{String(invoice.number).padStart(3, "0")}
+        </Link>
+      ) : (
+        <form action={createInvoice}>
+          <input type="hidden" name="order_id" value={orderId} />
+          <button
+            type="submit"
+            className="eyebrow rounded-full border border-white/20 px-4 py-2 text-cream/70 transition-colors hover:border-gold hover:text-gold"
+          >
+            Generate invoice
+          </button>
+        </form>
+      )}
       <p role="status" className={`font-sans text-sm ${state?.error ? "text-gold" : "text-cream/70"}`}>
-        {pending ? "Saving…" : (state?.error ?? state?.ok ?? (invoiceNote ? "Invoices are coming soon." : ""))}
+        {pending ? "Saving…" : (state?.error ?? state?.ok ?? "")}
       </p>
       {dialog}
     </div>

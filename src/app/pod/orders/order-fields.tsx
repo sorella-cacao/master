@@ -6,14 +6,17 @@ import { ItemRow, ItemTable } from "../item-table";
 
 export type OrderGroup = { title: string; items: { id: string; name: string; price: number }[] };
 
-/** Who, when, and a quantity box for every item, with the order total kept up to date. */
+/** A customer the order can be for, with any prices of their own (by stock item). */
+export type OrderCustomer = { name: string; prices: Record<string, number> };
+
+/** Who, when, and a quantity box for every item, with prices for that customer and the order total kept up to date. */
 export function OrderFields({
   groups,
   customers,
   initial,
 }: {
   groups: OrderGroup[];
-  customers: string[];
+  customers: OrderCustomer[];
   initial?: {
     customer: string;
     neededBy: string | null;
@@ -25,41 +28,57 @@ export function OrderFields({
 }) {
   const ref = useRef<HTMLDivElement>(null);
   const listId = useId();
+  const initialCustomer = initial?.customer ?? "";
+  const initialQuantities = initial?.quantities;
+  const [customer, setCustomer] = useState(initialCustomer);
+  const [quantities, setQuantities] = useState<Record<string, number>>(initialQuantities ?? {});
 
-  const priceOf = new Map([
-    ...groups.flatMap((g) => g.items.map((i) => [i.id, i.price] as const)),
-    ...Object.entries(initial?.prices ?? {}),
-  ]);
-  const totalOf = (quantities: [string, number][]) =>
-    Math.round(quantities.reduce((sum, [id, qty]) => sum + (qty > 0 ? qty * (priceOf.get(id) ?? 0) : 0), 0) * 100) / 100;
-
-  const initialTotal = totalOf(Object.entries(initial?.quantities ?? {}));
-  const [total, setTotal] = useState(initialTotal);
+  const theirPrices = customers.find((c) => c.name.toLowerCase() === customer.trim().toLowerCase())?.prices ?? {};
+  const priceOf = (id: string, standard: number) => initial?.prices[id] ?? theirPrices[id] ?? standard;
+  const standardOf = new Map(groups.flatMap((g) => g.items.map((i) => [i.id, i.price] as const)));
+  const total =
+    Math.round(
+      Object.entries(quantities).reduce((sum, [id, qty]) => sum + (qty > 0 ? qty * priceOf(id, standardOf.get(id) ?? 0) : 0), 0) * 100,
+    ) / 100;
 
   function recalculate() {
     const inputs = ref.current?.querySelectorAll<HTMLInputElement>("input[data-qty]") ?? [];
-    setTotal(totalOf([...inputs].map((input) => [input.dataset.qty!, Number(input.value) || 0])));
+    setQuantities(Object.fromEntries([...inputs].map((input) => [input.dataset.qty!, Number(input.value) || 0])));
   }
 
   // Clearing the form after saving puts the boxes back without firing input events.
   useEffect(() => {
     const form = ref.current?.closest("form");
-    const onReset = () => setTotal(initialTotal);
+    const onReset = () => {
+      setCustomer(initialCustomer);
+      setQuantities(initialQuantities ?? {});
+    };
     form?.addEventListener("reset", onReset);
     return () => form?.removeEventListener("reset", onReset);
-  }, [initialTotal]);
+  }, [initialCustomer, initialQuantities]);
 
   return (
     <div ref={ref} onInput={recalculate} className="space-y-6">
       <div className="grid gap-4 sm:grid-cols-[1fr_12rem]">
         <label className="block">
           <span className="eyebrow mb-2 block text-cream/70">Customer</span>
-          <input name="customer" required list={listId} defaultValue={initial?.customer} placeholder="e.g. Bronte Dispensary" className="pod-input" />
+          <input
+            name="customer"
+            required
+            list={listId}
+            value={customer}
+            onChange={(e) => setCustomer(e.target.value)}
+            placeholder="e.g. Bronte Dispensary"
+            className="pod-input"
+          />
           <datalist id={listId}>
             {customers.map((c) => (
-              <option key={c} value={c} />
+              <option key={c.name} value={c.name} />
             ))}
           </datalist>
+          {Object.keys(theirPrices).length > 0 && (
+            <span className="mt-1 block font-sans text-sm text-cream/70">Using {customer.trim()}’s prices.</span>
+          )}
         </label>
         <label className="block">
           <span className="eyebrow mb-2 block text-cream/70">Needed by</span>
@@ -81,7 +100,7 @@ export function OrderFields({
                 key={item.id}
                 name={item.name}
                 cells={[
-                  formatPrice(priceOf.get(item.id) ?? item.price),
+                  formatPrice(priceOf(item.id, item.price)),
                   <input
                     key="qty"
                     type="number"

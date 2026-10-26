@@ -12,6 +12,10 @@ const legacyWorkshops = {
 };
 
 const nextConfig: NextConfig = {
+  // The invoice PDF reads its fonts from disk, so ship them with that route.
+  outputFileTracingIncludes: {
+    "/pod/invoices/**": ["./src/app/pod/invoices/fonts/*.woff"],
+  },
   // Keep old Squarespace links (and search rankings) working.
   async redirects() {
     return [

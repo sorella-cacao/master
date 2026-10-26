@@ -31,6 +31,218 @@ export type Database = {
         }
         Relationships: []
       }
+      customer_prices: {
+        Row: {
+          customer_id: string
+          price: number
+          stock_item_id: string
+        }
+        Insert: {
+          customer_id: string
+          price: number
+          stock_item_id: string
+        }
+        Update: {
+          customer_id?: string
+          price?: number
+          stock_item_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "customer_prices_customer_id_fkey"
+            columns: ["customer_id"]
+            isOneToOne: false
+            referencedRelation: "customers"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "customer_prices_stock_item_id_fkey"
+            columns: ["stock_item_id"]
+            isOneToOne: false
+            referencedRelation: "stock_items"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      customers: {
+        Row: {
+          address: string | null
+          contact: string | null
+          created_at: string
+          email: string | null
+          id: string
+          name: string
+          notes: string | null
+          phone: string | null
+          updated_at: string
+        }
+        Insert: {
+          address?: string | null
+          contact?: string | null
+          created_at?: string
+          email?: string | null
+          id?: string
+          name: string
+          notes?: string | null
+          phone?: string | null
+          updated_at?: string
+        }
+        Update: {
+          address?: string | null
+          contact?: string | null
+          created_at?: string
+          email?: string | null
+          id?: string
+          name?: string
+          notes?: string | null
+          phone?: string | null
+          updated_at?: string
+        }
+        Relationships: []
+      }
+      invoice_lines: {
+        Row: {
+          description: string
+          id: string
+          invoice_id: string
+          position: number
+          quantity: number
+          unit_price: number
+        }
+        Insert: {
+          description?: string
+          id?: string
+          invoice_id: string
+          position?: number
+          quantity?: number
+          unit_price?: number
+        }
+        Update: {
+          description?: string
+          id?: string
+          invoice_id?: string
+          position?: number
+          quantity?: number
+          unit_price?: number
+        }
+        Relationships: [
+          {
+            foreignKeyName: "invoice_lines_invoice_id_fkey"
+            columns: ["invoice_id"]
+            isOneToOne: false
+            referencedRelation: "invoices"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      invoice_settings: {
+        Row: {
+          abn: string
+          address: string
+          bank_account_name: string
+          bank_account_number: string
+          bank_bsb: string
+          business_name: string
+          email: string
+          id: boolean
+          next_number: number
+          payable_to: string
+          payment_terms_days: number
+          phone: string
+          updated_at: string
+        }
+        Insert: {
+          abn?: string
+          address?: string
+          bank_account_name?: string
+          bank_account_number?: string
+          bank_bsb?: string
+          business_name?: string
+          email?: string
+          id?: boolean
+          next_number?: number
+          payable_to?: string
+          payment_terms_days?: number
+          phone?: string
+          updated_at?: string
+        }
+        Update: {
+          abn?: string
+          address?: string
+          bank_account_name?: string
+          bank_account_number?: string
+          bank_bsb?: string
+          business_name?: string
+          email?: string
+          id?: boolean
+          next_number?: number
+          payable_to?: string
+          payment_terms_days?: number
+          phone?: string
+          updated_at?: string
+        }
+        Relationships: []
+      }
+      invoices: {
+        Row: {
+          bill_to: string
+          created_at: string
+          customer_id: string | null
+          due_on: string
+          id: string
+          issued_on: string
+          notes: string | null
+          number: number
+          order_id: string | null
+          paid_on: string | null
+          seller: Json
+          updated_at: string
+        }
+        Insert: {
+          bill_to?: string
+          created_at?: string
+          customer_id?: string | null
+          due_on: string
+          id?: string
+          issued_on: string
+          notes?: string | null
+          number: number
+          order_id?: string | null
+          paid_on?: string | null
+          seller: Json
+          updated_at?: string
+        }
+        Update: {
+          bill_to?: string
+          created_at?: string
+          customer_id?: string | null
+          due_on?: string
+          id?: string
+          issued_on?: string
+          notes?: string | null
+          number?: number
+          order_id?: string | null
+          paid_on?: string | null
+          seller?: Json
+          updated_at?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "invoices_customer_id_fkey"
+            columns: ["customer_id"]
+            isOneToOne: false
+            referencedRelation: "customers"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "invoices_order_id_fkey"
+            columns: ["order_id"]
+            isOneToOne: true
+            referencedRelation: "orders"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       order_lines: {
         Row: {
           id: string
@@ -74,6 +286,7 @@ export type Database = {
         Row: {
           created_at: string
           customer: string
+          customer_id: string | null
           id: string
           kind: string
           needed_by: string | null
@@ -85,6 +298,7 @@ export type Database = {
         Insert: {
           created_at?: string
           customer: string
+          customer_id?: string | null
           id?: string
           kind?: string
           needed_by?: string | null
@@ -96,6 +310,7 @@ export type Database = {
         Update: {
           created_at?: string
           customer?: string
+          customer_id?: string | null
           id?: string
           kind?: string
           needed_by?: string | null
@@ -104,7 +319,15 @@ export type Database = {
           status?: string
           updated_at?: string
         }
-        Relationships: []
+        Relationships: [
+          {
+            foreignKeyName: "orders_customer_id_fkey"
+            columns: ["customer_id"]
+            isOneToOne: false
+            referencedRelation: "customers"
+            referencedColumns: ["id"]
+          },
+        ]
       }
       product_variants: {
         Row: {
@@ -452,10 +675,23 @@ export type Database = {
     }
     Functions: {
       pod_add_made: { Args: { counts: Json }; Returns: undefined }
+      pod_create_invoice: { Args: { order_id: string }; Returns: string }
       pod_record_sale: { Args: { customer: string; kind: string; lines: Json; note: string; price_list: string }; Returns: string }
       pod_save_order: {
         Args: { customer: string; lines: Json; needed_by: string | null; note: string | null; order_id: string | null }
         Returns: string
+      }
+      pod_save_invoice: {
+        Args: {
+          bill_to: string
+          due_on: string
+          invoice_id: string
+          issued_on: string
+          lines: Json
+          notes: string
+          number: number
+        }
+        Returns: undefined
       }
       pod_save_stock_take: { Args: { counts: Json }; Returns: undefined }
       pod_set_order_status: { Args: { order_id: string; status: string }; Returns: undefined }

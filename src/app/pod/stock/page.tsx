@@ -1,12 +1,11 @@
 import type { Metadata } from "next";
-import { formatPrice } from "@/lib/format";
 import { ItemRow, ItemTable } from "../item-table";
 import { PodForm } from "../pod-form";
 import { PodNav } from "../pod-nav";
 import { PodPanel } from "../pod-panel";
 import { getSession } from "../session";
 import { type StockGroup, getStockGroups } from "../stock-items";
-import { addMade, addOneOffFlavour, recordSale, saveStockTake, savePrices, setFlavourHidden } from "./actions";
+import { addMade, addOneOffFlavour, recordSale, saveStockTake, setFlavourHidden } from "./actions";
 import { type SaleGroup, SaleFields } from "./sale-fields";
 
 export const metadata: Metadata = { title: "Stock" };
@@ -56,7 +55,7 @@ export default async function StockPage() {
       >
         <div className="space-y-3">
           {groups.map((group) => (
-            <ItemTable key={group.productId} caption={group.title} headings={[itemHeading(group), "In stock", "Wholesale"]} collapsible>
+            <ItemTable key={group.productId} caption={group.title} headings={[itemHeading(group), "In stock"]} collapsible>
               {group.items.map((item) => (
                 <ItemRow
                   key={item.id}
@@ -73,9 +72,6 @@ export default async function StockPage() {
                   cells={[
                     <span key="qty" className={item.quantity < 0 ? "text-gold" : ""}>
                       {item.quantity}
-                    </span>,
-                    <span key="price" className="text-cream/80">
-                      {formatPrice(item.wholesalePrice)}
                     </span>,
                   ]}
                 />
@@ -97,43 +93,12 @@ export default async function StockPage() {
         </PodForm>
       </PodPanel>
 
-      <PodPanel title="Wholesale prices" hint="New orders use these prices. Orders already entered keep theirs.">
-        <PodForm action={savePrices} submitLabel="Save prices">
-          <div className="space-y-3">
-            {groups.map((group) => (
-              <ItemTable key={group.productId} caption={group.title} headings={[itemHeading(group), "Wholesale ($)"]} columnWidth="w-28" collapsible>
-                {group.items.map((item) => (
-                  <ItemRow
-                    key={item.id}
-                    name={item.name}
-                    cells={[
-                      <input
-                        key="price"
-                        type="number"
-                        name={`price:${item.id}`}
-                        min="0"
-                        step="0.01"
-                        inputMode="decimal"
-                        defaultValue={item.wholesalePrice.toFixed(2)}
-                        required
-                        aria-label={`${group.title} ${item.name} wholesale price`}
-                        className="pod-input w-20 px-2 py-1 text-right text-sm"
-                      />,
-                    ]}
-                  />
-                ))}
-              </ItemTable>
-            ))}
-          </div>
-        </PodForm>
-      </PodPanel>
-
       <PodPanel
         title="Add a one-off flavour"
         hint="For a flavour you’re making that isn’t on the website. It appears in stock and orders, never in the shop."
       >
         <PodForm action={addOneOffFlavour} submitLabel="Add flavour" resetOnSuccess>
-          <div className="grid gap-4 sm:grid-cols-[12rem_1fr_9rem]">
+          <div className="grid gap-4 sm:grid-cols-[12rem_1fr]">
             <label className="block">
               <span className="eyebrow mb-2 block text-cream/70">Size</span>
               <select name="product_id" className="pod-input">
@@ -147,10 +112,6 @@ export default async function StockPage() {
             <label className="block">
               <span className="eyebrow mb-2 block text-cream/70">Flavour</span>
               <input name="name" required placeholder="e.g. 75% Dark & Local Figs" className="pod-input" />
-            </label>
-            <label className="block">
-              <span className="eyebrow mb-2 block text-cream/70">Wholesale ($)</span>
-              <input type="number" name="price" min="0" step="0.01" inputMode="decimal" required className="pod-input" />
             </label>
           </div>
         </PodForm>
@@ -200,29 +161,30 @@ export default async function StockPage() {
       >
         <PodForm action={recordSale} submitLabel="Save and take off stock" resetOnSuccess>
           <input type="hidden" name="kind" value="spontaneous" />
-          <SaleFields kind="spontaneous" groups={saleGroups(groups, "wholesale")} />
+          <SaleFields kind="spontaneous" groups={saleGroups(groups)} />
         </PodForm>
       </PodPanel>
 
       <PodPanel title="Market" hint="Add what sold at a market. It comes off stock and goes into order history.">
         <PodForm action={recordSale} submitLabel="Save and take off stock" resetOnSuccess>
           <input type="hidden" name="kind" value="market" />
-          <SaleFields kind="market" groups={saleGroups(groups, "retail")} />
+          <SaleFields kind="market" groups={saleGroups(groups)} />
         </PodForm>
       </PodPanel>
     </div>
   );
 }
 
-/** Sizes and flavours for the sale forms, at wholesale or website prices (one-off flavours fall back to wholesale). */
-const saleGroups = (groups: StockGroup[], prices: "wholesale" | "retail"): SaleGroup[] =>
+/** Sizes and flavours for the sale forms, with both prices (one-off flavours have no website price, so use wholesale). */
+const saleGroups = (groups: StockGroup[]): SaleGroup[] =>
   groups.map((g) => ({
     title: g.title,
     items: g.items.map((i) => ({
       id: i.id,
       name: i.name,
       inStock: i.quantity,
-      price: prices === "retail" ? (i.retailPrice ?? i.wholesalePrice) : i.wholesalePrice,
+      wholesale: i.wholesalePrice,
+      retail: i.retailPrice ?? i.wholesalePrice,
     })),
   }));
 

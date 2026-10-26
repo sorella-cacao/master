@@ -55,40 +55,18 @@ export async function saveStockTake(_: SaveState, data: FormData): Promise<SaveS
   return { ok: "Stock take saved." };
 }
 
-export async function savePrices(_: SaveState, data: FormData): Promise<SaveState> {
-  const { supabase, isAdmin } = await getSession();
-  if (!isAdmin) return NO_ACCESS;
-
-  const prices: { id: string; price: number }[] = [];
-  for (const [key, raw] of data) {
-    if (!key.startsWith("price:")) continue;
-    const price = Number(String(raw).trim().replace(/^\$/, ""));
-    if (String(raw).trim() === "" || !Number.isFinite(price) || price < 0) {
-      return { error: "Enter every price as a number, e.g. 9.50." };
-    }
-    prices.push({ id: key.slice(6), price: Math.round(price * 100) / 100 });
-  }
-  for (const { id, price } of prices) {
-    const { error } = await supabase.from("stock_items").update({ wholesale_price: price }).eq("id", id);
-    if (error) return failed(error);
-  }
-  refresh();
-  return { ok: "Prices saved. Existing orders keep their prices." };
-}
-
 export async function addOneOffFlavour(_: SaveState, data: FormData): Promise<SaveState> {
   const { supabase, isAdmin } = await getSession();
   if (!isAdmin) return NO_ACCESS;
 
   const productId = String(data.get("product_id") ?? "");
   const name = String(data.get("name") ?? "").trim();
-  const price = Number(String(data.get("price") ?? "").trim().replace(/^\$/, ""));
   if (!name) return { error: "Enter the flavour's name." };
-  if (!Number.isFinite(price) || price < 0) return { error: "Enter its wholesale price, e.g. 9.50." };
 
+  // A one-off flavour is sold at the same wholesale price as the size's other flavours.
   const { data: last } = await supabase
     .from("stock_items")
-    .select("position")
+    .select("position, wholesale_price")
     .eq("product_id", productId)
     .order("position", { ascending: false })
     .limit(1)
@@ -97,7 +75,7 @@ export async function addOneOffFlavour(_: SaveState, data: FormData): Promise<Sa
   const { error } = await supabase.from("stock_items").insert({
     product_id: productId,
     name,
-    wholesale_price: Math.round(price * 100) / 100,
+    wholesale_price: last?.wholesale_price ?? 0,
     is_extra: true,
     position: (last?.position ?? -1) + 1,
   });
@@ -128,6 +106,8 @@ export async function recordSale(_: SaveState, data: FormData): Promise<SaveStat
 
   const kind = String(data.get("kind"));
   if (kind !== "spontaneous" && kind !== "market") return { error: "Couldn't save. Please try again." };
+  const priceList = kind === "market" ? "retail" : String(data.get("price_list"));
+  if (priceList !== "wholesale" && priceList !== "retail") return { error: "Choose wholesale or retail." };
   const ids = data.getAll("line_item").map(String);
   const quantities = data.getAll("line_qty").map((q) => Number(q));
   if (ids.some((id) => !id)) return { error: "Choose a flavour on every line." };
@@ -140,6 +120,7 @@ export async function recordSale(_: SaveState, data: FormData): Promise<SaveStat
     customer: String(data.get("customer") ?? ""),
     note: String(data.get("note") ?? ""),
     lines,
+    price_list: priceList,
   });
   if (error) return failed(error);
   refresh();

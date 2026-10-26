@@ -178,7 +178,7 @@ export default async function OrdersPage(props: PageProps<"/pod/orders">) {
                       <Fragment key={r.id}>
                         <ItemRow name={r.name} highlight={[1, 2]} accent={!!r.base} cells={[r.toMake, formatGrams(r.kg)]} />
                         {r.base && g.rows[index + 1]?.base !== r.base && (
-                          <tr className="border-t-2 border-[#c98557]">
+                          <tr className="border-t border-white/10">
                             <td aria-hidden />
                             <th scope="row" className="whitespace-nowrap bg-[#e7b28e] px-2 py-1 text-right font-sans text-[0.7rem] font-semibold">
                               {r.base} total

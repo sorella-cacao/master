@@ -1,6 +1,6 @@
 "use client";
 
-import { startTransition, useActionState } from "react";
+import { startTransition, useActionState, useState } from "react";
 import type { SaveState } from "../actions";
 import { setOrderStatus } from "./actions";
 
@@ -10,9 +10,10 @@ const STATUSES = [
   { value: "sent", label: "Sent" },
 ] as const;
 
-/** One-tap status buttons; marking an order Sent takes its items off stock. */
+/** One-tap status buttons (marking an order Sent takes its items off stock), and the invoice button. */
 export function OrderStatus({ orderId, status, itemCount }: { orderId: string; status: string; itemCount: number }) {
   const [state, formAction, pending] = useActionState(setOrderStatus, undefined as SaveState);
+  const [invoiceNote, setInvoiceNote] = useState(false);
 
   function choose(next: string) {
     if (next === status) return;
@@ -42,8 +43,16 @@ export function OrderStatus({ orderId, status, itemCount }: { orderId: string; s
           </button>
         ))}
       </div>
+      {/* Placeholder until invoices are set up. */}
+      <button
+        type="button"
+        onClick={() => setInvoiceNote(true)}
+        className="eyebrow rounded-full border border-white/20 px-4 py-2 text-cream/70 transition-colors hover:border-gold hover:text-gold"
+      >
+        Generate invoice
+      </button>
       <p role="status" className={`font-sans text-sm ${state?.error ? "text-gold" : "text-cream/70"}`}>
-        {pending ? "Saving…" : (state?.error ?? state?.ok ?? "")}
+        {pending ? "Saving…" : (state?.error ?? state?.ok ?? (invoiceNote ? "Invoices are coming soon." : ""))}
       </p>
     </div>
   );

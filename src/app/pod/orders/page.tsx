@@ -2,6 +2,7 @@ import type { Metadata } from "next";
 import Link from "next/link";
 import { formatPrice } from "@/lib/format";
 import { addDays, isDate, mondayOf, shortDate, sydneyToday } from "@/lib/weeks";
+import { ItemRow, ItemTable } from "../item-table";
 import { PodForm } from "../pod-form";
 import { PodNav } from "../pod-nav";
 import { getSession } from "../session";
@@ -140,33 +141,28 @@ export default async function OrdersPage(props: PageProps<"/pod/orders">) {
           <>
             <div className="grid gap-6 lg:grid-cols-2">
               {plan.map((g) => (
-                <div key={g.title} className="overflow-x-auto">
-                  <table className="w-full font-sans text-base">
-                    <caption className="pb-2 text-left font-serif text-2xl text-gold">{g.title}</caption>
-                    <thead>
-                      <tr className="eyebrow text-left text-cream/70">
-                        <th className="py-2 pr-3 font-normal">{g.title === "Pure Cacao" ? "Size" : "Flavour"}</th>
-                        <th className="py-2 pr-3 text-right font-normal">Ordered</th>
-                        <th className="py-2 pr-3 text-right font-normal">In stock</th>
-                        <th className="py-2 pr-3 text-right font-normal">To make</th>
-                        <th className="py-2 text-right font-normal">kg</th>
-                      </tr>
-                    </thead>
-                    <tbody>
-                      {g.rows.map((r) => (
-                        <tr key={r.id} className="border-t border-white/10">
-                          <td className="py-2.5 pr-3">{r.name}</td>
-                          <td className="py-2.5 pr-3 text-right tabular-nums">{r.ordered}</td>
-                          <td className="py-2.5 pr-3 text-right tabular-nums">{r.inStock}</td>
-                          <td className={`py-2.5 pr-3 text-right text-lg tabular-nums ${r.toMake ? "font-medium text-gold" : "text-cream/70"}`}>
-                            {r.toMake}
-                          </td>
-                          <td className={`py-2.5 text-right tabular-nums ${r.kg ? "" : "text-cream/70"}`}>{formatKg(r.kg)}</td>
-                        </tr>
-                      ))}
-                    </tbody>
-                  </table>
-                </div>
+                <ItemTable
+                  key={g.title}
+                  caption={g.title}
+                  headings={[g.title === "Pure Cacao" ? "Size" : "Flavour", "Ordered", "In stock", "To make", "kg"]}
+                >
+                  {g.rows.map((r) => (
+                    <ItemRow
+                      key={r.id}
+                      name={r.name}
+                      cells={[
+                        r.ordered,
+                        r.inStock,
+                        <span key="make" className={`text-lg ${r.toMake ? "font-medium text-gold" : "text-cream/70"}`}>
+                          {r.toMake}
+                        </span>,
+                        <span key="kg" className={r.kg ? "" : "text-cream/70"}>
+                          {formatKg(r.kg)}
+                        </span>,
+                      ]}
+                    />
+                  ))}
+                </ItemTable>
               ))}
             </div>
             <p className="font-sans text-lg">
@@ -285,32 +281,27 @@ function OrderCard({
         <OrderStatus orderId={order.id} status={order.status} itemCount={itemCount(order)} />
       </div>
 
-      <div className="mt-4 overflow-x-auto">
-        <table className="w-full font-sans text-base">
-          <thead>
-            <tr className="eyebrow text-left text-cream/70">
-              <th className="py-2 pr-3 font-normal">Item</th>
-              <th className="py-2 pr-3 text-right font-normal">Qty</th>
-              <th className="py-2 pr-3 text-right font-normal">Each</th>
-              <th className="py-2 text-right font-normal">Total</th>
-            </tr>
-          </thead>
-          <tbody>
-            {order.lines.map((line) => {
-              const item = items.get(line.stock_item_id);
-              return (
-                <tr key={line.stock_item_id} className="border-t border-white/10">
-                  <td className="py-2 pr-3">
+      <div className="mt-4">
+        <ItemTable headings={["Item", "Qty", "Each", "Total"]}>
+          {order.lines.map((line) => {
+            const item = items.get(line.stock_item_id);
+            return (
+              <ItemRow
+                key={line.stock_item_id}
+                name={
+                  <>
                     {item?.name ?? "Unknown item"} <span className="text-cream/70">· {item?.group}</span>
-                  </td>
-                  <td className="py-2 pr-3 text-right tabular-nums">{line.quantity}</td>
-                  <td className="py-2 pr-3 text-right tabular-nums">{formatPrice(Number(line.unit_price))}</td>
-                  <td className="py-2 text-right tabular-nums">{formatPrice(line.quantity * Number(line.unit_price))}</td>
-                </tr>
-              );
-            })}
-          </tbody>
-        </table>
+                  </>
+                }
+                cells={[
+                  line.quantity,
+                  formatPrice(Number(line.unit_price)),
+                  formatPrice(line.quantity * Number(line.unit_price)),
+                ]}
+              />
+            );
+          })}
+        </ItemTable>
       </div>
       {order.note && <p className="mt-3 italic text-cream/80">{order.note}</p>}
       {children}

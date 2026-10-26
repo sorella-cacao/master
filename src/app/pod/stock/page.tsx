@@ -58,38 +58,31 @@ export default async function StockPage() {
 
         <div className="grid gap-6 lg:grid-cols-2">
           {groups.map((group) => (
-            <article key={group.productId} className="rounded-2xl border border-white/10 bg-cacao-950/40 p-5 sm:p-6">
-              <h3 className="text-2xl text-gold">{group.title}</h3>
-              <div className="mt-3 overflow-x-auto">
-                <table className="w-full font-sans text-base">
-                  <thead>
-                    <tr className="eyebrow text-left text-cream/70">
-                      <th className="py-2 pr-4 font-normal">{group.title === "Pure Cacao" ? "Size" : "Flavour"}</th>
-                      <th className="py-2 pr-4 text-right font-normal">In stock</th>
-                      <th className="py-2 text-right font-normal">Wholesale</th>
-                    </tr>
-                  </thead>
-                  <tbody>
-                    {group.items.map((item) => (
-                      <tr key={item.id} className="border-t border-white/10">
-                        <td className="py-2.5 pr-4">
-                          {item.name}
-                          {item.isExtra && (
-                            <span className="eyebrow ml-2 rounded-full border border-white/20 px-2 py-0.5 text-[0.65rem] text-cream/70">
-                              One-off
-                            </span>
-                          )}
-                        </td>
-                        <td className={`py-2.5 pr-4 text-right text-lg tabular-nums ${item.quantity < 0 ? "text-gold" : ""}`}>
-                          {item.quantity}
-                        </td>
-                        <td className="py-2.5 text-right tabular-nums text-cream/80">{formatPrice(item.wholesalePrice)}</td>
-                      </tr>
-                    ))}
-                  </tbody>
-                </table>
-              </div>
-            </article>
+            <ItemTable key={group.productId} caption={group.title} headings={[itemHeading(group), "In stock", "Wholesale"]}>
+              {group.items.map((item) => (
+                <ItemRow
+                  key={item.id}
+                  name={
+                    <>
+                      {item.name}
+                      {item.isExtra && (
+                        <span className="eyebrow ml-2 rounded-full border border-white/20 px-2 py-0.5 text-[0.65rem] text-cream/70">
+                          One-off
+                        </span>
+                      )}
+                    </>
+                  }
+                  cells={[
+                    <span key="qty" className={`text-lg ${item.quantity < 0 ? "text-gold" : ""}`}>
+                      {item.quantity}
+                    </span>,
+                    <span key="price" className="text-cream/80">
+                      {formatPrice(item.wholesalePrice)}
+                    </span>,
+                  ]}
+                />
+              ))}
+            </ItemTable>
           ))}
         </div>
       </section>

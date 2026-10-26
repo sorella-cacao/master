@@ -7,7 +7,7 @@ export function ItemTable({
   headings,
   children,
 }: {
-  caption: string;
+  caption?: string;
   /** Column headings; the first is the item name, the rest are right-aligned. */
   headings: string[];
   children: React.ReactNode;
@@ -15,9 +15,11 @@ export function ItemTable({
   return (
     <div className="overflow-x-auto rounded-xl border border-white/15">
       <table className="w-full font-sans text-base">
-        <caption className="eyebrow border-b border-white/15 bg-white/5 px-4 py-2.5 text-left text-cream/80">
-          {caption}
-        </caption>
+        {caption && (
+          <caption className="eyebrow border-b border-white/15 bg-white/5 px-4 py-2.5 text-left text-cream/80">
+            {caption}
+          </caption>
+        )}
         <thead>
           <tr className="text-sm text-cream/70">
             {headings.map((heading, i) => (

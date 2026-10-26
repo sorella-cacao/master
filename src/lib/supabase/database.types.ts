@@ -251,6 +251,8 @@ export type Database = {
       }
       stock_items: {
         Row: {
+          base_chocolate: string | null
+          chocolate_grams: number | null
           created_at: string
           id: string
           is_active: boolean
@@ -264,6 +266,8 @@ export type Database = {
           wholesale_price: number
         }
         Insert: {
+          base_chocolate?: string | null
+          chocolate_grams?: number | null
           created_at?: string
           id?: string
           is_active?: boolean
@@ -277,6 +281,8 @@ export type Database = {
           wholesale_price?: number
         }
         Update: {
+          base_chocolate?: string | null
+          chocolate_grams?: number | null
           created_at?: string
           id?: string
           is_active?: boolean

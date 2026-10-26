@@ -26,8 +26,12 @@ type Order = {
 
 const ORDER_COLUMNS = "id, customer, needed_by, status, note, sent_at, lines:order_lines(stock_item_id, quantity, unit_price)";
 
-/** Chocolate weight of one item, in kg: bars by size, Pure Cacao by its size name (e.g. "250g", "1kg"). */
-function itemKg(groupTitle: string, itemName: string) {
+/**
+ * Chocolate in one item, in kg: its own amount when set (e.g. 90g of 75% Dark in a mandarin bar),
+ * otherwise bars by size and Pure Cacao by its size name (e.g. "250g", "1kg").
+ */
+function itemKg(groupTitle: string, itemName: string, chocolateGrams: number | null) {
+  if (chocolateGrams) return chocolateGrams / 1000;
   if (groupTitle === "Large Bar") return 0.1;
   if (groupTitle === "Small Bar") return 0.05;
   const size = itemName.trim().toLowerCase().match(/^(\d+(?:\.\d+)?)\s*(kg|g)$/);
@@ -103,12 +107,23 @@ export default async function OrdersPage(props: PageProps<"/pod/orders">) {
         .map((i) => {
           const need = ordered.get(i.id)!;
           const toMake = Math.max(0, need - Math.max(i.quantity, 0));
-          return { id: i.id, name: i.name, ordered: need, inStock: i.quantity, toMake, kg: toMake * itemKg(g.title, i.name) };
+          const kg = toMake * itemKg(g.title, i.name, i.chocolateGrams);
+          return { id: i.id, name: i.name, size: g.title, base: i.baseChocolate, ordered: need, inStock: i.quantity, toMake, kg };
         }),
     }))
     .filter((g) => g.rows.length);
   const totalToMake = plan.reduce((n, g) => n + g.rows.reduce((m, r) => m + r.toMake, 0), 0);
   const totalKg = plan.reduce((n, g) => n + g.rows.reduce((m, r) => m + r.kg, 0), 0);
+
+  // Flavours made from the same chocolate (e.g. 75% Dark), totalled so you know how much to temper.
+  const bases = new Map<string, { kg: number; rows: { id: string; label: string; kg: number }[] }>();
+  for (const r of plan.flatMap((g) => g.rows)) {
+    if (!r.base || !r.kg) continue;
+    if (!bases.has(r.base)) bases.set(r.base, { kg: 0, rows: [] });
+    const base = bases.get(r.base)!;
+    base.kg += r.kg;
+    base.rows.push({ id: r.id, label: `${r.name} · ${r.size}`, kg: r.kg });
+  }
   const laterOrders = openOrders.filter((o) => o.needed_by && o.needed_by > weekEnd).length;
 
   return (
@@ -167,6 +182,22 @@ export default async function OrdersPage(props: PageProps<"/pod/orders">) {
                 </ItemTable>
               ))}
             </div>
+            {[...bases].map(([name, base]) => (
+              <div key={name} className="overflow-hidden rounded-xl border-2 border-[#efb94f]">
+                <div className="flex flex-wrap items-baseline justify-between gap-2 bg-[#efb94f] px-4 py-3 font-sans">
+                  <span className="text-lg font-semibold">{name} chocolate needed</span>
+                  <span className="text-2xl font-semibold tabular-nums">{formatKg(base.kg)} kg</span>
+                </div>
+                <ul className="bg-[#fbe7b8] px-4 py-2 font-sans text-base">
+                  {base.rows.map((row) => (
+                    <li key={row.id} className="flex justify-between gap-4 py-1">
+                      <span>{row.label}</span>
+                      <span className="tabular-nums">{formatKg(row.kg)} kg</span>
+                    </li>
+                  ))}
+                </ul>
+              </div>
+            ))}
             <p className="font-sans text-lg">
               {totalToMake ? (
                 <>

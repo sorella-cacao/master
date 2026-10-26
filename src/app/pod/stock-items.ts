@@ -10,6 +10,10 @@ export type StockItem = {
   wholesalePrice: number;
   isExtra: boolean;
   isActive: boolean;
+  /** Grams of base chocolate in one, when it differs from the size's usual weight. */
+  chocolateGrams: number | null;
+  /** The chocolate it's made from (e.g. "75% Dark"), totalled together in the weekly plan. */
+  baseChocolate: string | null;
 };
 
 export type StockGroup = { productId: string; title: string; items: StockItem[] };
@@ -18,7 +22,7 @@ export type StockGroup = { productId: string; title: string; items: StockItem[] 
 export async function getStockGroups(supabase: Db, { includeHidden = false } = {}) {
   const { data, error } = await supabase
     .from("stock_items")
-    .select("id, name, quantity, wholesale_price, is_extra, is_active, position, product:products(id, title, position)")
+    .select("id, name, quantity, wholesale_price, is_extra, is_active, position, chocolate_grams, base_chocolate, product:products(id, title, position)")
     .order("position");
   if (error) throw error;
 
@@ -36,6 +40,8 @@ export async function getStockGroups(supabase: Db, { includeHidden = false } = {
       wholesalePrice: Number(row.wholesale_price),
       isExtra: row.is_extra,
       isActive: row.is_active,
+      chocolateGrams: row.chocolate_grams,
+      baseChocolate: row.base_chocolate,
     });
   }
   return [...groups.values()].sort((a, b) => a.position - b.position);

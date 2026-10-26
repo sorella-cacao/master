@@ -58,6 +58,8 @@ const lines = (text: string) => text.split("\n").map((l) => l.trim()).filter(Boo
 
 function InvoiceDocument({ invoice }: { invoice: Invoice }) {
   const { seller } = invoice;
+  // Lines left without a price (e.g. postage not needed this time) aren't printed.
+  const priced = invoice.lines.filter((l) => l.unit_price !== null);
   return (
     <Document title={`Invoice ${invoiceNumber(invoice.number)}`} author={seller.business_name}>
       <Page size="A4" style={s.page}>
@@ -104,10 +106,10 @@ function InvoiceDocument({ invoice }: { invoice: Invoice }) {
             <Text style={[s.head, s.qty]}>Qty</Text>
             <Text style={[s.head, s.total]}>Total price</Text>
           </View>
-          {invoice.lines.map((line, i) => (
+          {priced.map((line, i) => (
             <View key={i} style={i % 2 === 0 ? [s.row, s.shaded] : s.row} wrap={false}>
               <Text style={s.description}>{line.description}</Text>
-              <Text style={[s.price, s.number]}>{formatPrice(line.unit_price)}</Text>
+              <Text style={[s.price, s.number]}>{formatPrice(line.unit_price ?? 0)}</Text>
               <Text style={[s.qty, s.number]}>{quantity(line.quantity)}</Text>
               <Text style={[s.total, s.number]}>{formatPrice(lineTotal(line))}</Text>
             </View>
@@ -116,7 +118,7 @@ function InvoiceDocument({ invoice }: { invoice: Invoice }) {
 
         <View style={s.totalRow} wrap={false}>
           <Text style={s.totalLabel}>Total:</Text>
-          <Text style={s.totalAmount}>{formatPrice(invoiceTotal(invoice.lines))}</Text>
+          <Text style={s.totalAmount}>{formatPrice(invoiceTotal(priced))}</Text>
         </View>
 
         {(seller.bank_account_name || seller.bank_account_number) && (

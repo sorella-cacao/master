@@ -41,7 +41,7 @@ export default async function InvoicesPage() {
     issuedOn: i.issued_on,
     dueOn: i.due_on,
     paidOn: i.paid_on,
-    total: invoiceTotal(i.lines.map((l) => ({ ...l, quantity: Number(l.quantity), unit_price: Number(l.unit_price) }))),
+    total: invoiceTotal(i.lines.map((l) => ({ ...l, quantity: Number(l.quantity), unit_price: l.unit_price === null ? null : Number(l.unit_price) }))),
   }));
   const unpaid = invoices.filter((i) => !i.paidOn);
   const s = settings.data;

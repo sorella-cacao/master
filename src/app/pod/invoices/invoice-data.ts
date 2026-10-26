@@ -16,7 +16,8 @@ export type Seller = {
   bank_account_number: string;
 };
 
-export type InvoiceLine = { description: string; quantity: number; unit_price: number };
+/** A line with no price yet (e.g. postage to fill in) has a null price and is left off the PDF. */
+export type InvoiceLine = { description: string; quantity: number; unit_price: number | null };
 
 export type Invoice = {
   id: string;
@@ -35,7 +36,7 @@ export type Invoice = {
 /** "012" */
 export const invoiceNumber = (n: number) => String(n).padStart(3, "0");
 
-export const lineTotal = (l: InvoiceLine) => Math.round(l.quantity * l.unit_price * 100) / 100;
+export const lineTotal = (l: InvoiceLine) => Math.round(l.quantity * (l.unit_price ?? 0) * 100) / 100;
 export const invoiceTotal = (lines: InvoiceLine[]) => Math.round(lines.reduce((n, l) => n + lineTotal(l), 0) * 100) / 100;
 
 /** The first line of "Bill to", which is the customer's name. */
@@ -68,6 +69,6 @@ export async function getInvoice(supabase: Db, id: string): Promise<Invoice | nu
     updatedAt: data.updated_at,
     lines: [...data.lines]
       .sort((a, b) => a.position - b.position)
-      .map((l) => ({ description: l.description, quantity: Number(l.quantity), unit_price: Number(l.unit_price) })),
+      .map((l) => ({ description: l.description, quantity: Number(l.quantity), unit_price: l.unit_price === null ? null : Number(l.unit_price) })),
   };
 }

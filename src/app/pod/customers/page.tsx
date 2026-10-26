@@ -18,6 +18,7 @@ type Customer = {
   phone: string | null;
   address: string | null;
   notes: string | null;
+  invoice_postage: boolean;
 };
 
 export default async function CustomersPage() {
@@ -33,7 +34,7 @@ export default async function CustomersPage() {
 
   const [groups, list, priceRows] = await Promise.all([
     getStockGroups(supabase),
-    supabase.from("customers").select("id, name, contact, email, phone, address, notes").order("name"),
+    supabase.from("customers").select("id, name, contact, email, phone, address, notes, invoice_postage").order("name"),
     supabase.from("customer_prices").select("customer_id, stock_item_id, price"),
   ]);
   if (list.error) throw list.error;
@@ -133,6 +134,10 @@ function CustomerFields({ customer }: { customer?: Customer }) {
       <label className="block">
         <span className="eyebrow mb-1 block text-xs text-cream/70">Notes</span>
         <textarea name="notes" rows={3} defaultValue={customer?.notes ?? ""} placeholder="Optional" className="pod-input py-2 text-sm" />
+      </label>
+      <label className="flex items-center gap-3 font-sans text-sm sm:col-span-2">
+        <input type="checkbox" name="invoice_postage" defaultChecked={customer?.invoice_postage} className="size-4 accent-[#8a5226]" />
+        Add a blank Postage line to their invoices, to fill in each time
       </label>
     </div>
   );

@@ -71,6 +71,7 @@ export type Database = {
           created_at: string
           email: string | null
           id: string
+          invoice_postage: boolean
           name: string
           notes: string | null
           phone: string | null
@@ -82,6 +83,7 @@ export type Database = {
           created_at?: string
           email?: string | null
           id?: string
+          invoice_postage?: boolean
           name: string
           notes?: string | null
           phone?: string | null
@@ -93,6 +95,7 @@ export type Database = {
           created_at?: string
           email?: string | null
           id?: string
+          invoice_postage?: boolean
           name?: string
           notes?: string | null
           phone?: string | null
@@ -107,7 +110,7 @@ export type Database = {
           invoice_id: string
           position: number
           quantity: number
-          unit_price: number
+          unit_price: number | null
         }
         Insert: {
           description?: string
@@ -115,7 +118,7 @@ export type Database = {
           invoice_id: string
           position?: number
           quantity?: number
-          unit_price?: number
+          unit_price?: number | null
         }
         Update: {
           description?: string
@@ -123,7 +126,7 @@ export type Database = {
           invoice_id?: string
           position?: number
           quantity?: number
-          unit_price?: number
+          unit_price?: number | null
         }
         Relationships: [
           {

@@ -26,6 +26,7 @@ const details = (data: FormData) => ({
   phone: text(data, "phone") || null,
   address: text(data, "address") || null,
   notes: text(data, "notes") || null,
+  invoice_postage: data.get("invoice_postage") === "on",
 });
 
 export async function addCustomer(_: SaveState, data: FormData): Promise<SaveState> {

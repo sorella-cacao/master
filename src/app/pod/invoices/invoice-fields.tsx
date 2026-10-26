@@ -18,12 +18,12 @@ export function InvoiceFields({
     dueOn: string;
     billTo: string;
     notes: string | null;
-    lines: { description: string; quantity: number; unit_price: number }[];
+    lines: { description: string; quantity: number; unit_price: number | null }[];
   };
 }) {
   const nextKey = useRef(invoice.lines.length);
   const [lines, setLines] = useState<Line[]>(() =>
-    invoice.lines.map((l, i) => ({ key: i, description: l.description, price: money(l.unit_price), qty: money(l.quantity) })),
+    invoice.lines.map((l, i) => ({ key: i, description: l.description, price: l.unit_price === null ? "" : money(l.unit_price), qty: money(l.quantity) })),
   );
   const total = lines.reduce((n, l) => n + (Number(l.price) || 0) * (Number(l.qty) || 0), 0);
 
@@ -118,12 +118,14 @@ export function InvoiceFields({
         </button>
         <button
           type="button"
-          onClick={() => add("Shipping")}
+          onClick={() => add("Postage")}
           className="eyebrow rounded-full border border-white/20 px-4 py-2 text-cream/70 transition-colors hover:border-gold hover:text-gold"
         >
-          + Shipping
+          + Postage
         </button>
       </div>
+
+      <p className="font-sans text-sm text-cream/70">A line with no price, like postage you don’t need this time, is left off the PDF.</p>
 
       <label className="block">
         <span className="eyebrow mb-1 block text-xs text-cream/70">Note on the invoice</span>

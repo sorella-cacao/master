@@ -52,11 +52,12 @@ export async function saveInvoice(_: SaveState, data: FormData): Promise<SaveSta
     const unitPrice = Number(prices[i]);
     const quantity = Number(quantities[i]);
     if (!description.trim()) return { error: "Every line needs a description." };
-    if (!prices[i] || !Number.isFinite(unitPrice) || unitPrice < 0) return { error: `Enter a price for “${description}”.` };
+    // A blank price is kept (e.g. postage to fill in later) but left off the PDF.
+    if (prices[i] && (!Number.isFinite(unitPrice) || unitPrice < 0)) return { error: `Enter the price for “${description}” as a number.` };
     if (!quantities[i] || !Number.isFinite(quantity) || quantity <= 0) return { error: `Enter a quantity for “${description}”.` };
-    lines.push({ description, quantity, unit_price: Math.round(unitPrice * 100) / 100 });
+    lines.push({ description, quantity, unit_price: prices[i] ? Math.round(unitPrice * 100) / 100 : null });
   }
-  if (!lines.length) return { error: "Add at least one line." };
+  if (!lines.some((l) => l.unit_price !== null)) return { error: "Add at least one line with a price." };
 
   const { error } = await supabase.rpc("pod_save_invoice", {
     invoice_id: text(data, "invoice_id"),

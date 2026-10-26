@@ -42,18 +42,18 @@ export function useConfirm() {
         <div className="flex justify-center gap-3">
           <button
             type="button"
+            onClick={() => reply(true)}
+            className="eyebrow min-w-24 rounded-full bg-caramel px-5 py-2.5 text-cacao-950 transition-colors hover:bg-gold"
+          >
+            So sure
+          </button>
+          <button
+            type="button"
             autoFocus
             onClick={() => reply(false)}
             className="eyebrow min-w-24 rounded-full border border-white/20 px-5 py-2.5 text-cream/70 transition-colors hover:border-gold hover:text-gold"
           >
             Shit! No
-          </button>
-          <button
-            type="button"
-            onClick={() => reply(true)}
-            className="eyebrow min-w-24 rounded-full bg-caramel px-5 py-2.5 text-cacao-950 transition-colors hover:bg-gold"
-          >
-            So sure
           </button>
         </div>
       </div>

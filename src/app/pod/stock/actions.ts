@@ -120,3 +120,29 @@ export async function setFlavourHidden(_: SaveState, data: FormData): Promise<Sa
   refresh();
   return { ok: hidden ? "Hidden" : "Showing again" };
 }
+
+/** A spontaneous buy or a market day: recorded in order history and taken off stock straight away. */
+export async function recordSale(_: SaveState, data: FormData): Promise<SaveState> {
+  const { supabase, isAdmin } = await getSession();
+  if (!isAdmin) return NO_ACCESS;
+
+  const kind = String(data.get("kind"));
+  if (kind !== "spontaneous" && kind !== "market") return { error: "Couldn't save. Please try again." };
+  const ids = data.getAll("line_item").map(String);
+  const quantities = data.getAll("line_qty").map((q) => Number(q));
+  if (ids.some((id) => !id)) return { error: "Choose a flavour on every line." };
+  if (quantities.some((q) => !Number.isInteger(q) || q <= 0)) return { error: "Use whole numbers for quantities, e.g. 2." };
+  const lines = ids.map((id, i) => ({ stock_item_id: id, quantity: quantities[i] }));
+  if (!lines.length) return { error: "Add at least one item." };
+
+  const { error } = await supabase.rpc("pod_record_sale", {
+    kind,
+    customer: String(data.get("customer") ?? ""),
+    note: String(data.get("note") ?? ""),
+    lines,
+  });
+  if (error) return failed(error);
+  refresh();
+  const total = quantities.reduce((n, q) => n + q, 0);
+  return { ok: `Saved. ${total} taken off stock and added to order history.` };
+}

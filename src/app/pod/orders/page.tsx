@@ -8,7 +8,7 @@ import { PodForm } from "../pod-form";
 import { PodNav } from "../pod-nav";
 import { getSession } from "../session";
 import { type StockGroup, getStockGroups } from "../stock-items";
-import { deleteOrder, saveOrder } from "./actions";
+import { deleteOrder, saveOrder, undoSale } from "./actions";
 import { type OrderGroup, OrderFields } from "./order-fields";
 import { OrderStatus } from "./order-status";
 
@@ -18,6 +18,7 @@ type Line = { stock_item_id: string; quantity: number; unit_price: number };
 type Order = {
   id: string;
   customer: string;
+  kind: string;
   needed_by: string | null;
   status: string;
   note: string | null;
@@ -25,7 +26,7 @@ type Order = {
   lines: Line[];
 };
 
-const ORDER_COLUMNS = "id, customer, needed_by, status, note, sent_at, lines:order_lines(stock_item_id, quantity, unit_price)";
+const ORDER_COLUMNS = "id, customer, kind, needed_by, status, note, sent_at, lines:order_lines(stock_item_id, quantity, unit_price)";
 
 /**
  * Chocolate in one item, in kg: its own amount when set (e.g. 90g of 75% Dark in a mandarin bar),
@@ -86,8 +87,8 @@ export default async function OrdersPage(props: PageProps<"/pod/orders">) {
       .neq("status", "sent")
       .order("needed_by", { ascending: true, nullsFirst: false })
       .order("created_at"),
-    supabase.from("orders").select(ORDER_COLUMNS).eq("status", "sent").order("sent_at", { ascending: false }).limit(20),
-    supabase.from("orders").select("customer").order("created_at", { ascending: false }).limit(500),
+    supabase.from("orders").select(ORDER_COLUMNS).eq("status", "sent").order("sent_at", { ascending: false }).limit(30),
+    supabase.from("orders").select("customer").eq("kind", "order").order("created_at", { ascending: false }).limit(500),
   ]);
   if (open.error) throw open.error;
   if (sent.error) throw sent.error;
@@ -292,8 +293,10 @@ export default async function OrdersPage(props: PageProps<"/pod/orders">) {
       {sentOrders.length > 0 && (
         <details className="rounded-2xl border border-white/10 bg-cacao-950/40">
           <summary className="cursor-pointer p-6 sm:px-8">
-            <span className="text-3xl">Sent orders</span>
-            <span className="mt-1 block text-base text-cream/70">The latest {sentOrders.length}.</span>
+            <span className="text-3xl">Order history</span>
+            <span className="mt-1 block text-base text-cream/70">
+              The latest {sentOrders.length} sent orders, spontaneous buys and market sales.
+            </span>
           </summary>
           <div className="space-y-5 px-6 pb-6 sm:px-8 sm:pb-8">
             {sentOrders.map((order) => (
@@ -305,6 +308,9 @@ export default async function OrdersPage(props: PageProps<"/pod/orders">) {
     </div>
   );
 }
+
+/** Sales recorded without an order, by kind. */
+const SALE_KINDS: Record<string, string | undefined> = { spontaneous: "Spontaneous buy", market: "Market" };
 
 function OrderCard({
   order,
@@ -318,24 +324,34 @@ function OrderCard({
   children?: React.ReactNode;
 }) {
   const overdue = order.status !== "sent" && order.needed_by && order.needed_by < today;
+  const sale = SALE_KINDS[order.kind];
   return (
     <article className="rounded-2xl border border-white/10 bg-cacao-950/40 p-6 sm:p-8">
       <div className="flex flex-wrap items-baseline justify-between gap-4">
-        <h3 className="text-3xl text-gold">{order.customer}</h3>
+        <h3 className="text-3xl text-gold">
+          {order.customer}
+          {sale && order.customer !== sale && (
+            <span className="eyebrow ml-3 rounded-full border border-white/20 px-2 py-0.5 align-middle text-[0.65rem] text-cream/70">
+              {sale}
+            </span>
+          )}
+        </h3>
         <p className="font-sans text-lg">{formatPrice(orderTotal(order))}</p>
       </div>
       <p className="mt-1 text-cream/80">
         {order.status === "sent" && order.sent_at
-          ? `Sent ${new Date(order.sent_at).toLocaleDateString("en-AU", { timeZone: "Australia/Sydney", day: "numeric", month: "short" })}`
+          ? `${sale ? "Sold" : "Sent"} ${new Date(order.sent_at).toLocaleDateString("en-AU", { timeZone: "Australia/Sydney", day: "numeric", month: "short" })}`
           : order.needed_by
             ? `Needed by ${shortDate(order.needed_by)}`
             : "No date set"}
         {overdue && <span className="eyebrow ml-3 rounded-full bg-gold/15 px-2 py-0.5 text-gold">Overdue</span>}
       </p>
 
-      <div className="mt-4">
-        <OrderStatus orderId={order.id} status={order.status} itemCount={itemCount(order)} />
-      </div>
+      {!sale && (
+        <div className="mt-4">
+          <OrderStatus orderId={order.id} status={order.status} itemCount={itemCount(order)} />
+        </div>
+      )}
 
       <div className="mt-4">
         <ItemTable headings={["Item", "Qty", "Each", "Total"]}>
@@ -360,6 +376,16 @@ function OrderCard({
         </ItemTable>
       </div>
       {order.note && <p className="mt-3 italic text-cream/80">{order.note}</p>}
+      {sale && (
+        <PodForm
+          action={undoSale}
+          submitLabel="Undo this sale"
+          variant="quiet"
+          confirmMessage={`Remove this ${sale.toLowerCase()}? Its ${itemCount(order)} items go back into stock.`}
+        >
+          <input type="hidden" name="order_id" value={order.id} />
+        </PodForm>
+      )}
       {children}
     </article>
   );

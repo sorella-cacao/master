@@ -75,6 +75,7 @@ export type Database = {
           created_at: string
           customer: string
           id: string
+          kind: string
           needed_by: string | null
           note: string | null
           sent_at: string | null
@@ -85,6 +86,7 @@ export type Database = {
           created_at?: string
           customer: string
           id?: string
+          kind?: string
           needed_by?: string | null
           note?: string | null
           sent_at?: string | null
@@ -95,6 +97,7 @@ export type Database = {
           created_at?: string
           customer?: string
           id?: string
+          kind?: string
           needed_by?: string | null
           note?: string | null
           sent_at?: string | null
@@ -449,12 +452,14 @@ export type Database = {
     }
     Functions: {
       pod_add_made: { Args: { counts: Json }; Returns: undefined }
+      pod_record_sale: { Args: { customer: string; kind: string; lines: Json; note: string }; Returns: string }
       pod_save_order: {
         Args: { customer: string; lines: Json; needed_by: string | null; note: string | null; order_id: string | null }
         Returns: string
       }
       pod_save_stock_take: { Args: { counts: Json }; Returns: undefined }
       pod_set_order_status: { Args: { order_id: string; status: string }; Returns: undefined }
+      pod_undo_sale: { Args: { order_id: string }; Returns: undefined }
       receipts_cron_secret_matches: { Args: { secret: string }; Returns: boolean }
     }
     Enums: {

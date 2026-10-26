@@ -71,3 +71,12 @@ export async function deleteOrder(_: SaveState, data: FormData): Promise<SaveSta
   refresh();
   return { ok: "Deleted" };
 }
+
+export async function undoSale(_: SaveState, data: FormData): Promise<SaveState> {
+  const { supabase, isAdmin } = await getSession();
+  if (!isAdmin) return NO_ACCESS;
+  const { error } = await supabase.rpc("pod_undo_sale", { order_id: String(data.get("order_id")) });
+  if (error) return failed(error);
+  refresh();
+  return { ok: "Removed, and put back in stock" };
+}

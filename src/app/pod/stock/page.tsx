@@ -5,7 +5,8 @@ import { PodForm } from "../pod-form";
 import { PodNav } from "../pod-nav";
 import { getSession } from "../session";
 import { type StockGroup, getStockGroups } from "../stock-items";
-import { addMade, addOneOffFlavour, saveStockTake, savePrices, setFlavourHidden } from "./actions";
+import { addMade, addOneOffFlavour, recordSale, saveStockTake, savePrices, setFlavourHidden } from "./actions";
+import { type SaleGroup, SaleFields } from "./sale-fields";
 
 export const metadata: Metadata = { title: "Stock" };
 
@@ -47,18 +48,14 @@ export default async function StockPage() {
         <PodNav current="/pod/stock" />
       </header>
 
-      <section className="space-y-6">
-        <div>
-          <h2 className="text-4xl">Stock</h2>
-          <p className="mt-2 text-cream/70">
-            Last stock take: {when(lastTake.data?.created_at)} · Last batch added: {when(lastMade.data?.created_at)}.
-            Orders marked Sent come off automatically.
-          </p>
-        </div>
-
+      <Panel
+        title="Stock"
+        hint={`Last stock take: ${when(lastTake.data?.created_at)} · Last batch added: ${when(lastMade.data?.created_at)}. Orders marked Sent come off automatically.`}
+        open
+      >
         <div className="space-y-6">
           {groups.map((group) => (
-            <ItemTable key={group.productId} caption={group.title} headings={[itemHeading(group), "In stock", "Wholesale"]}>
+            <ItemTable key={group.productId} caption={group.title} headings={[itemHeading(group), "In stock", "Wholesale"]} collapsible>
               {group.items.map((item) => (
                 <ItemRow
                   key={item.id}
@@ -85,7 +82,7 @@ export default async function StockPage() {
             </ItemTable>
           ))}
         </div>
-      </section>
+      </Panel>
 
       <Panel title="Add what I made this week" hint="Type how many of each you made. They’re added to the stock above." open>
         <PodForm action={addMade} submitLabel="Add to stock" resetOnSuccess>
@@ -103,7 +100,7 @@ export default async function StockPage() {
         <PodForm action={savePrices} submitLabel="Save prices">
           <div className="space-y-6">
             {groups.map((group) => (
-              <ItemTable key={group.productId} caption={group.title} headings={[itemHeading(group), "Wholesale ($)"]} columnWidth="w-40">
+              <ItemTable key={group.productId} caption={group.title} headings={[itemHeading(group), "Wholesale ($)"]} columnWidth="w-40" collapsible>
                 {group.items.map((item) => (
                   <ItemRow
                     key={item.id}
@@ -195,6 +192,23 @@ export default async function StockPage() {
           </div>
         )}
       </Panel>
+
+      <Panel
+        title="Spontaneous buy"
+        hint="Someone bought without an order? Add what they took. It comes off stock and goes into order history."
+      >
+        <PodForm action={recordSale} submitLabel="Save and take off stock" resetOnSuccess>
+          <input type="hidden" name="kind" value="spontaneous" />
+          <SaleFields kind="spontaneous" groups={saleGroups(groups, "wholesale")} />
+        </PodForm>
+      </Panel>
+
+      <Panel title="Market" hint="Add what sold at a market. It comes off stock and goes into order history.">
+        <PodForm action={recordSale} submitLabel="Save and take off stock" resetOnSuccess>
+          <input type="hidden" name="kind" value="market" />
+          <SaleFields kind="market" groups={saleGroups(groups, "retail")} />
+        </PodForm>
+      </Panel>
     </div>
   );
 }
@@ -211,6 +225,18 @@ function Panel({ title, hint, open, children }: { title: string; hint: string; o
   );
 }
 
+/** Sizes and flavours for the sale forms, at wholesale or website prices (one-off flavours fall back to wholesale). */
+const saleGroups = (groups: StockGroup[], prices: "wholesale" | "retail"): SaleGroup[] =>
+  groups.map((g) => ({
+    title: g.title,
+    items: g.items.map((i) => ({
+      id: i.id,
+      name: i.name,
+      inStock: i.quantity,
+      price: prices === "retail" ? (i.retailPrice ?? i.wholesalePrice) : i.wholesalePrice,
+    })),
+  }));
+
 const itemHeading = (group: StockGroup) => (group.title === "Pure Cacao" ? "Size" : "Flavour");
 
 /** A table per size with a number box on every item's row. */
@@ -224,6 +250,7 @@ function CountTables({ groups, name }: { groups: StockGroup[]; name: "made" | "c
           caption={group.title}
           headings={[itemHeading(group), isCount ? "Was" : "In stock", isCount ? "Count now" : "Made"]}
           columnWidth="w-36"
+          collapsible
         >
           {group.items.map((item) => (
             <ItemRow

@@ -8,9 +8,15 @@ export function ItemTable({
   highlight = [],
   columnWidth = "w-28",
   compact = false,
+  collapsible = false,
+  bare = false,
   children,
 }: {
+  /** No outer border (used inside a collapsible table). */
+  bare?: boolean;
   caption?: string;
+  /** Let the table fold away by tapping its caption bar (starts open). */
+  collapsible?: boolean;
   /** Tighter rows and smaller text, for an at-a-glance summary. */
   compact?: boolean;
   /** Width of every column after the item name, so tables stacked together line up. */
@@ -21,12 +27,34 @@ export function ItemTable({
   headings: string[];
   children: React.ReactNode;
 }) {
+  const captionPadding = compact ? "px-3 py-1.5" : "px-4 py-2.5";
+
+  if (collapsible && caption) {
+    return (
+      <details open className="group overflow-hidden rounded-xl border border-white/15">
+        <summary
+          className={`eyebrow flex cursor-pointer list-none items-center justify-between bg-white/5 text-cream/80 hover:text-gold [&::-webkit-details-marker]:hidden ${captionPadding}`}
+        >
+          {caption}
+          <span aria-hidden className="text-base transition-transform group-open:rotate-180">
+            ▾
+          </span>
+        </summary>
+        <div className="border-t border-white/15">
+          <ItemTable headings={headings} highlight={highlight} columnWidth={columnWidth} compact={compact} bare>
+            {children}
+          </ItemTable>
+        </div>
+      </details>
+    );
+  }
+
   return (
-    <div className="overflow-x-auto rounded-xl border border-white/15">
+    <div className={`overflow-x-auto ${bare ? "" : "rounded-xl border border-white/15"}`}>
       <table className={`w-full table-fixed font-sans ${compact ? "text-sm" : "text-base"}`}>
         {caption && (
           <caption
-            className={`eyebrow border-b border-white/15 bg-white/5 text-left text-cream/80 ${compact ? "px-3 py-1.5" : "px-4 py-2.5"}`}
+            className={`eyebrow border-b border-white/15 bg-white/5 text-left text-cream/80 ${captionPadding}`}
           >
             {caption}
           </caption>

@@ -60,6 +60,11 @@ body {
   .pod-input {
     @apply w-full rounded-xl border border-white/15 bg-cacao-800 px-4 py-3 font-sans text-base text-cream placeholder:text-cream/40 focus:border-gold focus:outline-none;
   }
+
+  /* A section of a Pod page, framed in honey like "To make this week". */
+  .pod-card {
+    @apply rounded-2xl border-2 border-[#efb94f] bg-cacao-950/40;
+  }
 }
 
 /*

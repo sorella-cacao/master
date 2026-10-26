@@ -134,16 +134,16 @@ export default async function OrdersPage(props: PageProps<"/pod/orders">) {
   const laterOrders = openOrders.filter((o) => o.needed_by && o.needed_by > weekEnd).length;
 
   return (
-    <div className="space-y-12">
+    <div className="space-y-6">
       <header className="space-y-6">
         <h1 className="font-script text-6xl text-gold sm:text-7xl">The Pod</h1>
         <PodNav current="/pod/orders" />
       </header>
 
-      <section aria-labelledby="make-heading" className="space-y-5 rounded-2xl border-2 border-[#efb94f] bg-cacao-950/40 p-6 sm:p-8">
+      <section aria-labelledby="make-heading" className="pod-card space-y-5 p-6 sm:p-8">
         <div className="flex flex-wrap items-end justify-between gap-4">
           <div>
-            <h2 id="make-heading" className="text-4xl">
+            <h2 id="make-heading" className="text-3xl">
               {weekStart === thisMonday ? "To make this week" : "To make"}
             </h2>
             <p className="mt-1 text-cream/70">
@@ -216,8 +216,8 @@ export default async function OrdersPage(props: PageProps<"/pod/orders">) {
       </section>
 
       {plan.length > 0 && (
-        <section aria-labelledby="plan-heading" className="space-y-5 rounded-2xl border border-white/10 bg-cacao-950/40 p-6 sm:p-8">
-          <h2 id="plan-heading" className="text-4xl">
+        <section aria-labelledby="plan-heading" className="pod-card space-y-5 p-6 sm:p-8">
+          <h2 id="plan-heading" className="text-3xl">
             {weekStart === thisMonday ? "This week’s orders" : "Orders for the week"}
           </h2>
           <div className="space-y-3">
@@ -236,9 +236,9 @@ export default async function OrdersPage(props: PageProps<"/pod/orders">) {
         </section>
       )}
 
-      <details open={openOrders.length === 0} className="rounded-2xl border border-white/10 bg-cacao-950/40">
-        <summary className="cursor-pointer p-6 sm:px-8">
-          <span className="text-4xl">New order</span>
+      <details open={openOrders.length === 0} className="pod-card">
+        <summary className="cursor-pointer px-6 py-4 sm:px-8">
+          <span className="text-3xl">New order</span>
           <span className="mt-1 block text-base text-cream/70">Copy in an order from your email.</span>
         </summary>
         <div className="px-6 pb-6 sm:px-8 sm:pb-8">
@@ -248,8 +248,8 @@ export default async function OrdersPage(props: PageProps<"/pod/orders">) {
         </div>
       </details>
 
-      <section aria-labelledby="open-heading" className="space-y-5">
-        <h2 id="open-heading" className="text-4xl">
+      <section aria-labelledby="open-heading" className="pod-card space-y-5 p-6 sm:p-8">
+        <h2 id="open-heading" className="text-3xl">
           Orders
         </h2>
         {openOrders.length === 0 && <p className="text-xl text-cream/70">No orders waiting.</p>}
@@ -287,9 +287,9 @@ export default async function OrdersPage(props: PageProps<"/pod/orders">) {
       </section>
 
       {sentOrders.length > 0 && (
-        <details className="rounded-2xl border border-white/10 bg-cacao-950/40">
-          <summary className="cursor-pointer p-6 sm:px-8">
-            <span className="text-4xl">Order history</span>
+        <details className="pod-card">
+          <summary className="cursor-pointer px-6 py-4 sm:px-8">
+            <span className="text-3xl">Order history</span>
             <span className="mt-1 block text-base text-cream/70">
               The latest {sentOrders.length} sent orders, spontaneous buys and market sales.
             </span>
@@ -322,9 +322,9 @@ function OrderCard({
   const overdue = order.status !== "sent" && order.needed_by && order.needed_by < today;
   const sale = SALE_KINDS[order.kind];
   return (
-    <article className="rounded-2xl border border-white/10 bg-cacao-950/40 p-6 sm:p-8">
+    <article className="rounded-2xl border border-white/15 bg-cacao-800/60 p-4 sm:p-6">
       <div className="flex flex-wrap items-baseline justify-between gap-4">
-        <h3 className="text-3xl text-gold">
+        <h3 className="text-2xl text-gold">
           {order.customer}
           {sale && order.customer !== sale && (
             <span className="eyebrow ml-3 rounded-full border border-white/20 px-2 py-0.5 align-middle text-[0.65rem] text-cream/70">

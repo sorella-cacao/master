@@ -42,7 +42,7 @@ export default async function StockPage() {
   const hidden = allGroups.flatMap((g) => g.items.filter((i) => !i.isActive).map((i) => ({ ...i, title: g.title })));
 
   return (
-    <div className="space-y-12">
+    <div className="space-y-6">
       <header className="space-y-6">
         <h1 className="font-script text-6xl text-gold sm:text-7xl">The Pod</h1>
         <PodNav current="/pod/stock" />
@@ -215,12 +215,12 @@ export default async function StockPage() {
 
 function Panel({ title, hint, open, children }: { title: string; hint: string; open?: boolean; children: React.ReactNode }) {
   return (
-    <details open={open} className="rounded-2xl border border-white/10 bg-cacao-950/40">
-      <summary className="cursor-pointer p-6 sm:px-8">
-        <span className="text-4xl">{title}</span>
+    <details open={open} className="pod-card">
+      <summary className="cursor-pointer px-6 py-4 sm:px-8">
+        <span className="text-3xl">{title}</span>
         <span className="mt-1 block text-base text-cream/70">{hint}</span>
       </summary>
-      <div className="px-6 pb-6 sm:px-8 sm:pb-8">{children}</div>
+      <div className="px-6 pb-6 pt-2 sm:px-8 sm:pb-8">{children}</div>
     </details>
   );
 }

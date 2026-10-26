@@ -30,7 +30,7 @@ export function ItemTable({
                 key={heading}
                 scope="col"
                 className={`px-4 py-2 ${i === 0 ? "text-left" : "text-right"} ${
-                  highlight.includes(i) ? "bg-gold/15 font-medium text-gold" : "font-normal"
+                  highlight.includes(i) ? "bg-[#efb94f] font-semibold text-cream" : "font-normal"
                 }`}
               >
                 {heading}
@@ -63,7 +63,7 @@ export function ItemRow({
       {cells.map((cell, i) => (
         <td
           key={i}
-          className={`px-4 py-2 text-right tabular-nums ${highlight.includes(i + 1) ? "bg-gold/15 font-semibold" : ""}`}
+          className={`px-4 py-2 text-right tabular-nums ${highlight.includes(i + 1) ? "bg-[#f6cf7a] font-semibold text-cream" : ""}`}
         >
           {cell}
         </td>

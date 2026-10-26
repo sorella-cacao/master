@@ -155,10 +155,10 @@ export default async function OrdersPage(props: PageProps<"/pod/orders">) {
                       cells={[
                         r.ordered,
                         r.inStock,
-                        <span key="make" className={`text-lg ${r.toMake ? "text-gold" : "text-cream/70"}`}>
+                        <span key="make" className={`text-lg ${r.toMake ? "" : "text-cream/70"}`}>
                           {r.toMake}
                         </span>,
-                        <span key="kg" className={`text-lg ${r.kg ? "text-gold" : "text-cream/70"}`}>
+                        <span key="kg" className={`text-lg ${r.kg ? "" : "text-cream/70"}`}>
                           {formatKg(r.kg)}
                         </span>,
                       ]}

@@ -67,13 +67,13 @@ export function OrderFields({
         </label>
       </div>
 
-      <div className="space-y-6">
+      <div className="space-y-3">
         {groups.map((group) => (
           <ItemTable
             key={group.title}
             caption={group.title}
             headings={[group.title === "Pure Cacao" ? "Size" : "Flavour", "Price", "Qty"]}
-            columnWidth="w-36"
+            columnWidth="w-28"
           >
             {group.items.map((item) => (
               <ItemRow
@@ -92,7 +92,7 @@ export function OrderFields({
                     placeholder="0"
                     defaultValue={initial?.quantities[item.id] || undefined}
                     aria-label={`${group.title} ${item.name}`}
-                    className="pod-input w-24 py-2 text-right"
+                    className="pod-input w-20 px-2 py-1 text-right text-sm"
                   />,
                 ]}
               />

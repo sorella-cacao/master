@@ -6,8 +6,7 @@ export function ItemTable({
   caption,
   headings,
   highlight = [],
-  columnWidth = "w-28",
-  compact = false,
+  columnWidth = "w-24",
   collapsible = false,
   bare = false,
   children,
@@ -17,8 +16,6 @@ export function ItemTable({
   caption?: string;
   /** Let the table fold away by tapping its caption bar (starts open). */
   collapsible?: boolean;
-  /** Tighter rows and smaller text, for an at-a-glance summary. */
-  compact?: boolean;
   /** Width of every column after the item name, so tables stacked together line up. */
   columnWidth?: string;
   /** Column positions (0 = item name) to shade so they stand out. */
@@ -27,13 +24,12 @@ export function ItemTable({
   headings: string[];
   children: React.ReactNode;
 }) {
-  const captionPadding = compact ? "px-3 py-1.5" : "px-4 py-2.5";
 
   if (collapsible && caption) {
     return (
       <details open className="group overflow-hidden rounded-xl border border-white/15">
         <summary
-          className={`eyebrow flex cursor-pointer list-none items-center justify-between bg-white/5 text-cream/80 hover:text-gold [&::-webkit-details-marker]:hidden ${captionPadding}`}
+          className={`eyebrow flex cursor-pointer list-none items-center justify-between bg-white/5 text-cream/80 hover:text-gold [&::-webkit-details-marker]:hidden px-3 py-1.5`}
         >
           {caption}
           <span aria-hidden className="text-base transition-transform group-open:rotate-180">
@@ -41,7 +37,7 @@ export function ItemTable({
           </span>
         </summary>
         <div className="border-t border-white/15">
-          <ItemTable headings={headings} highlight={highlight} columnWidth={columnWidth} compact={compact} bare>
+          <ItemTable headings={headings} highlight={highlight} columnWidth={columnWidth} bare>
             {children}
           </ItemTable>
         </div>
@@ -51,21 +47,21 @@ export function ItemTable({
 
   return (
     <div className={`overflow-x-auto ${bare ? "" : "rounded-xl border border-white/15"}`}>
-      <table className={`w-full table-fixed font-sans ${compact ? "text-sm" : "text-base"}`}>
+      <table className="w-full table-fixed font-sans text-sm">
         {caption && (
           <caption
-            className={`eyebrow border-b border-white/15 bg-white/5 text-left text-cream/80 ${captionPadding}`}
+            className="eyebrow border-b border-white/15 bg-white/5 px-3 py-1.5 text-left text-cream/80"
           >
             {caption}
           </caption>
         )}
         <thead>
-          <tr className={`text-cream/70 ${compact ? "text-xs" : "text-sm"}`}>
+          <tr className="text-xs text-cream/70">
             {headings.map((heading, i) => (
               <th
                 key={heading}
                 scope="col"
-                className={`${compact ? "px-3 py-1" : "px-4 py-2"} ${i === 0 ? "text-left" : `${columnWidth} text-right`} ${
+                className={`px-3 py-1 ${i === 0 ? "text-left" : `${columnWidth} text-right`} ${
                   highlight.includes(i) ? "bg-[#efb94f] font-semibold text-cream" : "font-normal"
                 }`}
               >
@@ -85,12 +81,10 @@ export function ItemRow({
   name,
   cells,
   highlight = [],
-  compact = false,
   accent = false,
 }: {
   name: React.ReactNode;
   cells: React.ReactNode[];
-  compact?: boolean;
   /** Colour the highlighted boxes terracotta instead of honey, e.g. flavours made from 75% Dark. */
   accent?: boolean;
   /** Column positions (0 = item name) to shade, matching the table's. */
@@ -98,13 +92,13 @@ export function ItemRow({
 }) {
   return (
     <tr className="border-t border-white/10 odd:bg-cacao-950/60">
-      <th scope="row" className={`${compact ? "px-3 py-1" : "px-4 py-2"} text-left font-normal`}>
+      <th scope="row" className="px-3 py-1 text-left font-normal">
         {name}
       </th>
       {cells.map((cell, i) => (
         <td
           key={i}
-          className={`${compact ? "px-3 py-1" : "px-4 py-2"} text-right tabular-nums ${highlight.includes(i + 1) ? `${accent ? "bg-[#e7b28e]" : "bg-[#f6cf7a] font-semibold"} text-cream` : ""}`}
+          className={`px-3 py-1 text-right tabular-nums ${highlight.includes(i + 1) ? `${accent ? "bg-[#e7b28e]" : "bg-[#f6cf7a] font-semibold"} text-cream` : ""}`}
         >
           {cell}
         </td>

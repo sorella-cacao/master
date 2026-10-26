@@ -176,12 +176,10 @@ export default async function OrdersPage(props: PageProps<"/pod/orders">) {
                   caption={g.title}
                   headings={[g.title === "Pure Cacao" ? "Size" : "Flavour", "To make", "Weight"]}
                   highlight={[1, 2]}
-                  columnWidth="w-24"
-                  compact
                 >
                   {g.rows.map((r, index) => (
                     <Fragment key={r.id}>
-                      <ItemRow name={r.name} highlight={[1, 2]} compact accent={!!r.base} cells={[r.toMake, formatGrams(r.kg)]} />
+                      <ItemRow name={r.name} highlight={[1, 2]} accent={!!r.base} cells={[r.toMake, formatGrams(r.kg)]} />
                       {r.base && g.rows[index + 1]?.base !== r.base && (
                         <tr className="border-t-2 border-[#c98557]">
                           <td aria-hidden />
@@ -228,11 +226,9 @@ export default async function OrdersPage(props: PageProps<"/pod/orders">) {
                 key={g.title}
                 caption={g.title}
                 headings={[g.title === "Pure Cacao" ? "Size" : "Flavour", "Ordered", "In stock"]}
-                columnWidth="w-24"
-                compact
               >
                 {g.rows.map((r) => (
-                  <ItemRow key={r.id} name={r.name} compact cells={[r.ordered, r.inStock]} />
+                  <ItemRow key={r.id} name={r.name} cells={[r.ordered, r.inStock]} />
                 ))}
               </ItemTable>
             ))}
@@ -242,7 +238,7 @@ export default async function OrdersPage(props: PageProps<"/pod/orders">) {
 
       <details open={openOrders.length === 0} className="rounded-2xl border border-white/10 bg-cacao-950/40">
         <summary className="cursor-pointer p-6 sm:px-8">
-          <span className="text-3xl">New order</span>
+          <span className="text-4xl">New order</span>
           <span className="mt-1 block text-base text-cream/70">Copy in an order from your email.</span>
         </summary>
         <div className="px-6 pb-6 sm:px-8 sm:pb-8">
@@ -293,7 +289,7 @@ export default async function OrdersPage(props: PageProps<"/pod/orders">) {
       {sentOrders.length > 0 && (
         <details className="rounded-2xl border border-white/10 bg-cacao-950/40">
           <summary className="cursor-pointer p-6 sm:px-8">
-            <span className="text-3xl">Order history</span>
+            <span className="text-4xl">Order history</span>
             <span className="mt-1 block text-base text-cream/70">
               The latest {sentOrders.length} sent orders, spontaneous buys and market sales.
             </span>
@@ -354,7 +350,7 @@ function OrderCard({
       )}
 
       <div className="mt-4">
-        <ItemTable headings={["Item", "Qty", "Each", "Total"]}>
+        <ItemTable headings={["Item", "Qty", "Each", "Total"]} columnWidth="w-28">
           {order.lines.map((line) => {
             const item = items.get(line.stock_item_id);
             return (

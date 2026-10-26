@@ -51,7 +51,7 @@ export function SaleFields({ kind, groups }: { kind: "spontaneous" | "market"; g
           return (
             <div
               key={line.key}
-              className="grid grid-cols-[1fr_5.5rem] items-end gap-3 rounded-xl border border-white/15 p-3 odd:bg-cacao-950/60 sm:grid-cols-[10rem_1fr_6rem_2.5rem]"
+              className="grid grid-cols-[1fr_5.5rem] items-end gap-2 rounded-xl border border-white/15 px-3 py-2 odd:bg-cacao-950/60 sm:grid-cols-[10rem_1fr_6rem_2.5rem]"
             >
               <label className="col-start-1 row-start-1 block">
                 <span className="eyebrow mb-1 block text-xs text-cream/70">Type</span>
@@ -59,7 +59,7 @@ export function SaleFields({ kind, groups }: { kind: "spontaneous" | "market"; g
                   value={line.group}
                   onChange={(e) => update(line.key, { group: e.target.value, item: "" })}
                   aria-label={`Line ${index + 1} type`}
-                  className="pod-input"
+                  className="pod-input py-1.5 text-sm"
                 >
                   {groups.map((g) => (
                     <option key={g.title} value={g.title}>
@@ -76,7 +76,7 @@ export function SaleFields({ kind, groups }: { kind: "spontaneous" | "market"; g
                   value={line.item}
                   onChange={(e) => update(line.key, { item: e.target.value })}
                   aria-label={`Line ${index + 1} ${line.group === "Pure Cacao" ? "size" : "flavour"}`}
-                  className="pod-input"
+                  className="pod-input py-1.5 text-sm"
                 >
                   <option value="" disabled>
                     Choose…
@@ -100,7 +100,7 @@ export function SaleFields({ kind, groups }: { kind: "spontaneous" | "market"; g
                   value={line.qty}
                   onChange={(e) => update(line.key, { qty: e.target.value })}
                   aria-label={`Line ${index + 1} quantity`}
-                  className="pod-input text-right"
+                  className="pod-input py-1.5 text-right text-sm"
                 />
               </label>
               {lines.length > 1 ? (
@@ -108,7 +108,7 @@ export function SaleFields({ kind, groups }: { kind: "spontaneous" | "market"; g
                   type="button"
                   onClick={() => setLines((all) => all.filter((l) => l.key !== line.key))}
                   aria-label={`Remove line ${index + 1}`}
-                  className="col-span-2 row-start-3 h-10 justify-self-end rounded-full px-3 text-xl text-cream/70 hover:text-gold sm:col-span-1 sm:col-start-4 sm:row-start-1"
+                  className="col-span-2 row-start-3 h-8 justify-self-end rounded-full px-3 text-xl text-cream/70 hover:text-gold sm:col-span-1 sm:col-start-4 sm:row-start-1"
                 >
                   ×
                 </button>

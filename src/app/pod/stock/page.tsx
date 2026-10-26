@@ -53,7 +53,7 @@ export default async function StockPage() {
         hint={`Last stock take: ${when(lastTake.data?.created_at)} · Last batch added: ${when(lastMade.data?.created_at)}. Orders marked Sent come off automatically.`}
         open
       >
-        <div className="space-y-6">
+        <div className="space-y-3">
           {groups.map((group) => (
             <ItemTable key={group.productId} caption={group.title} headings={[itemHeading(group), "In stock", "Wholesale"]} collapsible>
               {group.items.map((item) => (
@@ -70,7 +70,7 @@ export default async function StockPage() {
                     </>
                   }
                   cells={[
-                    <span key="qty" className={`text-lg ${item.quantity < 0 ? "text-gold" : ""}`}>
+                    <span key="qty" className={item.quantity < 0 ? "text-gold" : ""}>
                       {item.quantity}
                     </span>,
                     <span key="price" className="text-cream/80">
@@ -98,9 +98,9 @@ export default async function StockPage() {
 
       <Panel title="Wholesale prices" hint="New orders use these prices. Orders already entered keep theirs.">
         <PodForm action={savePrices} submitLabel="Save prices">
-          <div className="space-y-6">
+          <div className="space-y-3">
             {groups.map((group) => (
-              <ItemTable key={group.productId} caption={group.title} headings={[itemHeading(group), "Wholesale ($)"]} columnWidth="w-40" collapsible>
+              <ItemTable key={group.productId} caption={group.title} headings={[itemHeading(group), "Wholesale ($)"]} columnWidth="w-28" collapsible>
                 {group.items.map((item) => (
                   <ItemRow
                     key={item.id}
@@ -116,7 +116,7 @@ export default async function StockPage() {
                         defaultValue={item.wholesalePrice.toFixed(2)}
                         required
                         aria-label={`${group.title} ${item.name} wholesale price`}
-                        className="pod-input w-28 py-2 text-right"
+                        className="pod-input w-20 px-2 py-1 text-right text-sm"
                       />,
                     ]}
                   />
@@ -217,7 +217,7 @@ function Panel({ title, hint, open, children }: { title: string; hint: string; o
   return (
     <details open={open} className="rounded-2xl border border-white/10 bg-cacao-950/40">
       <summary className="cursor-pointer p-6 sm:px-8">
-        <span className="text-3xl">{title}</span>
+        <span className="text-4xl">{title}</span>
         <span className="mt-1 block text-base text-cream/70">{hint}</span>
       </summary>
       <div className="px-6 pb-6 sm:px-8 sm:pb-8">{children}</div>
@@ -243,13 +243,13 @@ const itemHeading = (group: StockGroup) => (group.title === "Pure Cacao" ? "Size
 function CountTables({ groups, name }: { groups: StockGroup[]; name: "made" | "count" }) {
   const isCount = name === "count";
   return (
-    <div className="space-y-6">
+    <div className="space-y-3">
       {groups.map((group) => (
         <ItemTable
           key={group.productId}
           caption={group.title}
           headings={[itemHeading(group), isCount ? "Was" : "In stock", isCount ? "Count now" : "Made"]}
-          columnWidth="w-36"
+          columnWidth="w-28"
           collapsible
         >
           {group.items.map((item) => (
@@ -268,7 +268,7 @@ function CountTables({ groups, name }: { groups: StockGroup[]; name: "made" | "c
                   placeholder={isCount ? undefined : "0"}
                   defaultValue={isCount ? Math.max(item.quantity, 0) : undefined}
                   aria-label={`${group.title} ${item.name}`}
-                  className="pod-input w-24 py-2 text-right"
+                  className="pod-input w-20 px-2 py-1 text-right text-sm"
                 />,
               ]}
             />

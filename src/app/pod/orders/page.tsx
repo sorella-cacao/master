@@ -42,6 +42,9 @@ function itemKg(groupTitle: string, itemName: string, chocolateGrams: number | n
 
 const formatKg = (kg: number) => kg.toLocaleString("en-AU", { maximumFractionDigits: 2 });
 
+/** "600g", or "1,980g" for larger amounts. */
+const formatGrams = (kg: number) => `${Math.round(kg * 1000).toLocaleString("en-AU")}g`;
+
 const orderTotal = (order: Order) => order.lines.reduce((sum, l) => sum + l.quantity * Number(l.unit_price), 0);
 const itemCount = (order: Order) => order.lines.reduce((sum, l) => sum + l.quantity, 0);
 
@@ -123,6 +126,11 @@ export default async function OrdersPage(props: PageProps<"/pod/orders">) {
   for (const r of plan.flatMap((g) => g.rows)) {
     if (r.base) baseKg.set(r.base, (baseKg.get(r.base) ?? 0) + r.kg);
   }
+  // Just what still needs making, for the bars.
+  const makeList = plan
+    .filter((g) => g.title !== "Pure Cacao")
+    .map((g) => ({ ...g, rows: g.rows.filter((r) => r.toMake > 0) }))
+    .filter((g) => g.rows.length);
   const laterOrders = openOrders.filter((o) => o.needed_by && o.needed_by > weekEnd).length;
 
   return (
@@ -136,7 +144,7 @@ export default async function OrdersPage(props: PageProps<"/pod/orders">) {
         <div className="flex flex-wrap items-end justify-between gap-4">
           <div>
             <h2 id="plan-heading" className="text-4xl">
-              {weekStart === thisMonday ? "To make this week" : "To make"}
+              {weekStart === thisMonday ? "This week’s orders" : "Orders for the week"}
             </h2>
             <p className="mt-1 text-cream/70">
               Week of {shortDate(weekStart)} to {shortDate(weekEnd)}
@@ -153,13 +161,15 @@ export default async function OrdersPage(props: PageProps<"/pod/orders">) {
           <p className="text-xl text-cream/80">Nothing ordered for this week yet.</p>
         ) : (
           <>
-            <div className="space-y-6">
+            <div className="space-y-3">
               {plan.map((g) => (
                 <ItemTable
                   key={g.title}
                   caption={g.title}
                   headings={[g.title === "Pure Cacao" ? "Size" : "Flavour", "Ordered", "In stock", "To make", "kg"]}
                   highlight={[3, 4]}
+                  columnWidth="w-20"
+                  compact
                 >
                   {g.rows.map((r, index) => {
                     const lastOfBase = r.base && g.rows[index + 1]?.base !== r.base;
@@ -169,23 +179,24 @@ export default async function OrdersPage(props: PageProps<"/pod/orders">) {
                         <ItemRow
                           name={r.name}
                           highlight={[3, 4]}
+                          compact
                           cells={[
                             r.ordered,
                             r.inStock,
-                            <span key="make" className={`text-lg ${r.toMake ? "" : "text-cream/70"}`}>
+                            <span key="make" className={r.toMake ? "" : "text-cream/70"}>
                               {r.toMake}
                             </span>,
-                            <span key="kg" className={`text-lg ${r.kg ? "" : "text-cream/70"}`}>
+                            <span key="kg" className={r.kg ? "" : "text-cream/70"}>
                               {formatKg(r.kg)}
                             </span>,
                           ]}
                         />
                         {lastOfBase && (
                           <tr className="border-t-2 border-[#efb94f]">
-                            <th scope="row" colSpan={4} className="px-4 py-2.5 text-right font-sans font-semibold">
+                            <th scope="row" colSpan={4} className="px-3 py-1 text-right font-sans font-semibold">
                               {r.base} total
                             </th>
-                            <td className="bg-[#efb94f] px-4 py-2.5 text-right text-xl font-semibold tabular-nums">
+                            <td className="bg-[#efb94f] px-3 py-1 text-right font-semibold tabular-nums">
                               {formatKg(baseTotal)}
                             </td>
                           </tr>
@@ -220,6 +231,42 @@ export default async function OrdersPage(props: PageProps<"/pod/orders">) {
           {laterOrders > 0 && ` ${laterOrders} later ${laterOrders === 1 ? "order isn’t" : "orders aren’t"} included yet.`}
         </p>
       </section>
+
+      {makeList.length > 0 && (
+        <section aria-labelledby="make-heading" className="space-y-5 rounded-2xl border-2 border-[#efb94f] bg-cacao-950/40 p-6 sm:p-8">
+          <h2 id="make-heading" className="text-4xl">
+            {weekStart === thisMonday ? "To make this week" : "To make"}
+          </h2>
+          <div className="grid gap-8 md:grid-cols-2">
+            {makeList.map((g) => (
+              <div key={g.title}>
+                <h3 className="eyebrow mb-2 text-cream/70">{g.title}</h3>
+                <ul className="divide-y divide-white/10 font-sans text-lg">
+                  {g.rows.map((r, index) => (
+                    <Fragment key={r.id}>
+                      <li className="flex items-baseline justify-between gap-4 py-2">
+                        <span>{r.name}</span>
+                        <span className="shrink-0 tabular-nums">
+                          <strong className="font-semibold">{r.toMake}</strong>
+                          <span className="text-cream/70"> · {formatGrams(r.kg)}</span>
+                        </span>
+                      </li>
+                      {r.base && g.rows[index + 1]?.base !== r.base && (
+                        <li className="flex items-baseline justify-between gap-4 bg-[#f6cf7a] px-3 py-2 font-semibold">
+                          <span>{r.base} total</span>
+                          <span className="tabular-nums">
+                            {formatGrams(g.rows.filter((x) => x.base === r.base).reduce((n, x) => n + x.kg, 0))}
+                          </span>
+                        </li>
+                      )}
+                    </Fragment>
+                  ))}
+                </ul>
+              </div>
+            ))}
+          </div>
+        </section>
+      )}
 
       <details open={openOrders.length === 0} className="rounded-2xl border border-white/10 bg-cacao-950/40">
         <summary className="cursor-pointer p-6 sm:px-8">

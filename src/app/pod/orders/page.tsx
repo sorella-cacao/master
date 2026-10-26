@@ -178,12 +178,12 @@ export default async function OrdersPage(props: PageProps<"/pod/orders">) {
                       <Fragment key={r.id}>
                         <ItemRow name={r.name} highlight={[1, 2]} accent={!!r.base} cells={[r.toMake, formatGrams(r.kg)]} />
                         {r.base && g.rows[index + 1]?.base !== r.base && (
-                          <tr className="border-t border-white/10">
+                          <tr className="border-t border-white/30">
                             <td aria-hidden />
-                            <th scope="row" className="whitespace-nowrap bg-[#e7b28e] px-2 py-1 text-right font-sans text-[0.7rem] font-semibold">
+                            <th scope="row" className="whitespace-nowrap border-l border-white/30 bg-[#e7b28e] px-2 py-1 text-right font-sans text-[0.7rem] font-semibold">
                               {r.base} total
                             </th>
-                            <td className="bg-[#d9966a] px-3 py-1 text-right font-semibold tabular-nums">
+                            <td className="border-l border-white/30 bg-[#d9966a] px-3 py-1 text-right font-semibold tabular-nums">
                               {formatGrams(g.rows.filter((x) => x.base === r.base).reduce((n, x) => n + x.kg, 0))}
                             </td>
                           </tr>

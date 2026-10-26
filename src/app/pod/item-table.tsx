@@ -62,7 +62,7 @@ export function ItemTable({
                 key={heading}
                 scope="col"
                 className={`px-3 py-1 ${i === 0 ? "text-left" : `${columnWidth} text-right`} ${
-                  highlight.includes(i) ? "bg-[#efb94f] font-semibold text-cream" : "font-normal"
+                  highlight.includes(i) ? "border-l border-white/30 bg-[#efb94f] font-semibold text-cream" : "font-normal"
                 }`}
               >
                 {heading}
@@ -98,7 +98,7 @@ export function ItemRow({
       {cells.map((cell, i) => (
         <td
           key={i}
-          className={`px-3 py-1 text-right tabular-nums ${highlight.includes(i + 1) ? `${accent ? "bg-[#e7b28e]" : "bg-[#f6cf7a] font-semibold"} text-cream` : ""}`}
+          className={`px-3 py-1 text-right tabular-nums ${highlight.includes(i + 1) ? `border-l border-t border-white/30 ${accent ? "bg-[#e7b28e]" : "bg-[#f6cf7a] font-semibold"} text-cream` : ""}`}
         >
           {cell}
         </td>

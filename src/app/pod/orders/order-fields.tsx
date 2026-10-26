@@ -72,6 +72,7 @@ export function OrderFields({
           <ItemTable
             key={group.title}
             caption={group.title}
+            collapsible
             headings={[group.title === "Pure Cacao" ? "Size" : "Flavour", "Price", "Qty"]}
             columnWidth="w-28"
           >

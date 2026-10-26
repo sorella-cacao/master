@@ -6,6 +6,7 @@ import { addDays, isDate, mondayOf, shortDate, sydneyToday } from "@/lib/weeks";
 import { ItemRow, ItemTable } from "../item-table";
 import { PodForm } from "../pod-form";
 import { PodNav } from "../pod-nav";
+import { PodPanel } from "../pod-panel";
 import { getSession } from "../session";
 import { type StockGroup, getStockGroups } from "../stock-items";
 import { deleteOrder, saveOrder, undoSale } from "./actions";
@@ -140,92 +141,91 @@ export default async function OrdersPage(props: PageProps<"/pod/orders">) {
         <PodNav current="/pod/orders" />
       </header>
 
-      <section aria-labelledby="make-heading" className="pod-card space-y-5 p-6 sm:p-8">
-        <div className="flex flex-wrap items-end justify-between gap-4">
-          <div>
-            <h2 id="make-heading" className="text-3xl">
-              {weekStart === thisMonday ? "To make this week" : "To make"}
-            </h2>
-            <p className="mt-1 text-cream/70">
-              Week of {shortDate(weekStart)} to {shortDate(weekEnd)}
-            </p>
-          </div>
+      <PodPanel
+        title={weekStart === thisMonday ? "To make this week" : "To make"}
+        hint={`Week of ${shortDate(weekStart)} to ${shortDate(weekEnd)}`}
+        open
+      >
+        <div className="space-y-5">
           <nav aria-label="Choose a week" className="flex flex-wrap gap-2">
             <WeekLink href={`/pod/orders?week=${addDays(weekStart, -7)}`}>← Previous</WeekLink>
             {weekStart !== thisMonday && <WeekLink href="/pod/orders">This week</WeekLink>}
             <WeekLink href={`/pod/orders?week=${addDays(weekStart, 7)}`}>Next →</WeekLink>
           </nav>
-        </div>
 
-        {plan.length === 0 ? (
-          <p className="text-xl text-cream/80">Nothing ordered for this week yet.</p>
-        ) : makeList.length === 0 ? (
-          <p className="text-xl text-cream/80">You have enough stock for everything ordered.</p>
-        ) : (
-          <>
-            {baseKg.size > 0 && (
-              <p className="flex flex-wrap items-center gap-2 font-sans text-sm text-cream/80">
-                <span aria-hidden className="inline-block h-4 w-6 rounded border border-[#c98557] bg-[#e7b28e]" />
-                Made from {[...baseKg.keys()].join(" and ")} chocolate
+          {plan.length === 0 ? (
+            <p className="text-xl text-cream/80">Nothing ordered for this week yet.</p>
+          ) : makeList.length === 0 ? (
+            <p className="text-xl text-cream/80">You have enough stock for everything ordered.</p>
+          ) : (
+            <>
+              {baseKg.size > 0 && (
+                <p className="flex flex-wrap items-center gap-2 font-sans text-sm text-cream/80">
+                  <span aria-hidden className="inline-block h-4 w-6 rounded border border-[#c98557] bg-[#e7b28e]" />
+                  Made from {[...baseKg.keys()].join(" and ")} chocolate
+                </p>
+              )}
+              <div className="space-y-3">
+                {makeList.map((g) => (
+                  <ItemTable
+                    key={g.title}
+                    caption={g.title}
+                    headings={[g.title === "Pure Cacao" ? "Size" : "Flavour", "To make", "Weight"]}
+                    highlight={[1, 2]}
+                    collapsible
+                  >
+                    {g.rows.map((r, index) => (
+                      <Fragment key={r.id}>
+                        <ItemRow name={r.name} highlight={[1, 2]} accent={!!r.base} cells={[r.toMake, formatGrams(r.kg)]} />
+                        {r.base && g.rows[index + 1]?.base !== r.base && (
+                          <tr className="border-t-2 border-[#c98557]">
+                            <td aria-hidden />
+                            <th scope="row" className="whitespace-nowrap bg-[#e7b28e] px-2 py-1 text-right font-sans text-[0.7rem] font-semibold">
+                              {r.base} total
+                            </th>
+                            <td className="bg-[#d9966a] px-3 py-1 text-right font-semibold tabular-nums">
+                              {formatGrams(g.rows.filter((x) => x.base === r.base).reduce((n, x) => n + x.kg, 0))}
+                            </td>
+                          </tr>
+                        )}
+                      </Fragment>
+                    ))}
+                  </ItemTable>
+                ))}
+              </div>
+              <p className="font-sans text-lg">
+                Make <strong className="text-gold">{totalToMake}</strong> in total, which is{" "}
+                <strong className="text-gold">{formatKg(totalKg)} kg</strong> of chocolate
+                {[...baseKg].map(([base, kg], i) => (
+                  <Fragment key={base}>
+                    {i === 0 ? ", including " : " and "}
+                    <strong className="text-gold">{formatKg(kg)} kg</strong> of {base}
+                  </Fragment>
+                ))}
+                .
               </p>
-            )}
-            <div className="space-y-3">
-              {makeList.map((g) => (
-                <ItemTable
-                  key={g.title}
-                  caption={g.title}
-                  headings={[g.title === "Pure Cacao" ? "Size" : "Flavour", "To make", "Weight"]}
-                  highlight={[1, 2]}
-                >
-                  {g.rows.map((r, index) => (
-                    <Fragment key={r.id}>
-                      <ItemRow name={r.name} highlight={[1, 2]} accent={!!r.base} cells={[r.toMake, formatGrams(r.kg)]} />
-                      {r.base && g.rows[index + 1]?.base !== r.base && (
-                        <tr className="border-t-2 border-[#c98557]">
-                          <td aria-hidden />
-                          <th scope="row" className="whitespace-nowrap bg-[#e7b28e] px-2 py-1 text-right font-sans text-[0.7rem] font-semibold">
-                            {r.base} total
-                          </th>
-                          <td className="bg-[#d9966a] px-3 py-1 text-right font-semibold tabular-nums">
-                            {formatGrams(g.rows.filter((x) => x.base === r.base).reduce((n, x) => n + x.kg, 0))}
-                          </td>
-                        </tr>
-                      )}
-                    </Fragment>
-                  ))}
-                </ItemTable>
-              ))}
-            </div>
-            <p className="font-sans text-lg">
-              Make <strong className="text-gold">{totalToMake}</strong> in total, which is{" "}
-              <strong className="text-gold">{formatKg(totalKg)} kg</strong> of chocolate
-              {[...baseKg].map(([base, kg], i) => (
-                <Fragment key={base}>
-                  {i === 0 ? ", including " : " and "}
-                  <strong className="text-gold">{formatKg(kg)} kg</strong> of {base}
-                </Fragment>
-              ))}
-              .
-            </p>
-          </>
-        )}
-        <p className="text-base text-cream/70">
-          Counts every order not yet sent that’s needed by {shortDate(weekEnd)}, including overdue ones.
-          {laterOrders > 0 && ` ${laterOrders} later ${laterOrders === 1 ? "order isn’t" : "orders aren’t"} included yet.`}
-        </p>
-      </section>
+            </>
+          )}
+          <p className="text-base text-cream/70">
+            Counts every order not yet sent that’s needed by {shortDate(weekEnd)}, including overdue ones.
+            {laterOrders > 0 && ` ${laterOrders} later ${laterOrders === 1 ? "order isn’t" : "orders aren’t"} included yet.`}
+          </p>
+        </div>
+      </PodPanel>
 
       {plan.length > 0 && (
-        <section aria-labelledby="plan-heading" className="pod-card space-y-5 p-6 sm:p-8">
-          <h2 id="plan-heading" className="text-3xl">
-            {weekStart === thisMonday ? "This week’s orders" : "Orders for the week"}
-          </h2>
+        <PodPanel
+          title={weekStart === thisMonday ? "This week’s orders" : "Orders for the week"}
+          hint="How many of each are ordered, and how many you have."
+          open
+        >
           <div className="space-y-3">
             {plan.map((g) => (
               <ItemTable
                 key={g.title}
                 caption={g.title}
                 headings={[g.title === "Pure Cacao" ? "Size" : "Flavour", "Ordered", "In stock"]}
+                collapsible
               >
                 {g.rows.map((r) => (
                   <ItemRow key={r.id} name={r.name} cells={[r.ordered, r.inStock]} />
@@ -233,73 +233,67 @@ export default async function OrdersPage(props: PageProps<"/pod/orders">) {
               </ItemTable>
             ))}
           </div>
-        </section>
+        </PodPanel>
       )}
 
-      <details open={openOrders.length === 0} className="pod-card">
-        <summary className="cursor-pointer px-6 py-4 sm:px-8">
-          <span className="text-3xl">New order</span>
-          <span className="mt-1 block text-base text-cream/70">Copy in an order from your email.</span>
-        </summary>
-        <div className="px-6 pb-6 sm:px-8 sm:pb-8">
-          <PodForm action={saveOrder} submitLabel="Save order" resetOnSuccess>
-            <OrderFields groups={formGroups(groups)} customers={customers} />
-          </PodForm>
-        </div>
-      </details>
+      <PodPanel title="New order" hint="Copy in an order from your email." open={openOrders.length === 0}>
+        <PodForm action={saveOrder} submitLabel="Save order" resetOnSuccess>
+          <OrderFields groups={formGroups(groups)} customers={customers} />
+        </PodForm>
+      </PodPanel>
 
-      <section aria-labelledby="open-heading" className="pod-card space-y-5 p-6 sm:p-8">
-        <h2 id="open-heading" className="text-3xl">
-          Orders
-        </h2>
-        {openOrders.length === 0 && <p className="text-xl text-cream/70">No orders waiting.</p>}
-        {openOrders.map((order) => (
-          <OrderCard key={order.id} order={order} items={items} today={today}>
-            <details className="mt-5 border-t border-white/10 pt-4">
-              <summary className="eyebrow cursor-pointer text-cream/70 hover:text-gold">Edit order</summary>
-              <div className="mt-4">
-                <PodForm action={saveOrder} submitLabel="Save changes">
-                  <input type="hidden" name="order_id" value={order.id} />
-                  <OrderFields
-                    groups={formGroups(groups, order)}
-                    customers={customers}
-                    initial={{
-                      customer: order.customer,
-                      neededBy: order.needed_by,
-                      note: order.note,
-                      quantities: Object.fromEntries(order.lines.map((l) => [l.stock_item_id, l.quantity])),
-                      prices: Object.fromEntries(order.lines.map((l) => [l.stock_item_id, Number(l.unit_price)])),
-                    }}
-                  />
-                </PodForm>
-                <PodForm
-                  action={deleteOrder}
-                  submitLabel="Delete order"
-                  variant="quiet"
-                  confirmMessage={`Delete the order for ${order.customer}? This can’t be undone.`}
-                >
-                  <input type="hidden" name="order_id" value={order.id} />
-                </PodForm>
-              </div>
-            </details>
-          </OrderCard>
-        ))}
-      </section>
+      <PodPanel
+        title="Orders"
+        hint={openOrders.length === 1 ? "1 order waiting. Tap an order to fold it away." : `${openOrders.length} orders waiting. Tap an order to fold it away.`}
+        open
+      >
+        <div className="space-y-5">
+          {openOrders.length === 0 && <p className="text-xl text-cream/70">No orders waiting.</p>}
+          {openOrders.map((order) => (
+            <OrderCard key={order.id} order={order} items={items} today={today} open>
+              <details className="mt-5 border-t border-white/10 pt-4">
+                <summary className="eyebrow cursor-pointer text-cream/70 hover:text-gold">Edit order</summary>
+                <div className="mt-4">
+                  <PodForm action={saveOrder} submitLabel="Save changes">
+                    <input type="hidden" name="order_id" value={order.id} />
+                    <OrderFields
+                      groups={formGroups(groups, order)}
+                      customers={customers}
+                      initial={{
+                        customer: order.customer,
+                        neededBy: order.needed_by,
+                        note: order.note,
+                        quantities: Object.fromEntries(order.lines.map((l) => [l.stock_item_id, l.quantity])),
+                        prices: Object.fromEntries(order.lines.map((l) => [l.stock_item_id, Number(l.unit_price)])),
+                      }}
+                    />
+                  </PodForm>
+                  <PodForm
+                    action={deleteOrder}
+                    submitLabel="Delete order"
+                    variant="quiet"
+                    confirmMessage={`Delete the order for ${order.customer}? This can’t be undone.`}
+                  >
+                    <input type="hidden" name="order_id" value={order.id} />
+                  </PodForm>
+                </div>
+              </details>
+            </OrderCard>
+          ))}
+        </div>
+      </PodPanel>
 
       {sentOrders.length > 0 && (
-        <details className="pod-card">
-          <summary className="cursor-pointer px-6 py-4 sm:px-8">
-            <span className="text-3xl">Order history</span>
-            <span className="mt-1 block text-base text-cream/70">
-              The latest {sentOrders.length} sent orders, spontaneous buys and market sales.
-            </span>
-          </summary>
-          <div className="space-y-5 px-6 pb-6 sm:px-8 sm:pb-8">
+        <PodPanel
+          title="Order history"
+          hint={`The latest ${sentOrders.length} sent orders, spontaneous buys and market sales. Tap one to see what was in it.`}
+        >
+          <div className="space-y-3">
             {sentOrders.map((order) => (
               <OrderCard key={order.id} order={order} items={items} today={today} />
             ))}
           </div>
-        </details>
+        </PodPanel>
       )}
     </div>
   );
@@ -312,78 +306,89 @@ function OrderCard({
   order,
   items,
   today,
+  open,
   children,
 }: {
   order: Order;
   items: Map<string, { name: string; group: string }>;
   today: string;
+  /** Start unfolded (open orders); history starts folded. */
+  open?: boolean;
   children?: React.ReactNode;
 }) {
   const overdue = order.status !== "sent" && order.needed_by && order.needed_by < today;
   const sale = SALE_KINDS[order.kind];
   return (
-    <article className="rounded-2xl border border-white/15 bg-cacao-800/60 p-4 sm:p-6">
-      <div className="flex flex-wrap items-baseline justify-between gap-4">
-        <h3 className="text-2xl text-gold">
-          {order.customer}
-          {sale && order.customer !== sale && (
-            <span className="eyebrow ml-3 rounded-full border border-white/20 px-2 py-0.5 align-middle text-[0.65rem] text-cream/70">
-              {sale}
+    <details open={open} className="group rounded-2xl border border-white/15 bg-cacao-800/60">
+      <summary className="cursor-pointer list-none p-4 sm:px-6 [&::-webkit-details-marker]:hidden">
+        <div className="flex flex-wrap items-baseline justify-between gap-4">
+          <h3 className="text-2xl text-gold">
+            {order.customer}
+            {sale && order.customer !== sale && (
+              <span className="eyebrow ml-3 rounded-full border border-white/20 px-2 py-0.5 align-middle text-[0.65rem] text-cream/70">
+                {sale}
+              </span>
+            )}
+          </h3>
+          <p className="flex items-baseline gap-3 font-sans text-lg">
+            {formatPrice(orderTotal(order))}
+            <span aria-hidden className="text-base text-cream/70 transition-transform group-open:rotate-180">
+              ▾
             </span>
-          )}
-        </h3>
-        <p className="font-sans text-lg">{formatPrice(orderTotal(order))}</p>
-      </div>
-      <p className="mt-1 text-cream/80">
-        {order.status === "sent" && order.sent_at
-          ? `${sale ? "Sold" : "Sent"} ${new Date(order.sent_at).toLocaleDateString("en-AU", { timeZone: "Australia/Sydney", day: "numeric", month: "short" })}`
-          : order.needed_by
-            ? `Needed by ${shortDate(order.needed_by)}`
-            : "No date set"}
-        {overdue && <span className="eyebrow ml-3 rounded-full bg-gold/15 px-2 py-0.5 text-gold">Overdue</span>}
-      </p>
-
-      {!sale && (
-        <div className="mt-4">
-          <OrderStatus orderId={order.id} status={order.status} itemCount={itemCount(order)} />
+          </p>
         </div>
-      )}
+        <p className="mt-1 text-cream/80">
+          {order.status === "sent" && order.sent_at
+            ? `${sale ? "Sold" : "Sent"} ${new Date(order.sent_at).toLocaleDateString("en-AU", { timeZone: "Australia/Sydney", day: "numeric", month: "short" })}`
+            : order.needed_by
+              ? `Needed by ${shortDate(order.needed_by)}`
+              : "No date set"}
+          {overdue && <span className="eyebrow ml-3 rounded-full bg-gold/15 px-2 py-0.5 text-gold">Overdue</span>}
+        </p>
+      </summary>
+      <div className="px-4 pb-4 sm:px-6 sm:pb-6">
+        {!sale && (
+          <div>
+            <OrderStatus orderId={order.id} status={order.status} itemCount={itemCount(order)} />
+          </div>
+        )}
 
-      <div className="mt-4">
-        <ItemTable headings={["Item", "Qty", "Each", "Total"]} columnWidth="w-28">
-          {order.lines.map((line) => {
-            const item = items.get(line.stock_item_id);
-            return (
-              <ItemRow
-                key={line.stock_item_id}
-                name={
-                  <>
-                    {item?.name ?? "Unknown item"} <span className="text-cream/70">· {item?.group}</span>
-                  </>
-                }
-                cells={[
-                  line.quantity,
-                  formatPrice(Number(line.unit_price)),
-                  formatPrice(line.quantity * Number(line.unit_price)),
-                ]}
-              />
-            );
-          })}
-        </ItemTable>
+        <div className={sale ? "" : "mt-4"}>
+          <ItemTable headings={["Item", "Qty", "Each", "Total"]} columnWidth="w-28">
+            {order.lines.map((line) => {
+              const item = items.get(line.stock_item_id);
+              return (
+                <ItemRow
+                  key={line.stock_item_id}
+                  name={
+                    <>
+                      {item?.name ?? "Unknown item"} <span className="text-cream/70">· {item?.group}</span>
+                    </>
+                  }
+                  cells={[
+                    line.quantity,
+                    formatPrice(Number(line.unit_price)),
+                    formatPrice(line.quantity * Number(line.unit_price)),
+                  ]}
+                />
+              );
+            })}
+          </ItemTable>
+        </div>
+        {order.note && <p className="mt-3 italic text-cream/80">{order.note}</p>}
+        {sale && (
+          <PodForm
+            action={undoSale}
+            submitLabel="Undo this sale"
+            variant="quiet"
+            confirmMessage={`Remove this ${sale.toLowerCase()}? Its ${itemCount(order)} items go back into stock.`}
+          >
+            <input type="hidden" name="order_id" value={order.id} />
+          </PodForm>
+        )}
+        {children}
       </div>
-      {order.note && <p className="mt-3 italic text-cream/80">{order.note}</p>}
-      {sale && (
-        <PodForm
-          action={undoSale}
-          submitLabel="Undo this sale"
-          variant="quiet"
-          confirmMessage={`Remove this ${sale.toLowerCase()}? Its ${itemCount(order)} items go back into stock.`}
-        >
-          <input type="hidden" name="order_id" value={order.id} />
-        </PodForm>
-      )}
-      {children}
-    </article>
+    </details>
   );
 }
 

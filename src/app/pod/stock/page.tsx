@@ -3,6 +3,7 @@ import { formatPrice } from "@/lib/format";
 import { ItemRow, ItemTable } from "../item-table";
 import { PodForm } from "../pod-form";
 import { PodNav } from "../pod-nav";
+import { PodPanel } from "../pod-panel";
 import { getSession } from "../session";
 import { type StockGroup, getStockGroups } from "../stock-items";
 import { addMade, addOneOffFlavour, recordSale, saveStockTake, savePrices, setFlavourHidden } from "./actions";
@@ -48,7 +49,7 @@ export default async function StockPage() {
         <PodNav current="/pod/stock" />
       </header>
 
-      <Panel
+      <PodPanel
         title="Stock"
         hint={`Last stock take: ${when(lastTake.data?.created_at)} · Last batch added: ${when(lastMade.data?.created_at)}. Orders marked Sent come off automatically.`}
         open
@@ -82,21 +83,21 @@ export default async function StockPage() {
             </ItemTable>
           ))}
         </div>
-      </Panel>
+      </PodPanel>
 
-      <Panel title="Add what I made this week" hint="Type how many of each you made. They’re added to the stock above." open>
+      <PodPanel title="Add what I made this week" hint="Type how many of each you made. They’re added to the stock above." open>
         <PodForm action={addMade} submitLabel="Add to stock" resetOnSuccess>
           <CountTables groups={groups} name="made" />
         </PodForm>
-      </Panel>
+      </PodPanel>
 
-      <Panel title="Full stock take" hint="Count everything on the shelf. These numbers replace the stock above.">
+      <PodPanel title="Full stock take" hint="Count everything on the shelf. These numbers replace the stock above.">
         <PodForm action={saveStockTake} submitLabel="Save stock take" confirmMessage="Replace your stock levels with these counts?">
           <CountTables groups={groups} name="count" />
         </PodForm>
-      </Panel>
+      </PodPanel>
 
-      <Panel title="Wholesale prices" hint="New orders use these prices. Orders already entered keep theirs.">
+      <PodPanel title="Wholesale prices" hint="New orders use these prices. Orders already entered keep theirs.">
         <PodForm action={savePrices} submitLabel="Save prices">
           <div className="space-y-3">
             {groups.map((group) => (
@@ -125,9 +126,9 @@ export default async function StockPage() {
             ))}
           </div>
         </PodForm>
-      </Panel>
+      </PodPanel>
 
-      <Panel
+      <PodPanel
         title="Add a one-off flavour"
         hint="For a flavour you’re making that isn’t on the website. It appears in stock and orders, never in the shop."
       >
@@ -191,9 +192,9 @@ export default async function StockPage() {
             ))}
           </div>
         )}
-      </Panel>
+      </PodPanel>
 
-      <Panel
+      <PodPanel
         title="Spontaneous buy"
         hint="Someone bought without an order? Add what they took. It comes off stock and goes into order history."
       >
@@ -201,27 +202,15 @@ export default async function StockPage() {
           <input type="hidden" name="kind" value="spontaneous" />
           <SaleFields kind="spontaneous" groups={saleGroups(groups, "wholesale")} />
         </PodForm>
-      </Panel>
+      </PodPanel>
 
-      <Panel title="Market" hint="Add what sold at a market. It comes off stock and goes into order history.">
+      <PodPanel title="Market" hint="Add what sold at a market. It comes off stock and goes into order history.">
         <PodForm action={recordSale} submitLabel="Save and take off stock" resetOnSuccess>
           <input type="hidden" name="kind" value="market" />
           <SaleFields kind="market" groups={saleGroups(groups, "retail")} />
         </PodForm>
-      </Panel>
+      </PodPanel>
     </div>
-  );
-}
-
-function Panel({ title, hint, open, children }: { title: string; hint: string; open?: boolean; children: React.ReactNode }) {
-  return (
-    <details open={open} className="pod-card">
-      <summary className="cursor-pointer px-6 py-4 sm:px-8">
-        <span className="text-3xl">{title}</span>
-        <span className="mt-1 block text-base text-cream/70">{hint}</span>
-      </summary>
-      <div className="px-6 pb-6 pt-2 sm:px-8 sm:pb-8">{children}</div>
-    </details>
   );
 }
 

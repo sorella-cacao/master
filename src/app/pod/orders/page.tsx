@@ -25,6 +25,17 @@ type Order = {
 
 const ORDER_COLUMNS = "id, customer, needed_by, status, note, sent_at, lines:order_lines(stock_item_id, quantity, unit_price)";
 
+/** Chocolate weight of one item, in kg: bars by size, Pure Cacao by its size name (e.g. "250g", "1kg"). */
+function itemKg(groupTitle: string, itemName: string) {
+  if (groupTitle === "Large Bar") return 0.1;
+  if (groupTitle === "Small Bar") return 0.05;
+  const size = itemName.trim().toLowerCase().match(/^(\d+(?:\.\d+)?)\s*(kg|g)$/);
+  if (!size) return 0;
+  return size[2] === "kg" ? Number(size[1]) : Number(size[1]) / 1000;
+}
+
+const formatKg = (kg: number) => kg.toLocaleString("en-AU", { maximumFractionDigits: 2 });
+
 const orderTotal = (order: Order) => order.lines.reduce((sum, l) => sum + l.quantity * Number(l.unit_price), 0);
 const itemCount = (order: Order) => order.lines.reduce((sum, l) => sum + l.quantity, 0);
 
@@ -90,11 +101,13 @@ export default async function OrdersPage(props: PageProps<"/pod/orders">) {
         .filter((i) => ordered.has(i.id))
         .map((i) => {
           const need = ordered.get(i.id)!;
-          return { id: i.id, name: i.name, ordered: need, inStock: i.quantity, toMake: Math.max(0, need - Math.max(i.quantity, 0)) };
+          const toMake = Math.max(0, need - Math.max(i.quantity, 0));
+          return { id: i.id, name: i.name, ordered: need, inStock: i.quantity, toMake, kg: toMake * itemKg(g.title, i.name) };
         }),
     }))
     .filter((g) => g.rows.length);
   const totalToMake = plan.reduce((n, g) => n + g.rows.reduce((m, r) => m + r.toMake, 0), 0);
+  const totalKg = plan.reduce((n, g) => n + g.rows.reduce((m, r) => m + r.kg, 0), 0);
   const laterOrders = openOrders.filter((o) => o.needed_by && o.needed_by > weekEnd).length;
 
   return (
@@ -135,7 +148,8 @@ export default async function OrdersPage(props: PageProps<"/pod/orders">) {
                         <th className="py-2 pr-3 font-normal">{g.title === "Pure Cacao" ? "Size" : "Flavour"}</th>
                         <th className="py-2 pr-3 text-right font-normal">Ordered</th>
                         <th className="py-2 pr-3 text-right font-normal">In stock</th>
-                        <th className="py-2 text-right font-normal">To make</th>
+                        <th className="py-2 pr-3 text-right font-normal">To make</th>
+                        <th className="py-2 text-right font-normal">kg</th>
                       </tr>
                     </thead>
                     <tbody>
@@ -144,9 +158,10 @@ export default async function OrdersPage(props: PageProps<"/pod/orders">) {
                           <td className="py-2.5 pr-3">{r.name}</td>
                           <td className="py-2.5 pr-3 text-right tabular-nums">{r.ordered}</td>
                           <td className="py-2.5 pr-3 text-right tabular-nums">{r.inStock}</td>
-                          <td className={`py-2.5 text-right text-lg tabular-nums ${r.toMake ? "font-medium text-gold" : "text-cream/70"}`}>
+                          <td className={`py-2.5 pr-3 text-right text-lg tabular-nums ${r.toMake ? "font-medium text-gold" : "text-cream/70"}`}>
                             {r.toMake}
                           </td>
+                          <td className={`py-2.5 text-right tabular-nums ${r.kg ? "" : "text-cream/70"}`}>{formatKg(r.kg)}</td>
                         </tr>
                       ))}
                     </tbody>
@@ -157,7 +172,8 @@ export default async function OrdersPage(props: PageProps<"/pod/orders">) {
             <p className="font-sans text-lg">
               {totalToMake ? (
                 <>
-                  Make <strong className="text-gold">{totalToMake}</strong> in total.
+                  Make <strong className="text-gold">{totalToMake}</strong> in total, which is{" "}
+                  <strong className="text-gold">{formatKg(totalKg)} kg</strong> of chocolate.
                 </>
               ) : (
                 "You have enough stock for everything ordered."

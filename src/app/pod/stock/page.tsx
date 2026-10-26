@@ -42,13 +42,13 @@ export default async function StockPage() {
   const hidden = allGroups.flatMap((g) => g.items.filter((i) => !i.isActive).map((i) => ({ ...i, title: g.title })));
 
   return (
-    <div className="space-y-6">
+    <div className="space-y-3">
       <header className="space-y-6">
         <h1 className="font-script text-6xl text-gold sm:text-7xl">The Pod</h1>
         <PodNav current="/pod/stock" />
       </header>
 
-      <PodPanel
+      <PodPanel small
         title="Stock"
         hint={`Last stock take: ${when(lastTake.data?.created_at)} · Last batch added: ${when(lastMade.data?.created_at)}. Orders marked Sent come off automatically.`}
         open
@@ -81,19 +81,19 @@ export default async function StockPage() {
         </div>
       </PodPanel>
 
-      <PodPanel title="Add what I made this week" hint="Type how many of each you made. They’re added to the stock above." open>
+      <PodPanel small title="Add what I made this week" hint="Type how many of each you made. They’re added to the stock above." open>
         <PodForm action={addMade} submitLabel="Add to stock" resetOnSuccess>
           <CountTables groups={groups} name="made" />
         </PodForm>
       </PodPanel>
 
-      <PodPanel title="Full stock take" hint="Count everything on the shelf. These numbers replace the stock above.">
+      <PodPanel small title="Full stock take" hint="Count everything on the shelf. These numbers replace the stock above.">
         <PodForm action={saveStockTake} submitLabel="Save stock take" confirmMessage="Are you sure you want to make these changes?">
           <CountTables groups={groups} name="count" />
         </PodForm>
       </PodPanel>
 
-      <PodPanel
+      <PodPanel small
         title="Add a one-off flavour"
         hint="For a flavour you’re making that isn’t on the website. It appears in stock and orders, never in the shop."
       >
@@ -155,7 +155,7 @@ export default async function StockPage() {
         )}
       </PodPanel>
 
-      <PodPanel
+      <PodPanel small
         title="Spontaneous buy"
         hint="Someone bought without an order? Add what they took. It comes off stock and goes into order history."
       >
@@ -165,7 +165,7 @@ export default async function StockPage() {
         </PodForm>
       </PodPanel>
 
-      <PodPanel title="Market" hint="Add what sold at a market. It comes off stock and goes into order history.">
+      <PodPanel small title="Market" hint="Add what sold at a market. It comes off stock and goes into order history.">
         <PodForm action={recordSale} submitLabel="Save and take off stock" resetOnSuccess>
           <input type="hidden" name="kind" value="market" />
           <SaleFields kind="market" groups={saleGroups(groups)} />

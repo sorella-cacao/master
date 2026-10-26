@@ -146,13 +146,13 @@ export default async function OrdersPage(props: PageProps<"/pod/orders">) {
   const laterOrders = openOrders.filter((o) => o.needed_by && o.needed_by > weekEnd).length;
 
   return (
-    <div className="space-y-6">
+    <div className="space-y-3">
       <header className="space-y-6">
         <h1 className="font-script text-6xl text-gold sm:text-7xl">The Pod</h1>
         <PodNav current="/pod/orders" />
       </header>
 
-      <PodPanel
+      <PodPanel small
         title={weekStart === thisMonday ? "To make this week" : "To make"}
         hint={`Week of ${shortDate(weekStart)} to ${shortDate(weekEnd)}`}
         open
@@ -225,7 +225,7 @@ export default async function OrdersPage(props: PageProps<"/pod/orders">) {
       </PodPanel>
 
       {plan.length > 0 && (
-        <PodPanel
+        <PodPanel small
           title={weekStart === thisMonday ? "This week’s orders" : "Orders for the week"}
           hint="How many of each are ordered, and how many you have."
           open
@@ -247,13 +247,13 @@ export default async function OrdersPage(props: PageProps<"/pod/orders">) {
         </PodPanel>
       )}
 
-      <PodPanel title="New order" hint="Copy in an order from your email." open={openOrders.length === 0}>
+      <PodPanel small title="New order" hint="Copy in an order from your email." open={openOrders.length === 0}>
         <PodForm action={saveOrder} submitLabel="Save order" resetOnSuccess>
           <OrderFields groups={formGroups(groups)} customers={customers} />
         </PodForm>
       </PodPanel>
 
-      <PodPanel
+      <PodPanel small
         title="Orders"
         hint={openOrders.length === 1 ? "1 order waiting. Tap an order to fold it away." : `${openOrders.length} orders waiting. Tap an order to fold it away.`}
         open
@@ -295,7 +295,7 @@ export default async function OrdersPage(props: PageProps<"/pod/orders">) {
       </PodPanel>
 
       {sentOrders.length > 0 && (
-        <PodPanel
+        <PodPanel small
           title="Order history"
           hint={`The latest ${sentOrders.length} sent orders, spontaneous buys and market sales. Tap one to see what was in it.`}
         >
@@ -331,9 +331,9 @@ function OrderCard({
   const sale = SALE_KINDS[order.kind];
   return (
     <details open={open} className="group rounded-2xl border border-white/15 bg-cacao-800/60">
-      <summary className="cursor-pointer list-none p-4 sm:px-6 [&::-webkit-details-marker]:hidden">
+      <summary className="cursor-pointer list-none px-4 py-3 sm:px-5 [&::-webkit-details-marker]:hidden">
         <div className="flex flex-wrap items-baseline justify-between gap-4">
-          <h3 className="text-2xl text-gold">
+          <h3 className="text-xl text-gold">
             {order.customer}
             {sale && order.customer !== sale && (
               <span className="eyebrow ml-3 rounded-full border border-white/20 px-2 py-0.5 align-middle text-[0.65rem] text-cream/70">
@@ -341,7 +341,7 @@ function OrderCard({
               </span>
             )}
           </h3>
-          <p className="flex items-baseline gap-3 font-sans text-lg">
+          <p className="flex items-baseline gap-3 font-sans text-base">
             {formatPrice(orderTotal(order))}
             <span aria-hidden className="text-base text-cream/70 transition-transform group-open:rotate-180">
               ▾

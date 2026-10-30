@@ -99,6 +99,20 @@ export async function setFlavourHidden(_: SaveState, data: FormData): Promise<Sa
   return { ok: hidden ? "Hidden" : "Showing again" };
 }
 
+/** Makes a one-off flavour part of the main stock, so it's no longer listed as a one-off. */
+export async function addToMainStock(_: SaveState, data: FormData): Promise<SaveState> {
+  const { supabase, isAdmin } = await getSession();
+  if (!isAdmin) return NO_ACCESS;
+  const { error } = await supabase
+    .from("stock_items")
+    .update({ is_extra: false })
+    .eq("id", String(data.get("id")))
+    .is("parent_id", null);
+  if (error) return failed(error);
+  refresh();
+  return { ok: "Added to main stock" };
+}
+
 /** A spontaneous buy or a market day: recorded in order history and taken off stock straight away. */
 export async function recordSale(_: SaveState, data: FormData): Promise<SaveState> {
   const { supabase, isAdmin } = await getSession();

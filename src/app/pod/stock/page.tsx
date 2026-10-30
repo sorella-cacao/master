@@ -5,7 +5,7 @@ import { PodNav } from "../pod-nav";
 import { PodPanel } from "../pod-panel";
 import { getSession } from "../session";
 import { type StockGroup, getStockGroups } from "../stock-items";
-import { addMade, addOneOffFlavour, recordSale, saveStockTake, setFlavourHidden } from "./actions";
+import { addMade, addOneOffFlavour, addToMainStock, recordSale, saveStockTake, setFlavourHidden } from "./actions";
 import { type SaleGroup, SaleFields } from "./sale-fields";
 
 export const metadata: Metadata = { title: "Stock" };
@@ -126,10 +126,21 @@ export default async function StockPage() {
                     <span>
                       {item.name} <span className="text-cream/70">· {g.title}</span>
                     </span>
-                    <PodForm action={setFlavourHidden} submitLabel="Hide" variant="quiet" className="-mt-4">
-                      <input type="hidden" name="id" value={item.id} />
-                      <input type="hidden" name="hidden" value="true" />
-                    </PodForm>
+                    <span className="flex flex-wrap gap-x-3">
+                      <PodForm
+                        action={addToMainStock}
+                        submitLabel="Add to main stock"
+                        variant="quiet"
+                        className="-mt-4"
+                        confirmMessage={`Make ${item.name} (${g.title}) part of your main stock?`}
+                      >
+                        <input type="hidden" name="id" value={item.id} />
+                      </PodForm>
+                      <PodForm action={setFlavourHidden} submitLabel="Hide" variant="quiet" className="-mt-4">
+                        <input type="hidden" name="id" value={item.id} />
+                        <input type="hidden" name="hidden" value="true" />
+                      </PodForm>
+                    </span>
                   </div>
                 )),
             )}

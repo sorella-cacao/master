@@ -76,13 +76,11 @@ export async function setOrderStatus(_: SaveState, data: FormData): Promise<Save
   return { ok: status === "sent" ? "Sent, and taken off stock" : "Updated" };
 }
 
+/** Deletes an order; if it was already sent, its items go back into stock. Its invoice, if any, is kept. */
 export async function deleteOrder(_: SaveState, data: FormData): Promise<SaveState> {
   const { supabase, isAdmin } = await getSession();
   if (!isAdmin) return NO_ACCESS;
-  const id = String(data.get("order_id"));
-  const { data: order } = await supabase.from("orders").select("status").eq("id", id).maybeSingle();
-  if (order?.status === "sent") return { error: "Move it back to Packed first, so its stock is put back." };
-  const { error } = await supabase.from("orders").delete().eq("id", id);
+  const { error } = await supabase.rpc("pod_delete_order", { order_id: String(data.get("order_id")) });
   if (error) return failed(error);
   refresh();
   return { ok: "Deleted" };

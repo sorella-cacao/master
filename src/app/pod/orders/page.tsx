@@ -309,7 +309,18 @@ export default async function OrdersPage(props: PageProps<"/pod/orders">) {
             </OrderCard>
           ))}
           {sentOrders.map((order) => (
-            <OrderCard key={order.id} order={order} items={items} today={today} />
+            <OrderCard key={order.id} order={order} items={items} today={today}>
+              {order.kind === "order" && (
+                <PodForm
+                  action={deleteOrder}
+                  submitLabel="Delete order"
+                  variant="quiet"
+                  confirmMessage={`Delete the order for ${order.customer}? Its ${itemCount(order)} items go back into stock.${order.invoice ? " Its invoice stays in your invoices." : ""}`}
+                >
+                  <input type="hidden" name="order_id" value={order.id} />
+                </PodForm>
+              )}
+            </OrderCard>
           ))}
         </div>
       </PodPanel>

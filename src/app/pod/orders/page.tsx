@@ -317,10 +317,10 @@ export default async function OrdersPage(props: PageProps<"/pod/orders">) {
   );
 }
 
-/** Each order's card is coloured by where it's up to: making (yellow), packed (green), sent (brown). */
+/** Each order's card is coloured by where it's up to: making (green), packed (yellow), sent (brown). */
 const STATUS_STYLE: Record<string, { label: string; card: string }> = {
-  to_make: { label: "To make", card: "border-l-[#e0a92c] bg-[#fcefc4]" },
-  packed: { label: "Packed", card: "border-l-[#5e9a4a] bg-[#dcebd2]" },
+  to_make: { label: "To make", card: "border-l-[#5e9a4a] bg-[#dcebd2]" },
+  packed: { label: "Packed", card: "border-l-[#e0a92c] bg-[#fcefc4]" },
   sent: { label: "Sent", card: "border-l-[#8a5226] bg-[#ead8c4]" },
 };
 

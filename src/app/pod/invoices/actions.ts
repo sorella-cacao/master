@@ -2,9 +2,12 @@
 
 import { revalidatePath } from "next/cache";
 import { redirect } from "next/navigation";
+import { formatPrice } from "@/lib/format";
 import { isDate, sydneyToday } from "@/lib/weeks";
 import type { SaveState } from "../actions";
 import { getSession } from "../session";
+import { billToName, getInvoice, invoiceNumber, invoiceTotal } from "./invoice-data";
+import { renderInvoicePdf } from "./invoice-pdf";
 
 const NO_ACCESS: SaveState = { error: "This account doesn't have access to the Pod." };
 
@@ -119,4 +122,42 @@ export async function saveInvoiceSettings(_: SaveState, data: FormData): Promise
   if (error) return failed(error);
   refresh();
   return { ok: "Saved. New invoices use these details; existing ones keep theirs." };
+}
+
+/**
+ * Puts the invoice in an email, PDF attached, in the Fastmail Drafts folder to check and send.
+ * Nothing is sent from here.
+ */
+export async function emailInvoice(invoiceId: string): Promise<SaveState> {
+  const { supabase, isAdmin } = await getSession();
+  if (!isAdmin) return NO_ACCESS;
+
+  const invoice = await getInvoice(supabase, invoiceId);
+  if (!invoice) return { error: "That invoice no longer exists." };
+  const { data: row } = await supabase.from("invoices").select("customer:customers(name, email, contact)").eq("id", invoiceId).single();
+  const name = row?.customer?.name ?? billToName(invoice.billTo);
+  const to = row?.customer?.email?.trim();
+  if (!to) return { error: `Add ${name}’s email address on the Customers page first.` };
+
+  const number = invoiceNumber(invoice.number);
+  const due = new Date(`${invoice.dueOn}T00:00:00Z`).toLocaleDateString("en-AU", { timeZone: "UTC", day: "numeric", month: "long", year: "numeric" });
+  const pdf = await renderInvoicePdf(invoice);
+
+  const { error } = await supabase.functions.invoke("draft-invoice-email", {
+    body: {
+      to,
+      toName: row?.customer?.contact ?? name,
+      subject: `Invoice ${number} – ${invoice.seller.business_name || "Sorella Cacao"}`,
+      text: `Hi ${name},\n\nPlease find attached invoice ${number} for ${formatPrice(invoiceTotal(invoice.lines))}, due ${due}.\n\nThank you!\n\n${invoice.seller.business_name || "Sorella Cacao"}`,
+      filename: `Invoice ${number} - ${billToName(invoice.billTo)}.pdf`.replace(/[^\w .&()-]/g, ""),
+      pdf: Buffer.from(pdf).toString("base64"),
+    },
+  });
+  if (error) {
+    // The function explains what went wrong (e.g. Fastmail isn't connected yet).
+    const body = await (error as { context?: Response }).context?.json?.().catch(() => null);
+    console.error(error);
+    return { error: body?.error ?? "Couldn't make the email. Please try again." };
+  }
+  return { ok: "Draft ready in Fastmail" };
 }

@@ -8,6 +8,7 @@ import { PodNav } from "../../pod-nav";
 import { getSession } from "../../session";
 import { deleteInvoice, saveInvoice, setInvoicePaid } from "../actions";
 import { billToName, getInvoice, invoiceNumber, invoiceStatus, invoiceTotal } from "../invoice-data";
+import { EmailInvoiceButton } from "../email-invoice-button";
 import { InvoiceFields } from "../invoice-fields";
 import { StatusChip } from "../status-chip";
 
@@ -51,12 +52,15 @@ export default async function InvoicePage(props: PageProps<"/pod/invoices/[id]">
               <StatusChip status={status} />
             </p>
           </div>
-          <a
-            href={`${pdf}?download=1`}
-            className="eyebrow rounded-full bg-caramel px-5 py-2.5 text-cacao-950 transition-colors hover:bg-gold"
-          >
-            Download PDF
-          </a>
+          <div className="flex flex-wrap items-start gap-3">
+            <EmailInvoiceButton invoiceId={invoice.id} />
+            <a
+              href={`${pdf}?download=1`}
+              className="eyebrow rounded-full bg-caramel px-5 py-2.5 text-cacao-950 transition-colors hover:bg-gold"
+            >
+              Download PDF
+            </a>
+          </div>
         </div>
 
         <div className="grid gap-8 lg:grid-cols-2">

@@ -258,12 +258,21 @@ export default async function OrdersPage(props: PageProps<"/pod/orders">) {
         </PodForm>
       </PodPanel>
 
-      <PodPanel small
+      <PodPanel
+        small
         title="Orders"
-        hint={openOrders.length === 1 ? "1 order waiting. Tap an order to open it." : `${openOrders.length} orders waiting. Tap an order to open it.`}
+        hint={`${openOrders.filter((o) => o.status === "to_make").length} to make · ${openOrders.filter((o) => o.status === "packed").length} packed · the latest ${sentOrders.length} sent. Tap an order to open it.`}
       >
-        <div className="space-y-5">
-          {openOrders.length === 0 && <p className="text-xl text-cream/70">No orders waiting.</p>}
+        <div className="space-y-3">
+          <p className="flex flex-wrap gap-x-4 gap-y-1 font-sans text-sm text-cream/80">
+            {Object.entries(STATUS_STYLE).map(([status, style]) => (
+              <span key={status} className="flex items-center gap-1.5">
+                <span aria-hidden className={`inline-block h-3 w-5 rounded border-l-4 ${style.card}`} />
+                {style.label}
+              </span>
+            ))}
+          </p>
+          {openOrders.length === 0 && sentOrders.length === 0 && <p className="text-xl text-cream/70">No orders yet.</p>}
           {openOrders.map((order) => (
             <OrderCard key={order.id} order={order} items={items} today={today}>
               <details className="mt-5 border-t border-white/10 pt-4">
@@ -295,24 +304,21 @@ export default async function OrdersPage(props: PageProps<"/pod/orders">) {
               </details>
             </OrderCard>
           ))}
+          {sentOrders.map((order) => (
+            <OrderCard key={order.id} order={order} items={items} today={today} />
+          ))}
         </div>
       </PodPanel>
-
-      {sentOrders.length > 0 && (
-        <PodPanel small
-          title="Order history"
-          hint={`The latest ${sentOrders.length} sent orders, spontaneous buys and market sales. Tap one to see what was in it.`}
-        >
-          <div className="space-y-3">
-            {sentOrders.map((order) => (
-              <OrderCard key={order.id} order={order} items={items} today={today} />
-            ))}
-          </div>
-        </PodPanel>
-      )}
     </div>
   );
 }
+
+/** Each order's card is coloured by where it's up to: making (yellow), packed (green), sent (brown). */
+const STATUS_STYLE: Record<string, { label: string; card: string }> = {
+  to_make: { label: "To make", card: "border-l-[#e0a92c] bg-[#fcefc4]" },
+  packed: { label: "Packed", card: "border-l-[#5e9a4a] bg-[#dcebd2]" },
+  sent: { label: "Sent", card: "border-l-[#8a5226] bg-[#ead8c4]" },
+};
 
 /** Sales recorded without an order, by kind. */
 const SALE_KINDS: Record<string, string | undefined> = { spontaneous: "Spontaneous buy", market: "Market" };
@@ -331,7 +337,7 @@ function OrderCard({
   const overdue = order.status !== "sent" && order.needed_by && order.needed_by < today;
   const sale = SALE_KINDS[order.kind];
   return (
-    <details className="group rounded-2xl border border-white/15 bg-cacao-800/60">
+    <details className={`group rounded-2xl border border-l-[6px] border-white/15 ${STATUS_STYLE[order.status]?.card ?? "bg-cacao-800/60"}`}>
       <summary className="cursor-pointer list-none px-4 py-3 sm:px-5 [&::-webkit-details-marker]:hidden">
         <div className="flex flex-wrap items-baseline justify-between gap-4">
           <h3 className="text-xl text-gold">

@@ -3,6 +3,7 @@
 import { useEffect, useId, useRef, useState } from "react";
 import { formatPrice } from "@/lib/format";
 import { ItemRow, ItemTable } from "../item-table";
+import { parseOrder } from "./parse-order";
 
 export type OrderGroup = { title: string; items: { id: string; name: string; price: number }[] };
 
@@ -41,6 +42,18 @@ export function OrderFields({
       Object.entries(quantities).reduce((sum, [id, qty]) => sum + (qty > 0 ? qty * priceOf(id, standardOf.get(id) ?? 0) : 0), 0) * 100,
     ) / 100;
 
+  const [pasted, setPasted] = useState("");
+  const [pasteResult, setPasteResult] = useState<{ filled: number; unread: string[] } | null>(null);
+
+  /** Fills the quantity boxes from an order pasted from an email. */
+  function fillFromEmail() {
+    const { quantities: found, unread } = parseOrder(pasted, groups);
+    const inputs = ref.current?.querySelectorAll<HTMLInputElement>("input[data-qty]") ?? [];
+    for (const input of inputs) input.value = found[input.dataset.qty!] ? String(found[input.dataset.qty!]) : "";
+    recalculate();
+    setPasteResult({ filled: Object.keys(found).length, unread });
+  }
+
   function recalculate() {
     const inputs = ref.current?.querySelectorAll<HTMLInputElement>("input[data-qty]") ?? [];
     setQuantities(Object.fromEntries([...inputs].map((input) => [input.dataset.qty!, Number(input.value) || 0])));
@@ -52,6 +65,8 @@ export function OrderFields({
     const onReset = () => {
       setCustomer(initialCustomer);
       setQuantities(initialQuantities ?? {});
+      setPasted("");
+      setPasteResult(null);
     };
     form?.addEventListener("reset", onReset);
     return () => form?.removeEventListener("reset", onReset);
@@ -85,6 +100,48 @@ export function OrderFields({
           <input type="date" name="needed_by" defaultValue={initial?.neededBy ?? ""} className="pod-input" />
         </label>
       </div>
+
+      {!initial && (
+        <div className="space-y-2 rounded-xl border border-dashed border-white/25 p-4">
+          <label className="block">
+            <span className="eyebrow mb-2 block text-cream/70">Paste the order from the email</span>
+            <textarea
+              value={pasted}
+              onChange={(e) => setPasted(e.target.value)}
+              rows={5}
+              placeholder={"e.g.\n6 x 50g Hazelnut\n2 x 108g Goat Milk\n75% Blood Orange small - 6"}
+              className="pod-input py-2 text-sm"
+            />
+          </label>
+          <div className="flex flex-wrap items-center gap-x-4 gap-y-2">
+            <button
+              type="button"
+              onClick={fillFromEmail}
+              disabled={!pasted.trim()}
+              className="eyebrow rounded-full border border-white/20 px-4 py-2 text-cream/70 transition-colors hover:border-gold hover:text-gold disabled:opacity-50"
+            >
+              Fill in amounts
+            </button>
+            {pasteResult && (
+              <p className="font-sans text-sm text-cream/70">
+                {pasteResult.filled
+                  ? `Filled in ${pasteResult.filled} ${pasteResult.filled === 1 ? "item" : "items"} below. Check them before saving.`
+                  : "Couldn’t find any flavours in that. Fill in the boxes below instead."}
+              </p>
+            )}
+          </div>
+          {pasteResult && pasteResult.unread.length > 0 && (
+            <div className="rounded-lg bg-[#e7b28e]/40 px-3 py-2 font-sans text-sm">
+              <p className="font-semibold">Couldn’t work out these lines, so add them yourself:</p>
+              <ul className="mt-1 list-disc pl-5">
+                {pasteResult.unread.map((line, i) => (
+                  <li key={i}>{line}</li>
+                ))}
+              </ul>
+            </div>
+          )}
+        </div>
+      )}
 
       <div className="space-y-3">
         {groups.map((group) => (

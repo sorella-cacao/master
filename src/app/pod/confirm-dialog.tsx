@@ -32,8 +32,12 @@ export function useConfirm() {
   const dialog = (
     <dialog
       ref={ref}
-      // Escape or tapping outside counts as No.
-      onClose={() => reply(false)}
+      // Escape or tapping outside counts as No. (Not onClose: closing one box fires that event late,
+      // which would answer the next box when two questions come one after the other.)
+      onCancel={(e) => {
+        e.preventDefault();
+        reply(false);
+      }}
       onClick={(e) => e.target === e.currentTarget && reply(false)}
       aria-labelledby={messageId}
       className="m-auto w-[calc(100%-2rem)] max-w-md rounded-2xl border-2 border-[#efb94f] bg-cacao-950 p-0 text-cream shadow-2xl backdrop:bg-[#1f1208]/40 backdrop:backdrop-blur-sm"

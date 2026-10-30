@@ -1,7 +1,7 @@
 "use client";
 
 import Link from "next/link";
-import { startTransition, useActionState } from "react";
+import { startTransition, useActionState, useState, useTransition } from "react";
 import type { SaveState } from "../actions";
 import { useConfirm } from "../confirm-dialog";
 import { createInvoice } from "../invoices/actions";
@@ -27,6 +27,8 @@ export function OrderStatus({
 }) {
   const [state, formAction, pending] = useActionState(setOrderStatus, undefined as SaveState);
   const { confirm, dialog } = useConfirm();
+  const [invoiceError, setInvoiceError] = useState("");
+  const [sending, startSending] = useTransition();
 
   async function choose(next: string) {
     if (next === status) return;
@@ -35,6 +37,22 @@ export function OrderStatus({
     const data = new FormData();
     data.set("order_id", orderId);
     data.set("status", next);
+
+    // When sending an order without an invoice, offer to make the invoice too, then open it.
+    if (next === "sent" && !invoice && (await confirm("Generate the invoice now?", { yes: "Yes", no: "Not now" }))) {
+      setInvoiceError("");
+      startSending(async () => {
+        const result = await setOrderStatus(undefined, data);
+        if (result?.error) {
+          setInvoiceError(result.error);
+          return;
+        }
+        const invoiceData = new FormData();
+        invoiceData.set("order_id", orderId);
+        await createInvoice(invoiceData);
+      });
+      return;
+    }
     startTransition(() => formAction(data));
   }
 
@@ -45,7 +63,7 @@ export function OrderStatus({
           <button
             key={s.value}
             type="button"
-            disabled={pending}
+            disabled={pending || sending}
             aria-pressed={s.value === status}
             onClick={() => choose(s.value)}
             className={`eyebrow rounded-full px-4 py-2 transition-colors disabled:opacity-60 ${
@@ -74,8 +92,8 @@ export function OrderStatus({
           </button>
         </form>
       )}
-      <p role="status" className={`font-sans text-sm ${state?.error ? "text-gold" : "text-cream/70"}`}>
-        {pending ? "Saving…" : (state?.error ?? state?.ok ?? "")}
+      <p role="status" className={`font-sans text-sm ${state?.error || invoiceError ? "text-gold" : "text-cream/70"}`}>
+        {pending || sending ? "Saving…" : (invoiceError || state?.error || state?.ok || "")}
       </p>
       {dialog}
     </div>

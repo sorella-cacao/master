@@ -37,16 +37,20 @@ const SAME_AS: Record<string, string> = {
 
 // Words that don't tell flavours apart.
 const IGNORE = new Set(["local", "and", "w", "with", "bar", "bars", "dark", "roasted", "the", "of", "choc", "chocolate", "salt", "milk", "x", "qty"]);
+// Words for size, not flavour.
+const SIZE_WORDS = new Set(["large", "small", "lg", "sm", "mini", "big", "grams", "g", "kg"]);
 
 const words = (text: string) =>
   text
     .toLowerCase()
+    // "S&P" and "S and P" are Salt & Pepper.
+    .replace(/\bs\s*(&|and|\+)\s*p\b/g, " pepper ")
     .replace(/&/g, " and ")
     .replace(/[^a-z0-9%.\s]/g, " ")
     .split(/\s+/)
     .filter(Boolean)
     .map((w) => SAME_AS[w] ?? w)
-    .filter((w) => !IGNORE.has(w));
+    .filter((w) => !IGNORE.has(w) && !SIZE_WORDS.has(w) && !/^\d+(\.\d+)?(x|g|kg|grams?)?$/.test(w) && !/^x\d+$/.test(w));
 
 function sizeOf(line: string): Size | null {
   const l = line.toLowerCase();
@@ -105,8 +109,12 @@ function bestMatch(line: string, groups: ParseGroup[], size: Size | null) {
       const linePercents = [...lineWords].filter((w) => w.endsWith("%"));
       const itemPercents = itemWords.filter((w) => w.endsWith("%"));
       if (linePercents.length && itemPercents.length && !itemPercents.some((p) => lineWords.has(p))) continue;
-      const score = itemWords.filter((w) => lineWords.has(w)).length;
+      const matched = itemWords.filter((w) => lineWords.has(w));
+      const score = matched.length;
       if (!score) continue;
+      // Matching only on "75%" isn't enough when the line names something else too (e.g. "75% Beetroot").
+      const onlyPercent = matched.every((w) => w.endsWith("%"));
+      if (onlyPercent && [...lineWords].some((w) => !w.endsWith("%") && !itemWords.includes(w))) continue;
       const extra = itemWords.length - score;
       if (!best || score > best.score || (score === best.score && extra < best.extra)) {
         tie = !!best && score === best.score && extra === best.extra && best.group !== group.title;

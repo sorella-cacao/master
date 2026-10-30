@@ -87,7 +87,8 @@ export default async function StockPage() {
       </PodPanel>
 
       <PodPanel small title="Full stock take" hint="Count everything on the shelf. These numbers replace the stock above.">
-        <PodForm action={saveStockTake} submitLabel="Save stock take" confirmMessage="Are you sure you want to make these changes?">
+        <PodForm action={saveStockTake} submitLabel="Save stock take" confirmMessage="Are you sure you want to make these changes?"
+          confirmDetail="These amounts will override your full stock amounts.">
           <CountTables groups={groups} name="count" />
         </PodForm>
       </PodPanel>

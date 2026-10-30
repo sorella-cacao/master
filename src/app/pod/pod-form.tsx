@@ -10,6 +10,8 @@ type Props = {
   children?: React.ReactNode;
   /** Ask before submitting, e.g. for deletes. */
   confirmMessage?: string;
+  /** Smaller text under the question, e.g. what will happen. */
+  confirmDetail?: string;
   /** Clear the fields after a successful save, e.g. for "add" forms. */
   resetOnSuccess?: boolean;
   variant?: "primary" | "quiet";
@@ -22,6 +24,7 @@ export function PodForm({
   submitLabel,
   children,
   confirmMessage,
+  confirmDetail,
   resetOnSuccess,
   variant = "primary",
   className = "",
@@ -35,7 +38,7 @@ export function PodForm({
     // Submit manually so React doesn't reset the fields back to their old values.
     e.preventDefault();
     const data = new FormData(e.currentTarget);
-    if (confirmMessage && !(await confirm(confirmMessage))) return;
+    if (confirmMessage && !(await confirm(confirmMessage, undefined, confirmDetail))) return;
     setEdited(false);
     startTransition(() => formAction(data));
   }

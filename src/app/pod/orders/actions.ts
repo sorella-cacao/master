@@ -1,6 +1,7 @@
 "use server";
 
 import { revalidatePath } from "next/cache";
+import { redirect } from "next/navigation";
 import { isDate } from "@/lib/weeks";
 import type { SaveState } from "../actions";
 import { getSession } from "../session";
@@ -51,7 +52,7 @@ export async function saveOrder(_: SaveState, data: FormData): Promise<SaveState
   }
   if (!lines.length) return { error: "Add at least one item to the order." };
 
-  const { error } = await supabase.rpc("pod_save_order", {
+  const { data: savedId, error } = await supabase.rpc("pod_save_order", {
     order_id: orderId,
     customer,
     needed_by: neededBy || null,
@@ -60,7 +61,9 @@ export async function saveOrder(_: SaveState, data: FormData): Promise<SaveState
   });
   if (error) return failed(error);
   refresh();
-  return { ok: orderId ? "Saved" : `Order for ${customer} added.` };
+  if (orderId) return { ok: "Saved" };
+  // Show the new order in the Orders list, opened up.
+  redirect(`/pod/orders?saved=${savedId}#order-${savedId}`);
 }
 
 export async function setOrderStatus(_: SaveState, data: FormData): Promise<SaveState> {

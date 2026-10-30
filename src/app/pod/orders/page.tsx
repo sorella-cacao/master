@@ -12,6 +12,7 @@ import { type StockGroup, getStockGroups } from "../stock-items";
 import { deleteOrder, saveOrder, undoSale } from "./actions";
 import { type OrderCustomer, type OrderGroup, OrderFields } from "./order-fields";
 import { OrderStatus } from "./order-status";
+import { ScrollTo } from "./scroll-to";
 
 export const metadata: Metadata = { title: "Orders" };
 
@@ -82,7 +83,8 @@ export default async function OrdersPage(props: PageProps<"/pod/orders">) {
     );
   }
 
-  const { week } = await props.searchParams;
+  const { week, saved: savedParam } = await props.searchParams;
+  const justSavedId = typeof savedParam === "string" ? savedParam : null;
   const today = sydneyToday();
   const thisMonday = mondayOf(today);
   const weekStart = mondayOf(typeof week === "string" && isDate(week) ? week : today);
@@ -258,8 +260,10 @@ export default async function OrdersPage(props: PageProps<"/pod/orders">) {
         </PodForm>
       </PodPanel>
 
+      {justSavedId && <ScrollTo id={`order-${justSavedId}`} />}
       <PodPanel
         small
+        open={!!justSavedId}
         title="Orders"
         hint={`${openOrders.filter((o) => o.status === "to_make").length} to make · ${openOrders.filter((o) => o.status === "packed").length} packed · the latest ${sentOrders.length} sent. Tap an order to open it.`}
       >
@@ -274,7 +278,7 @@ export default async function OrdersPage(props: PageProps<"/pod/orders">) {
           </p>
           {openOrders.length === 0 && sentOrders.length === 0 && <p className="text-xl text-cream/70">No orders yet.</p>}
           {openOrders.map((order) => (
-            <OrderCard key={order.id} order={order} items={items} today={today}>
+            <OrderCard key={order.id} order={order} items={items} today={today} justSaved={order.id === justSavedId}>
               <details className="mt-5 border-t border-white/10 pt-4">
                 <summary className="eyebrow cursor-pointer text-cream/70 hover:text-gold">Edit order</summary>
                 <div className="mt-4">
@@ -327,17 +331,24 @@ function OrderCard({
   order,
   items,
   today,
+  justSaved = false,
   children,
 }: {
   order: Order;
   items: Map<string, { name: string; group: string }>;
   today: string;
+  /** Just added: shown opened up and outlined, and scrolled to. */
+  justSaved?: boolean;
   children?: React.ReactNode;
 }) {
   const overdue = order.status !== "sent" && order.needed_by && order.needed_by < today;
   const sale = SALE_KINDS[order.kind];
   return (
-    <details className={`group rounded-2xl border border-l-[6px] border-white/15 ${STATUS_STYLE[order.status]?.card ?? "bg-cacao-800/60"}`}>
+    <details
+      id={`order-${order.id}`}
+      open={justSaved}
+      className={`group scroll-mt-6 rounded-2xl border border-l-[6px] border-white/15 ${STATUS_STYLE[order.status]?.card ?? "bg-cacao-800/60"} ${justSaved ? "ring-2 ring-[#efb94f]" : ""}`}
+    >
       <summary className="cursor-pointer list-none px-4 py-3 sm:px-5 [&::-webkit-details-marker]:hidden">
         <div className="flex flex-wrap items-baseline justify-between gap-4">
           <h3 className="text-xl text-gold">

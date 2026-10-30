@@ -72,6 +72,7 @@ export type Database = {
           email: string | null
           id: string
           invoice_postage: boolean
+          invoice_variety: boolean
           name: string
           next_invoice_number: number
           notes: string | null
@@ -85,6 +86,7 @@ export type Database = {
           email?: string | null
           id?: string
           invoice_postage?: boolean
+          invoice_variety?: boolean
           name: string
           next_invoice_number?: number
           notes?: string | null
@@ -98,6 +100,7 @@ export type Database = {
           email?: string | null
           id?: string
           invoice_postage?: boolean
+          invoice_variety?: boolean
           name?: string
           next_invoice_number?: number
           notes?: string | null

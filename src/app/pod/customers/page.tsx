@@ -19,6 +19,7 @@ type Customer = {
   address: string | null;
   notes: string | null;
   invoice_postage: boolean;
+  invoice_variety: boolean;
   next_invoice_number: number;
 };
 
@@ -35,7 +36,7 @@ export default async function CustomersPage() {
 
   const [groups, list, priceRows] = await Promise.all([
     getStockGroups(supabase),
-    supabase.from("customers").select("id, name, contact, email, phone, address, notes, invoice_postage, next_invoice_number").order("name"),
+    supabase.from("customers").select("id, name, contact, email, phone, address, notes, invoice_postage, invoice_variety, next_invoice_number").order("name"),
     supabase.from("customer_prices").select("customer_id, stock_item_id, price"),
   ]);
   if (list.error) throw list.error;
@@ -144,6 +145,10 @@ function CustomerFields({ customer }: { customer?: Customer }) {
       <label className="flex items-center gap-3 font-sans text-sm sm:col-span-2">
         <input type="checkbox" name="invoice_postage" defaultChecked={customer?.invoice_postage} className="size-4 accent-[#8a5226]" />
         Add a blank Postage line to their invoices, to fill in each time
+      </label>
+      <label className="flex items-center gap-3 font-sans text-sm sm:col-span-2">
+        <input type="checkbox" name="invoice_variety" defaultChecked={customer?.invoice_variety} className="size-4 accent-[#8a5226]" />
+        Show bars on their invoices as a variety, e.g. “30 x 50g Small Bar Variety” (the order still lists each flavour, for stock)
       </label>
     </div>
   );

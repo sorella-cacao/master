@@ -27,6 +27,7 @@ const details = (data: FormData) => ({
   address: text(data, "address") || null,
   notes: text(data, "notes") || null,
   invoice_postage: data.get("invoice_postage") === "on",
+  invoice_variety: data.get("invoice_variety") === "on",
 });
 
 /** "Next invoice #" from the form, or a message if it isn't a whole number from 1. */

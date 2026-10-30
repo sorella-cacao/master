@@ -75,6 +75,15 @@ export function OrderFields({
     setPasteResult({ filled: Object.keys(found).length + foundVarieties.length, unread });
   }
 
+  /** Empties every quantity box (and any fruits typed in), e.g. before pasting an order again. */
+  function clearAmounts() {
+    const inputs = ref.current?.querySelectorAll<HTMLInputElement>("input[data-qty]") ?? [];
+    for (const input of inputs) input.value = "";
+    recalculate();
+    setNewVarieties(blankVarieties());
+    setPasteResult(null);
+  }
+
   function recalculate() {
     const inputs = ref.current?.querySelectorAll<HTMLInputElement>("input[data-qty]") ?? [];
     setQuantities(Object.fromEntries([...inputs].map((input) => [input.dataset.qty!, Number(input.value) || 0])));
@@ -259,6 +268,16 @@ export function OrderFields({
             })}
           </ItemTable>
         ))}
+      </div>
+
+      <div className="flex justify-end">
+        <button
+          type="button"
+          onClick={clearAmounts}
+          className="eyebrow rounded-full border border-white/20 px-4 py-2 text-cream/70 transition-colors hover:border-gold hover:text-gold"
+        >
+          Clear amounts
+        </button>
       </div>
 
       <label className="block">

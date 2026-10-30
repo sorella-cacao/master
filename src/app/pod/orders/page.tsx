@@ -59,7 +59,14 @@ function formGroups(groups: StockGroup[], order?: Order): OrderGroup[] {
       title: g.title,
       items: g.items
         .filter((i) => i.isActive || onOrder.has(i.id))
-        .map((i) => ({ id: i.id, name: i.name, price: i.wholesalePrice })),
+        .map((i) => ({
+          id: i.id,
+          name: i.name,
+          price: i.wholesalePrice,
+          variety: i.variety,
+          parentId: i.parentId,
+          hasVarieties: i.hasVarieties,
+        })),
     }))
     .filter((g) => g.items.length);
 }

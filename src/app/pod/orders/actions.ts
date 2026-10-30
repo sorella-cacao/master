@@ -29,12 +29,25 @@ export async function saveOrder(_: SaveState, data: FormData): Promise<SaveState
   if (!customer) return { error: "Enter who the order is for." };
   if (neededBy && !isDate(neededBy)) return { error: "Choose a valid date." };
 
-  const lines: { stock_item_id: string; quantity: number }[] = [];
+  const lines: ({ stock_item_id: string; quantity: number } | { parent_id: string; fruit: string; quantity: number })[] = [];
   for (const [key, raw] of data) {
     if (!key.startsWith("qty:") || String(raw).trim() === "") continue;
     const quantity = Number(raw);
     if (!Number.isInteger(quantity) || quantity < 0) return { error: "Use whole numbers for quantities." };
     if (quantity > 0) lines.push({ stock_item_id: key.slice(4), quantity });
+  }
+
+  // Fruits typed into a "which fruit?" row, paired with their quantities in order.
+  const parents = new Set([...data.keys()].filter((k) => k.startsWith("variety_name:")).map((k) => k.slice(13)));
+  for (const parentId of parents) {
+    const names = data.getAll(`variety_name:${parentId}`).map((v) => String(v).trim());
+    const quantities = data.getAll(`variety_qty:${parentId}`).map((v) => String(v).trim());
+    for (const [i, fruit] of names.entries()) {
+      const quantity = Number(quantities[i] || 0);
+      if (!Number.isInteger(quantity) || quantity < 0) return { error: "Use whole numbers for quantities." };
+      if (!fruit && quantity > 0) return { error: "Type which fruit, e.g. Fig, next to each Local Fruit amount." };
+      if (fruit && quantity > 0) lines.push({ parent_id: parentId, fruit, quantity });
+    }
   }
   if (!lines.length) return { error: "Add at least one item to the order." };
 

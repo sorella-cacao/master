@@ -483,10 +483,12 @@ export type Database = {
           base_chocolate: string | null
           chocolate_grams: number | null
           created_at: string
+          has_varieties: boolean
           id: string
           is_active: boolean
           is_extra: boolean
           name: string
+          parent_id: string | null
           position: number
           product_id: string
           quantity: number
@@ -498,10 +500,12 @@ export type Database = {
           base_chocolate?: string | null
           chocolate_grams?: number | null
           created_at?: string
+          has_varieties?: boolean
           id?: string
           is_active?: boolean
           is_extra?: boolean
           name: string
+          parent_id?: string | null
           position?: number
           product_id: string
           quantity?: number
@@ -513,10 +517,12 @@ export type Database = {
           base_chocolate?: string | null
           chocolate_grams?: number | null
           created_at?: string
+          has_varieties?: boolean
           id?: string
           is_active?: boolean
           is_extra?: boolean
           name?: string
+          parent_id?: string | null
           position?: number
           product_id?: string
           quantity?: number

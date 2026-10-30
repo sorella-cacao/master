@@ -106,3 +106,16 @@ export function ItemRow({
     </tr>
   );
 }
+
+/** An item's name for a table row; a variety (e.g. a Local Fruit) shows indented under its item. */
+export function ItemName({ item }: { item: { name: string; variety?: string | null } }) {
+  if (!item.variety) return <>{item.name}</>;
+  return (
+    <span className="pl-4 text-cream/80">
+      <span aria-hidden className="mr-1 text-cream/50">
+        ↳
+      </span>
+      {item.variety}
+    </span>
+  );
+}

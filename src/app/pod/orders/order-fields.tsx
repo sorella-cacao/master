@@ -1,11 +1,17 @@
 "use client";
 
-import { useEffect, useId, useRef, useState } from "react";
+import { Fragment, useEffect, useId, useRef, useState } from "react";
 import { formatPrice } from "@/lib/format";
-import { ItemRow, ItemTable } from "../item-table";
+import { ItemName, ItemRow, ItemTable } from "../item-table";
 import { parseOrder } from "./parse-order";
 
-export type OrderGroup = { title: string; items: { id: string; name: string; price: number }[] };
+export type OrderGroup = {
+  title: string;
+  items: { id: string; name: string; price: number; variety: string | null; parentId: string | null; hasVarieties: boolean }[];
+};
+
+/** A variety typed into the order (e.g. a Local Fruit), added as its own stock item when saved. */
+type NewVariety = { key: number; parentId: string; name: string; qty: string };
 
 /** A customer the order can be for, with any prices of their own (by stock item). */
 export type OrderCustomer = { name: string; prices: Record<string, number> };
@@ -34,12 +40,26 @@ export function OrderFields({
   const [customer, setCustomer] = useState(initialCustomer);
   const [quantities, setQuantities] = useState<Record<string, number>>(initialQuantities ?? {});
 
+  // One empty "which fruit?" row under each item that takes varieties.
+  const nextKey = useRef(0);
+  const takesVarieties = groups.flatMap((g) => g.items.filter((i) => i.hasVarieties));
+  const blankVarieties = (filled: Omit<NewVariety, "key">[] = []) =>
+    takesVarieties.flatMap((p) => {
+      const rows = filled.filter((f) => f.parentId === p.id);
+      return (rows.length ? rows : [{ parentId: p.id, name: "", qty: "" }]).map((r) => ({ ...r, key: nextKey.current++ }));
+    });
+  const [newVarieties, setNewVarieties] = useState<NewVariety[]>(() => blankVarieties());
+  const updateVariety = (key: number, change: Partial<NewVariety>) =>
+    setNewVarieties((all) => all.map((v) => (v.key === key ? { ...v, ...change } : v)));
+
   const theirPrices = customers.find((c) => c.name.toLowerCase() === customer.trim().toLowerCase())?.prices ?? {};
   const priceOf = (id: string, standard: number) => initial?.prices[id] ?? theirPrices[id] ?? standard;
   const standardOf = new Map(groups.flatMap((g) => g.items.map((i) => [i.id, i.price] as const)));
   const total =
     Math.round(
-      Object.entries(quantities).reduce((sum, [id, qty]) => sum + (qty > 0 ? qty * priceOf(id, standardOf.get(id) ?? 0) : 0), 0) * 100,
+      (Object.entries(quantities).reduce((sum, [id, qty]) => sum + (qty > 0 ? qty * priceOf(id, standardOf.get(id) ?? 0) : 0), 0) +
+        newVarieties.reduce((sum, v) => sum + (Number(v.qty) > 0 ? Number(v.qty) * priceOf(v.parentId, standardOf.get(v.parentId) ?? 0) : 0), 0)) *
+        100,
     ) / 100;
 
   const [pasted, setPasted] = useState("");
@@ -47,11 +67,12 @@ export function OrderFields({
 
   /** Fills the quantity boxes from an order pasted from an email. */
   function fillFromEmail() {
-    const { quantities: found, unread } = parseOrder(pasted, groups);
+    const { quantities: found, newVarieties: foundVarieties, unread } = parseOrder(pasted, groups);
     const inputs = ref.current?.querySelectorAll<HTMLInputElement>("input[data-qty]") ?? [];
     for (const input of inputs) input.value = found[input.dataset.qty!] ? String(found[input.dataset.qty!]) : "";
     recalculate();
-    setPasteResult({ filled: Object.keys(found).length, unread });
+    setNewVarieties(blankVarieties(foundVarieties.map((v) => ({ parentId: v.parentId, name: v.name, qty: String(v.quantity) }))));
+    setPasteResult({ filled: Object.keys(found).length + foundVarieties.length, unread });
   }
 
   function recalculate() {
@@ -67,9 +88,12 @@ export function OrderFields({
       setQuantities(initialQuantities ?? {});
       setPasted("");
       setPasteResult(null);
+      setNewVarieties(blankVarieties());
     };
     form?.addEventListener("reset", onReset);
     return () => form?.removeEventListener("reset", onReset);
+    // blankVarieties only depends on the groups, which don't change while the form is open.
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [initialCustomer, initialQuantities]);
 
   return (
@@ -152,28 +176,87 @@ export function OrderFields({
             headings={[group.title === "Pure Cacao" ? "Size" : "Flavour", "Price", "Qty"]}
             columnWidth="w-28"
           >
-            {group.items.map((item) => (
-              <ItemRow
-                key={item.id}
-                name={item.name}
-                cells={[
-                  formatPrice(priceOf(item.id, item.price)),
-                  <input
-                    key="qty"
-                    type="number"
-                    name={`qty:${item.id}`}
-                    data-qty={item.id}
-                    min="0"
-                    step="1"
-                    inputMode="numeric"
-                    placeholder="0"
-                    defaultValue={initial?.quantities[item.id] || undefined}
-                    aria-label={`${group.title} ${item.name}`}
-                    className="pod-input w-20 px-2 py-1 text-right text-sm"
-                  />,
-                ]}
-              />
-            ))}
+            {group.items.map((item, index) => {
+              // After an item that takes varieties (and its varieties so far), rows to name a new one.
+              const family = item.parentId ?? item.id;
+              const next = group.items[index + 1];
+              const parent = group.items.find((i) => i.id === family);
+              const endsFamily = parent?.hasVarieties && (!next || (next.parentId ?? next.id) !== family);
+              return (
+                <Fragment key={item.id}>
+                  <ItemRow
+                    name={<ItemName item={item} />}
+                    cells={[
+                      formatPrice(priceOf(item.id, item.price)),
+                      <input
+                        key="qty"
+                        type="number"
+                        name={`qty:${item.id}`}
+                        data-qty={item.id}
+                        min="0"
+                        step="1"
+                        inputMode="numeric"
+                        placeholder="0"
+                        defaultValue={initial?.quantities[item.id] || undefined}
+                        aria-label={`${group.title} ${item.name}`}
+                        className="pod-input w-20 px-2 py-1 text-right text-sm"
+                      />,
+                    ]}
+                  />
+                  {endsFamily &&
+                    parent &&
+                    newVarieties
+                      .filter((v) => v.parentId === parent.id)
+                      .map((v, i, rows) => (
+                        <ItemRow
+                          key={v.key}
+                          name={
+                            <span className="flex items-center gap-2 pl-4">
+                              <span aria-hidden className="text-cream/50">
+                                ↳
+                              </span>
+                              <input
+                                name={`variety_name:${parent.id}`}
+                                value={v.name}
+                                onChange={(e) => updateVariety(v.key, { name: e.target.value })}
+                                placeholder="Which fruit? e.g. Fig"
+                                aria-label={`${group.title} ${parent.name}: which fruit`}
+                                className="pod-input max-w-48 px-2 py-1 text-sm"
+                              />
+                              {i === rows.length - 1 && (
+                                <button
+                                  type="button"
+                                  onClick={() =>
+                                    setNewVarieties((all) => [...all, { key: nextKey.current++, parentId: parent.id, name: "", qty: "" }])
+                                  }
+                                  className="whitespace-nowrap font-sans text-xs text-cream/70 hover:text-gold"
+                                >
+                                  + another
+                                </button>
+                              )}
+                            </span>
+                          }
+                          cells={[
+                            formatPrice(priceOf(parent.id, parent.price)),
+                            <input
+                              key="qty"
+                              type="number"
+                              name={`variety_qty:${parent.id}`}
+                              min="0"
+                              step="1"
+                              inputMode="numeric"
+                              placeholder="0"
+                              value={v.qty}
+                              onChange={(e) => updateVariety(v.key, { qty: e.target.value })}
+                              aria-label={`${group.title} ${parent.name}: quantity of ${v.name || "new fruit"}`}
+                              className="pod-input w-20 px-2 py-1 text-right text-sm"
+                            />,
+                          ]}
+                        />
+                      ))}
+                </Fragment>
+              );
+            })}
           </ItemTable>
         ))}
       </div>

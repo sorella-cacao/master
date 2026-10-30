@@ -1,5 +1,5 @@
 import type { Metadata } from "next";
-import { ItemRow, ItemTable } from "../item-table";
+import { ItemName, ItemRow, ItemTable } from "../item-table";
 import { PodForm } from "../pod-form";
 import { PodNav } from "../pod-nav";
 import { PodPanel } from "../pod-panel";
@@ -60,8 +60,8 @@ export default async function StockPage() {
                   key={item.id}
                   name={
                     <>
-                      {item.name}
-                      {item.isExtra && (
+                      <ItemName item={item} />
+                      {item.isExtra && !item.parentId && (
                         <span className="eyebrow ml-2 rounded-full border border-white/20 px-2 py-0.5 text-[0.65rem] text-cream/70">
                           One-off
                         </span>
@@ -115,12 +115,12 @@ export default async function StockPage() {
           </div>
         </PodForm>
 
-        {groups.some((g) => g.items.some((i) => i.isExtra)) && (
+        {groups.some((g) => g.items.some((i) => i.isExtra && !i.parentId)) && (
           <div className="mt-8 space-y-2">
             <p className="eyebrow text-cream/70">One-off flavours</p>
             {groups.flatMap((g) =>
               g.items
-                .filter((i) => i.isExtra)
+                .filter((i) => i.isExtra && !i.parentId)
                 .map((item) => (
                   <div key={item.id} className="flex flex-wrap items-center justify-between gap-x-4 border-t border-white/10 pt-2">
                     <span>
@@ -205,7 +205,7 @@ function CountTables({ groups, name }: { groups: StockGroup[]; name: "made" | "c
           {group.items.map((item) => (
             <ItemRow
               key={item.id}
-              name={item.name}
+              name={<ItemName item={item} />}
               cells={[
                 item.quantity,
                 <input

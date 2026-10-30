@@ -3,19 +3,21 @@
  * into quantities per stock item. Lines it can't place are returned so they can be checked.
  */
 
-export type ParseGroup = { title: string; items: { id: string; name: string }[] };
-export type ParsedOrder = { quantities: Record<string, number>; unread: string[] };
+export type ParseGroup = {
+  title: string;
+  items: { id: string; name: string; variety?: string | null; hasVarieties?: boolean }[];
+};
+/** A fruit (or other variety) the order names that isn't in stock yet, for its item's "which fruit?" row. */
+export type NewVarietyLine = { parentId: string; name: string; quantity: number };
+export type ParsedOrder = { quantities: Record<string, number>; newVarieties: NewVarietyLine[]; unread: string[] };
 
 type Size = "small" | "large" | "cacao";
 
 // Different words people use for the same flavour, mapped to one word.
 const SAME_AS: Record<string, string> = {
   goats: "goat",
-  orange: "mandarin",
-  oranges: "mandarin",
   mandarins: "mandarin",
-  citrus: "mandarin",
-  blood: "mandarin",
+  oranges: "orange",
   peaches: "peach",
   white: "peach",
   chili: "chilli",
@@ -52,6 +54,20 @@ function sizeOf(line: string): Size | null {
   if (/\b(50|49\.?5)\s*g(rams?)?\b|\bsmall\b|\bsm\b|\bmini\b/.test(l)) return "small";
   if (/\b(1[0-9]{2}|90|99)\s*g(rams?)?\b|\blarge\b|\blg\b|\bbig\b/.test(l)) return "large";
   return null;
+}
+
+// Fruits that go in Local Fruit bars, longest names first. (Peaches have their own white choc flavour.)
+const FRUITS = [
+  "blood orange", "passionfruit", "persimmon", "grapefruit", "nectarine", "tangerine", "raspberry", "strawberry",
+  "blackberry", "blueberry", "mulberry", "mandarin", "cumquat", "kumquat", "apricot", "cherry", "quince", "feijoa",
+  "orange", "lemon", "apple", "mango", "plum", "pear", "lime", "fig",
+];
+
+/** The fruit a line names, e.g. "Blood Orange" from "75% blood oranges small 6". */
+function fruitIn(line: string) {
+  const l = line.toLowerCase();
+  const fruit = FRUITS.find((f) => new RegExp(`\\b${f}(e?s)?\\b`).test(l));
+  return fruit ? fruit.replace(/\b\w/g, (c) => c.toUpperCase()) : null;
 }
 
 /** The quantity: a number that isn't a weight or a percentage, preferring one next to an "x". */
@@ -105,6 +121,7 @@ function bestMatch(line: string, groups: ParseGroup[], size: Size | null) {
 
 export function parseOrder(text: string, groups: ParseGroup[]): ParsedOrder {
   const quantities: Record<string, number> = {};
+  const newVarieties: NewVarietyLine[] = [];
   const unread: string[] = [];
   // A heading like "Large bars:" sets the size for the lines under it.
   let sizeFromHeading: Size | null = null;
@@ -125,6 +142,22 @@ export function parseOrder(text: string, groups: ParseGroup[]): ParsedOrder {
     if (quantity === 0) continue;
     const useSize = size ?? sizeFromHeading;
     const searchIn = useSize ? [groupFor(useSize, groups)].filter((g): g is ParseGroup => !!g) : groups.filter((g) => !/cacao/i.test(g.title));
+
+    // A named fruit goes to that fruit under Local Fruit, or to its "which fruit?" row if it's new.
+    const fruit = useSize && useSize !== "cacao" ? fruitIn(line) : null;
+    const takesFruit = fruit ? searchIn[0]?.items.find((i) => i.hasVarieties) : undefined;
+    if (fruit && takesFruit) {
+      const known = searchIn[0].items.find((i) => i.variety?.toLowerCase() === fruit.toLowerCase());
+      if (known) {
+        quantities[known.id] = (quantities[known.id] ?? 0) + quantity;
+      } else {
+        const same = newVarieties.find((v) => v.parentId === takesFruit.id && v.name === fruit);
+        if (same) same.quantity += quantity;
+        else newVarieties.push({ parentId: takesFruit.id, name: fruit, quantity });
+      }
+      continue;
+    }
+
     const match = bestMatch(line, searchIn, useSize);
     if (!match) {
       unread.push(line);
@@ -132,5 +165,5 @@ export function parseOrder(text: string, groups: ParseGroup[]): ParsedOrder {
     }
     quantities[match.id] = (quantities[match.id] ?? 0) + quantity;
   }
-  return { quantities, unread };
+  return { quantities, newVarieties, unread };
 }

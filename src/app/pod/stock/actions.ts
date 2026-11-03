@@ -113,15 +113,15 @@ export async function addToMainStock(_: SaveState, data: FormData): Promise<Save
   return { ok: "Added to main stock" };
 }
 
-/** A spontaneous buy or a market day: recorded in order history and taken off stock straight away. */
+/** An odd buy (spontaneous buy, gift, personal use, staff) or a market day: recorded in order history and taken off stock straight away. */
 export async function recordSale(_: SaveState, data: FormData): Promise<SaveState> {
   const { supabase, isAdmin } = await getSession();
   if (!isAdmin) return NO_ACCESS;
 
   const kind = String(data.get("kind"));
-  if (kind !== "spontaneous" && kind !== "market") return { error: "Couldn't save. Please try again." };
+  if (!["spontaneous", "gift", "personal", "staff", "market"].includes(kind)) return { error: "Couldn't save. Please try again." };
   const priceList = kind === "market" ? "retail" : String(data.get("price_list"));
-  if (priceList !== "wholesale" && priceList !== "retail") return { error: "Choose wholesale or retail." };
+  if (!["wholesale", "retail", "free"].includes(priceList)) return { error: "Choose wholesale, retail or free." };
   const ids = data.getAll("line_item").map(String);
   const quantities = data.getAll("line_qty").map((q) => Number(q));
   if (ids.some((id) => !id)) return { error: "Choose a flavour on every line." };

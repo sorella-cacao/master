@@ -336,7 +336,13 @@ const STATUS_STYLE: Record<string, { label: string; card: string }> = {
 };
 
 /** Sales recorded without an order, by kind. */
-const SALE_KINDS: Record<string, string | undefined> = { spontaneous: "Spontaneous buy", market: "Market" };
+const SALE_KINDS: Record<string, string | undefined> = {
+  spontaneous: "Spontaneous buy",
+  gift: "Gift",
+  personal: "Personal use",
+  staff: "Staff",
+  market: "Market",
+};
 
 function OrderCard({
   order,

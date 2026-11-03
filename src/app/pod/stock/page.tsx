@@ -167,12 +167,11 @@ export default async function StockPage() {
       </PodPanel>
 
       <PodPanel small
-        title="Spontaneous buy"
-        hint="Someone bought without an order? Add what they took. It comes off stock and goes into order history."
+        title="Odd buys"
+        hint="Bars that left without an order: a spontaneous buy, a gift, personal use or staff. They come off stock and go into order history."
       >
         <PodForm action={recordSale} submitLabel="Save and take off stock" resetOnSuccess>
-          <input type="hidden" name="kind" value="spontaneous" />
-          <SaleFields kind="spontaneous" groups={saleGroups(groups)} />
+          <SaleFields kind="odd" groups={saleGroups(groups)} />
         </PodForm>
       </PodPanel>
 

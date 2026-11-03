@@ -7,7 +7,7 @@ import { PodForm } from "../pod-form";
 import { PodNav } from "../pod-nav";
 import { PodPanel } from "../pod-panel";
 import { getSession } from "../session";
-import { saveInvoiceSettings } from "./actions";
+import { createManualInvoice, saveInvoiceSettings } from "./actions";
 import { billToName, invoiceNumber, invoiceStatus, invoiceTotal } from "./invoice-data";
 import { MarkPaidButton } from "./mark-paid-button";
 import { StatusChip } from "./status-chip";
@@ -25,12 +25,13 @@ export default async function InvoicesPage() {
     );
   }
 
-  const [list, settings] = await Promise.all([
+  const [list, settings, customerNames] = await Promise.all([
     supabase
       .from("invoices")
       .select("id, number, bill_to, issued_on, due_on, paid_on, customer:customers(name), lines:invoice_lines(description, quantity, unit_price)")
       .order("number", { ascending: false }),
     supabase.from("invoice_settings").select("*").eq("id", true).single(),
+    supabase.from("customers").select("name").order("name"),
   ]);
   if (list.error) throw list.error;
   if (settings.error) throw settings.error;
@@ -89,6 +90,41 @@ export default async function InvoicesPage() {
           </ItemTable>
         </PodPanel>
       )}
+
+      <PodPanel
+        small
+        title="New invoice"
+        hint="For a workshop or anything else that isn’t an order. It doesn’t change stock."
+      >
+        <PodForm action={createManualInvoice} submitLabel="Make invoice">
+          <div className="grid gap-4 sm:grid-cols-[1fr_1fr_6rem_8rem]">
+            <label className="block">
+              <span className="eyebrow mb-1 block text-xs text-cream/70">For</span>
+              <input name="customer" required list="invoice-customers" placeholder="e.g. Leura Public School" className="pod-input py-2 text-sm" />
+              <datalist id="invoice-customers">
+                {(customerNames.data ?? []).map((c) => (
+                  <option key={c.name} value={c.name} />
+                ))}
+              </datalist>
+            </label>
+            <label className="block">
+              <span className="eyebrow mb-1 block text-xs text-cream/70">Description</span>
+              <input name="description" required defaultValue="Chocolate making workshop" className="pod-input py-2 text-sm" />
+            </label>
+            <label className="block">
+              <span className="eyebrow mb-1 block text-xs text-cream/70">Qty</span>
+              <input name="quantity" type="number" min="0" step="any" defaultValue="1" className="pod-input py-2 text-right text-sm" />
+            </label>
+            <label className="block">
+              <span className="eyebrow mb-1 block text-xs text-cream/70">Price ($)</span>
+              <input name="price" inputMode="decimal" placeholder="e.g. 350" className="pod-input py-2 text-right text-sm" />
+            </label>
+          </div>
+          <p className="mt-2 font-sans text-sm text-cream/70">
+            It opens straight away so you can add more lines, then download or email it. Someone new is added to your customers.
+          </p>
+        </PodForm>
+      </PodPanel>
 
       <PodPanel
         small

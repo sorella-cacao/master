@@ -688,6 +688,10 @@ export type Database = {
     Functions: {
       pod_add_made: { Args: { counts: Json }; Returns: undefined }
       pod_create_invoice: { Args: { order_id: string }; Returns: string }
+      pod_create_manual_invoice: {
+        Args: { customer: string; description: string; quantity: number; unit_price: number | null }
+        Returns: string
+      }
       pod_delete_order: { Args: { order_id: string }; Returns: undefined }
       pod_record_sale: { Args: { customer: string; kind: string; lines: Json; note: string; price_list: string }; Returns: string }
       pod_save_order: {

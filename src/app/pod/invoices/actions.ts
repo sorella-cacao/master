@@ -161,3 +161,30 @@ export async function emailInvoice(invoiceId: string): Promise<SaveState> {
   }
   return { ok: "Draft ready in Fastmail" };
 }
+
+/** An invoice that isn't for an order (e.g. a workshop): it never changes stock. Opens it to finish off. */
+export async function createManualInvoice(_: SaveState, data: FormData): Promise<SaveState> {
+  const { supabase, isAdmin } = await getSession();
+  if (!isAdmin) return NO_ACCESS;
+
+  const customer = text(data, "customer");
+  const description = text(data, "description");
+  const quantity = Number(text(data, "quantity") || "1");
+  const priceText = text(data, "price").replace(/^\$/, "");
+  const price = priceText ? Number(priceText) : null;
+  if (!customer) return { error: "Enter who the invoice is for." };
+  if (!description) return { error: "Enter what it’s for, e.g. Chocolate making workshop." };
+  if (!Number.isFinite(quantity) || quantity <= 0) return { error: "Enter a quantity, e.g. 1." };
+  if (price !== null && (!Number.isFinite(price) || price < 0)) return { error: "Enter the price as a number, e.g. 350." };
+
+  const { data: id, error } = await supabase.rpc("pod_create_manual_invoice", {
+    customer,
+    description,
+    quantity,
+    unit_price: price === null ? null : Math.round(price * 100) / 100,
+  });
+  if (error) return failed(error);
+  refresh();
+  revalidatePath("/pod/customers");
+  redirect(`/pod/invoices/${id}`);
+}

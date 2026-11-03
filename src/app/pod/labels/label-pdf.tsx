@@ -2,7 +2,7 @@ import "server-only";
 import path from "node:path";
 import { Circle, Document, Font, Page, Path, Rect, StyleSheet, Svg, Text, View, renderToBuffer } from "@react-pdf/renderer";
 import type { Styles } from "@react-pdf/renderer";
-import { type Label, NUTRITION_ROWS, type PrintRun, labelTitle } from "./label-data";
+import { type Label, NUTRITION_ROWS, type PrintRun, type TextPart, labelTitle } from "./label-data";
 
 type Style = Styles[string];
 
@@ -34,6 +34,9 @@ const s = StyleSheet.create({
   row: { flexDirection: "row" },
   centre: { textAlign: "center" },
 });
+
+/** A part's text size as a multiple of the standard, from the label's text size settings. */
+const sizeOf = (label: Label) => (part: TextPart) => (label.textSizes[part] ?? 100) / 100;
 
 /** "May contain: Milk & nuts", with the allergens in bold. */
 function MayContain({ text, style }: { text: string; style: Style }) {
@@ -156,50 +159,51 @@ function InstagramIcon({ size }: { size: number }) {
 function LargeLabel({ label, run }: { label: Label; run: PrintRun }) {
   const W = 100 * MM;
   const H = 48 * MM;
-  const icon = 7.6;
+  const k = sizeOf(label);
+  const icon = 7.6 * k("details");
   return (
     <Page size={[W, H]} style={{ color: "#000" }}>
       {/* One page-sized box holds everything, so nothing that reaches the bottom edge starts a second page. */}
       <View style={{ position: "absolute", left: 0, top: 0, width: W, height: H }}>
-        <Text style={[s.headline, { position: "absolute", top: -1, left: 1, right: 1, fontSize: 8.9, lineHeight: 1.26 }]}>{HEADLINE}</Text>
+        <Text style={[s.headline, { position: "absolute", top: -1, left: 1, right: 1, fontSize: 8.9 * k("headline"), lineHeight: 1.26 }]}>{HEADLINE}</Text>
 
         <View style={{ position: "absolute", left: 1.2, top: 27.4 }}>
           <NutritionPanel
             label={label}
             width={109.4}
-            font={4.2}
+            font={4.2 * k("nutrition")}
             line={6.85}
             rowLine={6.55}
             columns={[52.6, 82]}
             boxed
-            titleSize={6.55}
+            titleSize={6.55 * k("nutrition")}
             gaps={{ top: 2.6, title: 2.6, section: 2.2 }}
           />
         </View>
 
         <View style={{ position: "absolute", left: 113, right: 1.5, top: 27.6 }}>
           {STORY.map((p) => (
-            <Text key={p} style={[s.sans, s.centre, { fontSize: 4.85, lineHeight: 1.39 }]}>
+            <Text key={p} style={[s.sans, s.centre, { fontSize: 4.85 * k("story"), lineHeight: 1.39 }]}>
               {p}
             </Text>
           ))}
         </View>
 
         <View style={{ position: "absolute", left: 112, width: 94, top: 85.4 }}>
-          <Ingredients label={label} style={{ fontSize: 4, lineHeight: 1.5, textAlign: "center" }} />
-          <MayContain text={label.mayContain} style={{ fontSize: 4, marginTop: 1.4, marginLeft: 3 }} />
+          <Ingredients label={label} style={{ fontSize: 4 * k("ingredients"), lineHeight: 1.5, textAlign: "center" }} />
+          <MayContain text={label.mayContain} style={{ fontSize: 4 * k("ingredients"), marginTop: 1.4, marginLeft: 3 }} />
         </View>
 
         <View style={{ position: "absolute", left: 111.6, top: 120.6 }}>
-          <Text style={[s.sans, { fontSize: 4.1, lineHeight: 1.7 }]}>Best Before {run.bestBefore}</Text>
-          <Text style={[s.sans, { fontSize: 4.1, lineHeight: 1.7, marginLeft: 1.4 }]}>Batch # {run.batch}</Text>
+          <Text style={[s.sans, { fontSize: 4.1 * k("details"), lineHeight: 1.7 }]}>Best Before {run.bestBefore}</Text>
+          <Text style={[s.sans, { fontSize: 4.1 * k("details"), lineHeight: 1.7, marginLeft: 1.4 }]}>Batch # {run.batch}</Text>
         </View>
-        <Text style={[s.sans, s.centre, { position: "absolute", left: 163, width: 45, top: 113.8, fontSize: 3.25, lineHeight: 1.38 }]}>
+        <Text style={[s.sans, s.centre, { position: "absolute", left: 163, width: 45, top: 113.8, fontSize: 3.25 * k("details"), lineHeight: 1.38 }]}>
           Packaged in recycled alfoil and compostable wrapping  (ink is made by heat! No nastie dyes)
         </Text>
 
         <View style={{ position: "absolute", left: 208, top: 93 }}>
-          <Text style={[s.sans, s.bold, { fontSize: 4.1, marginBottom: 4 }]}>Follow our journey..</Text>
+          <Text style={[s.sans, s.bold, { fontSize: 4.1 * k("details"), marginBottom: 4 }]}>Follow our journey..</Text>
           {[
             [<PhoneIcon key="p" size={icon} />, run.phone.replace(/\s+/g, "")],
             [<GlobeIcon key="g" size={icon} />, "sorellacacao.com.au"],
@@ -207,7 +211,7 @@ function LargeLabel({ label, run }: { label: Label; run: PrintRun }) {
           ].map(([iconEl, text], i) => (
             <View key={i} style={[s.row, { alignItems: "center", marginBottom: 1.7 }]}>
               {iconEl}
-              <Text style={[s.sans, s.bold, { fontSize: 5.6, marginLeft: 1.2 }]}>{text}</Text>
+              <Text style={[s.sans, s.bold, { fontSize: 5.6 * k("details"), marginLeft: 1.2 }]}>{text}</Text>
             </View>
           ))}
         </View>
@@ -223,8 +227,9 @@ function LargeLabel({ label, run }: { label: Label; run: PrintRun }) {
 function SmallLabel({ label, run }: { label: Label; run: PrintRun }) {
   const W = 50 * MM;
   const H = 32 * MM;
-  const text = { fontSize: 3.55, lineHeight: 1.3 };
-  const small = { fontSize: 3.3, lineHeight: 1.17 };
+  const k = sizeOf(label);
+  const text = { fontSize: 3.55 * k("ingredients"), lineHeight: 1.3 };
+  const small = { fontSize: 3.3 * k("details"), lineHeight: 1.17 };
   return (
     // The turned label is taller than the page, so its box is kept page-height and its contents spill
     // out of it (a taller box would be pushed onto a second page).
@@ -244,15 +249,15 @@ function SmallLabel({ label, run }: { label: Label; run: PrintRun }) {
           <NutritionPanel
             label={label}
             width={H}
-            font={3.15}
+            font={3.15 * k("nutrition")}
             line={5.3}
             rowLine={5.6}
             columns={[42.4, 62.5]}
             boxed={false}
-            titleSize={5.35}
+            titleSize={5.35 * k("nutrition")}
             gaps={{ top: 3, title: 3.1, section: 3 }}
             corner={
-              <Text style={[s.sans, s.centre, { fontSize: 3, lineHeight: 1.35, color: "#000" }]}>
+              <Text style={[s.sans, s.centre, { fontSize: 3 * k("details"), lineHeight: 1.35, color: "#000" }]}>
                 Packaged in recycled alfoil and compostable wrapping
               </Text>
             }
@@ -260,7 +265,7 @@ function SmallLabel({ label, run }: { label: Label; run: PrintRun }) {
         </View>
 
         {/* After the panel, so its last line ("Cacao.") sits on top of the panel's first rule, as in Canva. */}
-        <Text style={[s.headline, { position: "absolute", top: 0.4, left: 0.6, right: 0.6, fontSize: 4.75, lineHeight: 1.2 }]}>{HEADLINE}</Text>
+        <Text style={[s.headline, { position: "absolute", top: 0.4, left: 0.6, right: 0.6, fontSize: 4.75 * k("headline"), lineHeight: 1.2 }]}>{HEADLINE}</Text>
 
         <View style={{ position: "absolute", left: 0.8, right: 0.6, top: 108.7 }}>
           <Ingredients label={label} style={text} />
@@ -270,7 +275,7 @@ function SmallLabel({ label, run }: { label: Label; run: PrintRun }) {
           Follow our journey..
         </Text>
         <View style={{ position: "absolute", left: 0.8, width: 54, top: 128.5 }}>
-          <MayContain text={label.mayContain} style={small} />
+          <MayContain text={label.mayContain} style={{ ...small, fontSize: 3.3 * k("ingredients") }} />
           <Text style={[s.sans, small, { marginLeft: 4.4 }]}>Batch # {run.batch}</Text>
           <Text style={[s.sans, small]}>Best Before{run.bestBefore}</Text>
         </View>

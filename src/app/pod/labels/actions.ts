@@ -3,7 +3,7 @@
 import { revalidatePath } from "next/cache";
 import type { SaveState } from "../actions";
 import { getSession } from "../session";
-import { NUTRITION_ROWS, type Nutrition } from "./label-data";
+import { NUTRITION_ROWS, type Nutrition, TEXT_PARTS } from "./label-data";
 
 const NO_ACCESS: SaveState = { error: "This account doesn't have access to the Pod." };
 
@@ -29,6 +29,12 @@ function details(data: FormData) {
     nutrition: Object.fromEntries(
       NUTRITION_ROWS.map(([key]) => [key, [text(data, `${key}:serving`), text(data, `${key}:100g`)]]),
     ) as Nutrition,
+    // Only sizes changed from the standard 100% are kept.
+    text_sizes: Object.fromEntries(
+      TEXT_PARTS.map(([part]) => [part, Number(text(data, `size:${part}`) || 100)] as const).filter(
+        ([, size]) => Number.isFinite(size) && size !== 100 && size >= 50 && size <= 200,
+      ),
+    ),
   };
   if (!label.name) return { error: "Enter the flavour, e.g. 84% Dark." };
   if (!label.batch_code) return { error: "Enter the batch code, e.g. 84 or HZ." };

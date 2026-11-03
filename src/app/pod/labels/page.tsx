@@ -5,7 +5,7 @@ import { PodNav } from "../pod-nav";
 import { PodPanel } from "../pod-panel";
 import { getSession } from "../session";
 import { addLabel, deleteLabel, saveLabel } from "./actions";
-import { type Label, NUTRITION_ROWS, getLabels, labelTitle } from "./label-data";
+import { type Label, NUTRITION_ROWS, TEXT_PARTS, getLabels, labelTitle } from "./label-data";
 import { LabelMaker } from "./label-maker";
 
 export const metadata: Metadata = { title: "Labels" };
@@ -138,9 +138,32 @@ function LabelFields({ label }: { label?: Label }) {
           </tbody>
         </table>
       </div>
+
+      <fieldset className="space-y-3">
+        <legend className="eyebrow mb-1 text-xs text-cream/70">Text size</legend>
+        <p className="text-sm text-cream/70">
+          Bigger text takes more room, so make a test label after changing these to check nothing overlaps.
+        </p>
+        <div className="grid gap-4 sm:grid-cols-3">
+          {TEXT_PARTS.map(([part, name]) => (
+            <label key={part} className="block">
+              <span className="mb-1 block font-sans text-sm text-cream/80">{name}</span>
+              <select name={`size:${part}`} defaultValue={label?.textSizes[part] ?? 100} className="pod-input py-2 text-sm">
+                {TEXT_SIZES.map((size) => (
+                  <option key={size} value={size}>
+                    {size === 100 ? "Standard" : `${size}%`}
+                  </option>
+                ))}
+              </select>
+            </label>
+          ))}
+        </div>
+      </fieldset>
     </div>
   );
 }
+
+const TEXT_SIZES = [70, 75, 80, 85, 90, 95, 100, 105, 110, 115, 120, 125, 130, 140, 150];
 
 function Field({
   label,

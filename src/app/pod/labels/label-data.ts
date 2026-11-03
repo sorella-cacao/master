@@ -17,6 +17,16 @@ export const NUTRITION_ROWS: [keyof Nutrition, string][] = [
   ["sodium", "Sodium"],
 ];
 
+/** Parts of a label whose text size can be changed, with what they're called in the Pod. */
+export const TEXT_PARTS = [
+  ["headline", "Headline"],
+  ["story", "Story (large labels)"],
+  ["nutrition", "Nutrition panel"],
+  ["ingredients", "Ingredients & may contain"],
+  ["details", "Best before, batch & contact"],
+] as const;
+export type TextPart = (typeof TEXT_PARTS)[number][0];
+
 export type Label = {
   id: string;
   size: "small" | "large";
@@ -28,6 +38,8 @@ export type Label = {
   servingsPerPackage: string;
   servingSize: string;
   nutrition: Nutrition;
+  /** Percentages of the standard size, e.g. { ingredients: 110 }; a missing part is 100. */
+  textSizes: Partial<Record<TextPart, number>>;
 };
 
 /** What changes with each print run. */
@@ -36,7 +48,7 @@ export type PrintRun = { bestBefore: string; batch: string; phone: string };
 export async function getLabels(supabase: Db): Promise<Label[]> {
   const { data, error } = await supabase
     .from("labels")
-    .select("id, size, name, batch_code, ingredients, ingredient_notes, may_contain, servings_per_package, serving_size, nutrition")
+    .select("id, size, name, batch_code, ingredients, ingredient_notes, may_contain, servings_per_package, serving_size, nutrition, text_sizes")
     .order("size", { ascending: false })
     .order("position");
   if (error) throw error;
@@ -51,6 +63,7 @@ export async function getLabels(supabase: Db): Promise<Label[]> {
     servingsPerPackage: l.servings_per_package,
     servingSize: l.serving_size,
     nutrition: l.nutrition as Nutrition,
+    textSizes: (l.text_sizes ?? {}) as Label["textSizes"],
   }));
 }
 

@@ -2,7 +2,7 @@ import "server-only";
 import path from "node:path";
 import { Circle, Document, Font, Page, Path, Rect, StyleSheet, Svg, Text, View, renderToBuffer } from "@react-pdf/renderer";
 import type { Styles } from "@react-pdf/renderer";
-import { type Label, type Nutrition, type PrintRun, labelTitle } from "./label-data";
+import { type Label, NUTRITION_ROWS, type PrintRun, labelTitle } from "./label-data";
 
 type Style = Styles[string];
 
@@ -21,15 +21,6 @@ const STORY = [
   "Sorella Cacao is not just your average chocolate, it’s a ceremony of ingredients.",
   "Our origins are rooted in the love for chocolate that is good for our bodies and the Earth. We care deeply about where our ingredients come from and the hands that grow them.",
   "Where possible, we source local and organic. Our cacao beans come from family-run farms across the Pacific Islands where generations of care are woven into every harvest.",
-];
-const ROWS: [keyof Nutrition, string][] = [
-  ["energy", "Energy"],
-  ["protein", "Protein"],
-  ["fat", "Fat, total"],
-  ["saturated", " - saturated"],
-  ["carbohydrate", "Carbohydrate"],
-  ["sugars", " - sugars"],
-  ["sodium", "Sodium"],
 ];
 const RULE = "#7d7d7d";
 
@@ -117,7 +108,7 @@ function NutritionPanel({
         ))}
       </View>
       <View style={[rule, { paddingVertical: gaps.section }]}>
-        {ROWS.map(([key, name]) => (
+        {NUTRITION_ROWS.map(([key, name]) => (
           <View key={key} style={[s.row, { height: rowLine }]}>
             <Text style={{ ...cell(3, columns[0]) }}>{name}</Text>
             <Text style={{ ...cell(columns[0], columns[1]) }}>{label.nutrition[key]?.[0] ?? ""}</Text>

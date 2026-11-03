@@ -6,6 +6,17 @@ type Db = Awaited<ReturnType<typeof getSession>>["supabase"];
 /** Nutrition panel rows, per serving then per 100 g, as printed, e.g. ["503 kJ", "2516 kJ"]. */
 export type Nutrition = Record<"energy" | "protein" | "fat" | "saturated" | "carbohydrate" | "sugars" | "sodium", [string, string]>;
 
+/** The nutrition panel's rows, in order, with their printed names. */
+export const NUTRITION_ROWS: [keyof Nutrition, string][] = [
+  ["energy", "Energy"],
+  ["protein", "Protein"],
+  ["fat", "Fat, total"],
+  ["saturated", " - saturated"],
+  ["carbohydrate", "Carbohydrate"],
+  ["sugars", " - sugars"],
+  ["sodium", "Sodium"],
+];
+
 export type Label = {
   id: string;
   size: "small" | "large";

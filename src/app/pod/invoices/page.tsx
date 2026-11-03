@@ -88,6 +88,14 @@ export default async function InvoicesPage() {
                   ]}
                 />
               ))}
+            <tr className="border-t border-white/30 font-semibold">
+              <th scope="row" className="px-3 py-1.5 text-left">
+                Total unpaid
+              </th>
+              <td />
+              <td className="px-3 py-1.5 text-right tabular-nums text-gold">{formatPrice(owing(invoices))}</td>
+              <td colSpan={2} />
+            </tr>
           </ItemTable>
         </PodPanel>
       )}

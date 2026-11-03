@@ -168,54 +168,58 @@ function LargeLabel({ label, run }: { label: Label; run: PrintRun }) {
   const icon = 7.6;
   return (
     <Page size={[W, H]} style={{ color: "#000" }}>
-      <Text style={[s.headline, { position: "absolute", top: -1, left: 1, right: 1, fontSize: 8.9, lineHeight: 1.26 }]}>{HEADLINE}</Text>
+      {/* One page-sized box holds everything, so nothing that reaches the bottom edge starts a second page. */}
+      <View style={{ position: "absolute", left: 0, top: 0, width: W, height: H }}>
+        <Text style={[s.headline, { position: "absolute", top: -1, left: 1, right: 1, fontSize: 8.9, lineHeight: 1.26 }]}>{HEADLINE}</Text>
 
-      <View style={{ position: "absolute", left: 1.2, top: 27.4 }}>
-        <NutritionPanel
-          label={label}
-          width={109.4}
-          font={4.2}
-          line={6.85}
-          columns={[52.6, 82]}
-          boxed
-          titleSize={6.55}
-          gaps={{ top: 2.6, title: 2.6, section: 2.2 }}
-        />
-      </View>
+        <View style={{ position: "absolute", left: 1.2, top: 27.4 }}>
+          <NutritionPanel
+            label={label}
+            width={109.4}
+            font={4.2}
+            line={6.85}
+            rowLine={6.55}
+            columns={[52.6, 82]}
+            boxed
+            titleSize={6.55}
+            gaps={{ top: 2.6, title: 2.6, section: 2.2 }}
+          />
+        </View>
 
-      <View style={{ position: "absolute", left: 113, right: 1.5, top: 27.6 }}>
-        {STORY.map((p) => (
-          <Text key={p} style={[s.sans, s.centre, { fontSize: 4.85, lineHeight: 1.39 }]}>
-            {p}
-          </Text>
-        ))}
-      </View>
+        <View style={{ position: "absolute", left: 113, right: 1.5, top: 27.6 }}>
+          {STORY.map((p) => (
+            <Text key={p} style={[s.sans, s.centre, { fontSize: 4.85, lineHeight: 1.39 }]}>
+              {p}
+            </Text>
+          ))}
+        </View>
 
-      <View style={{ position: "absolute", left: 112, width: 94, top: 85.4 }}>
-        <Ingredients label={label} style={{ fontSize: 4, lineHeight: 1.5, textAlign: "center" }} />
-        <MayContain text={label.mayContain} style={{ fontSize: 4, marginTop: 1.4, marginLeft: 3 }} />
-      </View>
+        <View style={{ position: "absolute", left: 112, width: 94, top: 85.4 }}>
+          <Ingredients label={label} style={{ fontSize: 4, lineHeight: 1.5, textAlign: "center" }} />
+          <MayContain text={label.mayContain} style={{ fontSize: 4, marginTop: 1.4, marginLeft: 3 }} />
+        </View>
 
-      <View style={{ position: "absolute", left: 111.6, top: 120.6 }}>
-        <Text style={[s.sans, { fontSize: 4.1, lineHeight: 1.7 }]}>Best Before {run.bestBefore}</Text>
-        <Text style={[s.sans, { fontSize: 4.1, lineHeight: 1.7, marginLeft: 1.4 }]}>Batch # {run.batch}</Text>
-      </View>
-      <Text style={[s.sans, s.centre, { position: "absolute", left: 163, width: 45, top: 113.8, fontSize: 3.25, lineHeight: 1.38 }]}>
-        Packaged in recycled alfoil and compostable wrapping  (ink is made by heat! No nastie dyes)
-      </Text>
+        <View style={{ position: "absolute", left: 111.6, top: 120.6 }}>
+          <Text style={[s.sans, { fontSize: 4.1, lineHeight: 1.7 }]}>Best Before {run.bestBefore}</Text>
+          <Text style={[s.sans, { fontSize: 4.1, lineHeight: 1.7, marginLeft: 1.4 }]}>Batch # {run.batch}</Text>
+        </View>
+        <Text style={[s.sans, s.centre, { position: "absolute", left: 163, width: 45, top: 113.8, fontSize: 3.25, lineHeight: 1.38 }]}>
+          Packaged in recycled alfoil and compostable wrapping  (ink is made by heat! No nastie dyes)
+        </Text>
 
-      <View style={{ position: "absolute", left: 208, top: 93 }}>
-        <Text style={[s.sans, s.bold, { fontSize: 4.1, marginBottom: 4 }]}>Follow our journey..</Text>
-        {[
-          [<PhoneIcon key="p" size={icon} />, run.phone.replace(/\s+/g, "")],
-          [<GlobeIcon key="g" size={icon} />, "sorellacacao.com.au"],
-          [<InstagramIcon key="i" size={icon} />, "sorella_cacao"],
-        ].map(([iconEl, text], i) => (
-          <View key={i} style={[s.row, { alignItems: "center", marginBottom: 1.7 }]}>
-            {iconEl}
-            <Text style={[s.sans, s.bold, { fontSize: 5.6, marginLeft: 1.2 }]}>{text}</Text>
-          </View>
-        ))}
+        <View style={{ position: "absolute", left: 208, top: 93 }}>
+          <Text style={[s.sans, s.bold, { fontSize: 4.1, marginBottom: 4 }]}>Follow our journey..</Text>
+          {[
+            [<PhoneIcon key="p" size={icon} />, run.phone.replace(/\s+/g, "")],
+            [<GlobeIcon key="g" size={icon} />, "sorellacacao.com.au"],
+            [<InstagramIcon key="i" size={icon} />, "sorella_cacao"],
+          ].map(([iconEl, text], i) => (
+            <View key={i} style={[s.row, { alignItems: "center", marginBottom: 1.7 }]}>
+              {iconEl}
+              <Text style={[s.sans, s.bold, { fontSize: 5.6, marginLeft: 1.2 }]}>{text}</Text>
+            </View>
+          ))}
+        </View>
       </View>
     </Page>
   );

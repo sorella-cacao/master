@@ -307,7 +307,6 @@ export type Database = {
           serving_size: string
           servings_per_package: string
           size: string
-          text_sizes: Json
           updated_at: string
         }
         Insert: {
@@ -325,7 +324,6 @@ export type Database = {
           serving_size?: string
           servings_per_package: string
           size: string
-          text_sizes?: Json
           updated_at?: string
         }
         Update: {
@@ -343,7 +341,6 @@ export type Database = {
           serving_size?: string
           servings_per_package?: string
           size?: string
-          text_sizes?: Json
           updated_at?: string
         }
         Relationships: []

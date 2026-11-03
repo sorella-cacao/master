@@ -9,6 +9,7 @@ import { PodPanel } from "../pod-panel";
 import { getSession } from "../session";
 import { saveInvoiceSettings } from "./actions";
 import { billToName, invoiceNumber, invoiceStatus, invoiceTotal } from "./invoice-data";
+import { MarkPaidButton } from "./mark-paid-button";
 import { StatusChip } from "./status-chip";
 
 export const metadata: Metadata = { title: "Invoices" };
@@ -59,7 +60,38 @@ export default async function InvoicesPage() {
         <PodNav current="/pod/invoices" />
       </header>
 
+      {unpaid.length > 0 && (
+        <PodPanel
+          small
+          open
+          title="Unpaid"
+          hint={`${unpaid.length} unpaid, ${formatPrice(owing(invoices))} owing. Tap Paid once the money is in and it’s filed away.`}
+        >
+          <ItemTable headings={["Invoice", "Due", "Total", "Status", ""]} columnWidth="w-24">
+            {[...unpaid]
+              .sort((a, b) => a.dueOn.localeCompare(b.dueOn))
+              .map((i) => (
+                <ItemRow
+                  key={i.id}
+                  name={
+                    <Link href={`/pod/invoices/${i.id}`} className="underline decoration-white/30 underline-offset-2 hover:text-gold">
+                      {i.name} #{invoiceNumber(i.number)}
+                    </Link>
+                  }
+                  cells={[
+                    dayMonth(i.dueOn),
+                    formatPrice(i.total),
+                    <StatusChip key="status" status={invoiceStatus(i, today)} />,
+                    <MarkPaidButton key="paid" invoiceId={i.id} />,
+                  ]}
+                />
+              ))}
+          </ItemTable>
+        </PodPanel>
+      )}
+
       <PodPanel
+        small
         title="Invoices"
         hint={
           invoices.length === 0
@@ -114,7 +146,7 @@ export default async function InvoicesPage() {
         )}
       </PodPanel>
 
-      <PodPanel title="Your business details" hint="What goes on every new invoice. Invoices already made keep the details they were made with.">
+      <PodPanel small title="Your business details" hint="What goes on every new invoice. Invoices already made keep the details they were made with.">
         <PodForm action={saveInvoiceSettings} submitLabel="Save details">
           <div className="grid gap-4 sm:grid-cols-2">
             <Field label="Business name" name="business_name" value={s.business_name} />

@@ -26,6 +26,8 @@ function details(data: FormData) {
     may_contain: text(data, "may_contain"),
     servings_per_package: text(data, "servings_per_package"),
     serving_size: text(data, "serving_size"),
+    // Typed or pasted as a path; Finder's "Copy as Pathname" gives the whole path, so keep what's after Current Logos.
+    logo_file: text(data, "logo_file").replace(/^.*Current Logos\//, "").replace(/^\/+/, ""),
     nutrition: Object.fromEntries(
       NUTRITION_ROWS.map(([key]) => [key, [text(data, `${key}:serving`), text(data, `${key}:100g`)]]),
     ) as Nutrition,

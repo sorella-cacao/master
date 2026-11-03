@@ -280,6 +280,7 @@ export type Database = {
           id: string
           ingredient_notes: string
           ingredients: string
+          logo_file: string
           may_contain: string
           name: string
           nutrition: Json
@@ -296,6 +297,7 @@ export type Database = {
           id?: string
           ingredient_notes?: string
           ingredients: string
+          logo_file?: string
           may_contain?: string
           name: string
           nutrition: Json
@@ -312,6 +314,7 @@ export type Database = {
           id?: string
           ingredient_notes?: string
           ingredients?: string
+          logo_file?: string
           may_contain?: string
           name?: string
           nutrition?: Json

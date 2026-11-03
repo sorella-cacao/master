@@ -3,7 +3,7 @@
 import { useState, useSyncExternalStore } from "react";
 import { batchNumber } from "./batch-number";
 
-type LabelChoice = { id: string; size: "small" | "large"; name: string; batchCode: string; title: string };
+type LabelChoice = { id: string; size: "small" | "large"; name: string; batchCode: string; title: string; logoFile: string };
 
 // Chrome and Edge can save straight into a folder on the computer; other browsers download the files.
 type FolderHandle = {
@@ -45,7 +45,8 @@ const runFolderName = (today: string) =>
 export function LabelMaker({ labels, today, defaultBestBefore }: { labels: LabelChoice[]; today: string; defaultBestBefore: string }) {
   const [bestBefore, setBestBefore] = useState(defaultBestBefore);
   const [digits, setDigits] = useState(`${today.slice(8, 10)}${today.slice(5, 7)}`);
-  const [chosen, setChosen] = useState<Set<string>>(new Set());
+  // How many of each label to print, as typed.
+  const [copies, setCopies] = useState<Record<string, string>>({});
   const [status, setStatus] = useState("");
   const [busy, setBusy] = useState(false);
   // Known only in the browser (false while rendering on the server).
@@ -54,14 +55,6 @@ export function LabelMaker({ labels, today, defaultBestBefore }: { labels: Label
     () => !!folderPicker(),
     () => false,
   );
-
-  const toggle = (id: string) =>
-    setChosen((current) => {
-      const next = new Set(current);
-      if (next.has(id)) next.delete(id);
-      else next.add(id);
-      return next;
-    });
 
   async function pickFolder() {
     const folder = await folderPicker()!({ id: "sorella-labels", mode: "readwrite" });
@@ -72,8 +65,9 @@ export function LabelMaker({ labels, today, defaultBestBefore }: { labels: Label
   async function make(chooseFolder = false) {
     if (!/^\d{4}$/.test(digits)) return setStatus("Enter the first 4 digits of the batch number, e.g. 2610.");
     if (!bestBefore) return setStatus("Enter the best before date.");
-    const picked = labels.filter((l) => chosen.has(l.id));
-    if (!picked.length) return setStatus("Tick the labels you’d like.");
+    const count = (l: LabelChoice) => Number(copies[l.id] || 0);
+    const picked = labels.filter((l) => count(l) > 0);
+    if (!picked.length) return setStatus("Enter how many of each label you’d like.");
     if (bestBefore <= today && !window.confirm("That best before date isn’t in the future. Make the labels anyway?")) return;
 
     setBusy(true);
@@ -88,24 +82,34 @@ export function LabelMaker({ labels, today, defaultBestBefore }: { labels: Label
         }
       }
 
-      const files: { title: string; pdf: Blob }[] = [];
+      const files: { label: LabelChoice; title: string; pdf: Blob }[] = [];
       for (const label of picked) {
         setStatus(`Making ${label.title}…`);
         const response = await fetch(`/pod/labels/pdf?id=${label.id}&best_before=${bestBefore}&batch=${digits}`);
         if (!response.ok) throw new Error(await response.text());
-        files.push({ title: label.title, pdf: await response.blob() });
+        files.push({ label, title: label.title, pdf: await response.blob() });
       }
 
       if (folder) {
         const run = await (await folder.getDirectoryHandle("Print Runs", { create: true })).getDirectoryHandle(runFolderName(today), {
           create: true,
         });
-        for (const { title, pdf } of files) {
-          const writable = await (await run.getFileHandle(`${title}.pdf`, { create: true })).createWritable();
-          await writable.write(pdf);
+        const save = async (name: string, data: Blob) => {
+          const writable = await (await run.getFileHandle(name, { create: true })).createWritable();
+          await writable.write(data);
           await writable.close();
-        }
-        setStatus(`Saved ${files.length} label${files.length === 1 ? "" : "s"} in ${folder.name} › Print Runs › ${runFolderName(today)}.`);
+        };
+        for (const { title, pdf } of files) await save(`${title}.pdf`, pdf);
+        // The print list goes in last, once its PDFs are there: the print helper on the Mac prints
+        // each label with its logo, in pairs, then marks the list as printed.
+        const list = files.map(({ label, title }) => ({ file: `${title}.pdf`, logo: label.logoFile, copies: count(label), size: label.size }));
+        const time = new Date().toTimeString().slice(0, 8).replaceAll(":", "");
+        await save(`print-${time}.json`, new Blob([JSON.stringify({ labels: list }, null, 2)], { type: "application/json" }));
+        const total = list.reduce((n, l) => n + l.copies, 0);
+        setStatus(
+          `Saved in ${folder.name} › Print Runs › ${runFolderName(today)}. Sending ${total} label${total === 1 ? "" : "s"} to the printer` +
+            `${list.some((l) => !l.logo) ? " (some have no logo set, so they print alone)" : ", each with its logo"}.`,
+        );
       } else {
         for (const { title, pdf } of files) {
           const link = document.createElement("a");
@@ -114,7 +118,9 @@ export function LabelMaker({ labels, today, defaultBestBefore }: { labels: Label
           link.click();
           setTimeout(() => URL.revokeObjectURL(link.href), 10_000);
         }
-        setStatus(`Downloaded ${files.length} label${files.length === 1 ? "" : "s"}. Move them into Sorella › Labels › Print Runs.`);
+        setStatus(
+          `Downloaded ${files.length} label${files.length === 1 ? "" : "s"}. This browser can’t save into Print Runs, so they won’t print by themselves — use Chrome for that.`,
+        );
       }
     } catch (error) {
       // Closing the folder picker without choosing isn't an error worth showing.
@@ -160,7 +166,14 @@ export function LabelMaker({ labels, today, defaultBestBefore }: { labels: Label
               <p className="eyebrow border-b border-white/15 bg-white/5 px-3 py-1.5 text-cream/80">{title}</p>
               {ofSize.map((label, i) => (
                 <label key={label.id} className={`flex items-center gap-3 px-3 py-2 font-sans text-sm ${i % 2 ? "" : "bg-white/[0.03]"}`}>
-                  <input type="checkbox" checked={chosen.has(label.id)} onChange={() => toggle(label.id)} className="size-4 accent-[#8a5226]" />
+                  <input
+                    inputMode="numeric"
+                    value={copies[label.id] ?? ""}
+                    onChange={(e) => setCopies((c) => ({ ...c, [label.id]: e.target.value.replace(/\D/g, "").slice(0, 3) }))}
+                    placeholder="0"
+                    aria-label={`How many ${title.toLowerCase()} ${label.name} labels`}
+                    className="pod-input w-14 px-2 py-1 text-right text-sm"
+                  />
                   <span className="flex-1">{label.name}</span>
                   <span className="tabular-nums text-cream/60">
                     {/^\d{4}$/.test(digits) ? `Batch # ${batchNumber(digits, today, label.batchCode)}` : ""}

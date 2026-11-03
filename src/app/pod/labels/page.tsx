@@ -34,10 +34,17 @@ export default async function LabelsPage() {
       <PodPanel
         open
         title="Print labels"
-        hint="Pick the best before date, the first 4 batch digits and which labels, and they’re saved as PDFs ready to print."
+        hint="Pick the best before date, the first 4 batch digits and how many of each label. They’re saved as PDFs and printed with their logos."
       >
         <LabelMaker
-          labels={labels.map((l) => ({ id: l.id, size: l.size, name: l.name, batchCode: l.batchCode, title: labelTitle(l) }))}
+          labels={labels.map((l) => ({
+            id: l.id,
+            size: l.size,
+            name: l.name,
+            batchCode: l.batchCode,
+            title: labelTitle(l),
+            logoFile: l.logoFile,
+          }))}
           today={today}
           defaultBestBefore={addDays(today, 365)}
         />
@@ -104,6 +111,13 @@ function LabelFields({ label }: { label?: Label }) {
         />
         <Field label="Servings per package" name="servings_per_package" value={label?.servingsPerPackage} placeholder="e.g. 5.4" />
         <Field label="Serving size" name="serving_size" value={label?.servingSize ?? "20g"} />
+        <Field
+          label="Logo label (in Sorella › Logos › Current Logos)"
+          name="logo_file"
+          value={label?.logoFile}
+          placeholder="e.g. 75% Dark/Large Logo- 75% Dark (5).pdf"
+          wide
+        />
       </div>
 
       <div className="overflow-x-auto rounded-xl border border-white/15">

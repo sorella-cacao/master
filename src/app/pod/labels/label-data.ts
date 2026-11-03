@@ -40,6 +40,8 @@ export type Label = {
   nutrition: Nutrition;
   /** Percentages of the standard size, e.g. { ingredients: 110 }; a missing part is 100. */
   textSizes: Partial<Record<TextPart, number>>;
+  /** Its logo label, in Sorella › Logos › Current Logos, e.g. "75% Dark/Large Logo- 75% Dark (5).pdf". */
+  logoFile: string;
 };
 
 /** What changes with each print run. */
@@ -48,7 +50,7 @@ export type PrintRun = { bestBefore: string; batch: string; phone: string };
 export async function getLabels(supabase: Db): Promise<Label[]> {
   const { data, error } = await supabase
     .from("labels")
-    .select("id, size, name, batch_code, ingredients, ingredient_notes, may_contain, servings_per_package, serving_size, nutrition, text_sizes")
+    .select("id, size, name, batch_code, ingredients, ingredient_notes, may_contain, servings_per_package, serving_size, nutrition, text_sizes, logo_file")
     .order("size", { ascending: false })
     .order("position");
   if (error) throw error;
@@ -64,6 +66,7 @@ export async function getLabels(supabase: Db): Promise<Label[]> {
     servingSize: l.serving_size,
     nutrition: l.nutrition as Nutrition,
     textSizes: (l.text_sizes ?? {}) as Label["textSizes"],
+    logoFile: l.logo_file,
   }));
 }
 

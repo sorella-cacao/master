@@ -1,7 +1,7 @@
 #!/usr/bin/python3
 """Prints label runs saved by the Pod's Labels page on the TSC label printer.
 
-The Pod saves each run's PDFs into Sorella/Labels/Print Runs/<date>/ followed by a print list,
+The Pod saves each run's PDFs into Sorella/Labels/Print Runs/<date>/ (or Sorella/Print Runs/<date>/) and then a print list,
 print-HHMMSS.json: {"labels": [{"file", "logo", "copies", "size"}]}. Each label prints in pairs
 with its logo from Sorella/Logos/Current Logos (logo, ingredients, logo, ingredients...), then the
 list is renamed printed-HHMMSS.json (or failed-HHMMSS.json) so it never prints twice.
@@ -16,7 +16,8 @@ from datetime import datetime
 from pathlib import Path
 
 SORELLA = Path.home() / "Desktop" / "Sorella"
-RUNS = SORELLA / "Labels" / "Print Runs"
+# Where the Pod saves runs: Labels/Print Runs, or Print Runs right in Sorella if that folder was the one picked.
+RUNS = [SORELLA / "Labels" / "Print Runs", SORELLA / "Print Runs"]
 LOGOS = SORELLA / "Logos" / "Current Logos"
 PRINTER = "TSC_DA210"
 # The labels' own sizes, so the printer doesn't shrink them onto its 2 x 4 inch default.
@@ -52,17 +53,25 @@ def print_list(path):
             log(f"Printed {copies} x {ingredients.stem}" + (" with its logo" if len(pair) == 2 else ""))
 
 
+def print_lists():
+    """The print lists waiting in every Print Runs folder, oldest first."""
+    lists = []
+    for runs in RUNS:
+        try:
+            os.listdir(runs)
+        except FileNotFoundError:
+            continue
+        except PermissionError:
+            # macOS hasn't let this helper into the Desktop folder (Privacy & Security). Said once.
+            if not LOG.exists() or "no permission" not in LOG.read_text()[-300:]:
+                log("Can't open Print Runs: no permission to the Desktop folder yet")
+            continue
+        lists += runs.glob("*/print-*.json")
+    return sorted(lists, key=lambda p: p.stat().st_mtime)
+
+
 def main():
-    try:
-        os.listdir(RUNS)
-    except FileNotFoundError:
-        return
-    except PermissionError:
-        # macOS hasn't allowed this helper into the Desktop folder (Privacy & Security). Said once an hour.
-        if not LOG.exists() or "no permission" not in LOG.read_text()[-300:] or datetime.now().minute == 0:
-            log("Can't open Print Runs: no permission to the Desktop folder yet")
-        return
-    for path in sorted(RUNS.glob("*/print-*.json")):
+    for path in print_lists():
         done = "printed"
         try:
             print_list(path)

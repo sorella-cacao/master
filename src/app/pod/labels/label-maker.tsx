@@ -80,6 +80,8 @@ export function LabelMaker({ labels, today, defaultBestBefore }: { labels: Label
           setStatus("Choose your Labels folder (Sorella › Labels).");
           folder = await pickFolder();
         }
+        // If the Sorella folder itself was picked, use the Labels folder inside it.
+        folder = await folder.getDirectoryHandle("Labels").catch(() => folder!);
       }
 
       const files: { label: LabelChoice; title: string; pdf: Blob }[] = [];

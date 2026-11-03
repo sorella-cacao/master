@@ -273,6 +273,54 @@ export type Database = {
           },
         ]
       }
+      labels: {
+        Row: {
+          batch_code: string
+          created_at: string
+          id: string
+          ingredient_notes: string
+          ingredients: string
+          may_contain: string
+          name: string
+          nutrition: Json
+          position: number
+          serving_size: string
+          servings_per_package: string
+          size: string
+          updated_at: string
+        }
+        Insert: {
+          batch_code: string
+          created_at?: string
+          id?: string
+          ingredient_notes?: string
+          ingredients: string
+          may_contain?: string
+          name: string
+          nutrition: Json
+          position?: number
+          serving_size?: string
+          servings_per_package: string
+          size: string
+          updated_at?: string
+        }
+        Update: {
+          batch_code?: string
+          created_at?: string
+          id?: string
+          ingredient_notes?: string
+          ingredients?: string
+          may_contain?: string
+          name?: string
+          nutrition?: Json
+          position?: number
+          serving_size?: string
+          servings_per_package?: string
+          size?: string
+          updated_at?: string
+        }
+        Relationships: []
+      }
       order_lines: {
         Row: {
           id: string

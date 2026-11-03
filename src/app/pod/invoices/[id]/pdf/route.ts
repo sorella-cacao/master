@@ -13,7 +13,7 @@ export async function GET(request: NextRequest, ctx: RouteContext<"/pod/invoices
   if (!invoice) return new Response("Invoice not found", { status: 404 });
 
   const pdf = await renderInvoicePdf(invoice);
-  const filename = `Invoice ${invoiceNumber(invoice.number)} - ${billToName(invoice.billTo)}.pdf`.replace(/[^\w .&()-]/g, "");
+  const filename = `Invoice ${invoiceNumber(invoice.number, invoice.numberSuffix)} - ${billToName(invoice.billTo)}.pdf`.replace(/[^\w .&()-]/g, "");
   const disposition = request.nextUrl.searchParams.has("download") ? "attachment" : "inline";
   return new Response(new Uint8Array(pdf), {
     headers: {

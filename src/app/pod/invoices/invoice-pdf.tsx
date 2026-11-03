@@ -2,6 +2,7 @@ import "server-only";
 import path from "node:path";
 import { Document, Font, Page, StyleSheet, Text, View, renderToBuffer } from "@react-pdf/renderer";
 import { formatPrice } from "@/lib/format";
+import { CouncilInvoicePage } from "./council-invoice-pdf";
 import { type Invoice, invoiceNumber, invoiceTotal, lineTotal } from "./invoice-data";
 
 const fonts = path.join(process.cwd(), "src/app/pod/invoices/fonts");
@@ -60,78 +61,83 @@ function InvoiceDocument({ invoice }: { invoice: Invoice }) {
   const { seller } = invoice;
   // Lines left without a price (e.g. postage not needed this time) aren't printed.
   const priced = invoice.lines.filter((l) => l.unit_price !== null);
+  const number = invoiceNumber(invoice.number, invoice.numberSuffix);
   return (
-    <Document title={`Invoice ${invoiceNumber(invoice.number)}`} author={seller.business_name}>
-      <Page size="A4" style={s.page}>
-        <View style={s.rule} />
-        <View style={s.top}>
-          <View style={s.half}>
-            <Text style={s.business}>{seller.business_name}</Text>
-            {[...lines(seller.address), seller.email, seller.phone].filter(Boolean).map((line) => (
-              <Text key={line} style={s.detail}>
-                {line}
-              </Text>
-            ))}
-            {seller.abn && <Text style={s.detail}>ABN {seller.abn}</Text>}
-          </View>
-          <View style={s.half}>
-            <Text style={s.title}>Invoice # {invoiceNumber(invoice.number)}</Text>
-            <Text style={s.submitted}>Submitted on {shortDate(invoice.issuedOn)}</Text>
-          </View>
-        </View>
-
-        <View style={s.parties}>
-          <View style={s.party}>
-            <Text style={s.label}>Invoice for</Text>
-            {lines(invoice.billTo).map((line, i) => (
-              <Text key={i} style={s.detail}>
-                {line}
-              </Text>
-            ))}
-          </View>
-          <View style={s.partyNarrow}>
-            <Text style={s.label}>Payable to</Text>
-            <Text style={s.detail}>{seller.payable_to || seller.business_name}</Text>
-          </View>
-          <View style={s.partyNarrow}>
-            <Text style={s.label}>Due date</Text>
-            <Text style={s.detail}>{longDate(invoice.dueOn)}</Text>
-          </View>
-        </View>
-
-        <View style={s.table}>
-          <View style={s.headRow}>
-            <Text style={[s.head, s.description]}>Description</Text>
-            <Text style={[s.head, s.price]}>Price</Text>
-            <Text style={[s.head, s.qty]}>Qty</Text>
-            <Text style={[s.head, s.total]}>Total price</Text>
-          </View>
-          {priced.map((line, i) => (
-            <View key={i} style={i % 2 === 0 ? [s.row, s.shaded] : s.row} wrap={false}>
-              <Text style={s.description}>{line.description}</Text>
-              <Text style={[s.price, s.number]}>{formatPrice(line.unit_price ?? 0)}</Text>
-              <Text style={[s.qty, s.number]}>{quantity(line.quantity)}</Text>
-              <Text style={[s.total, s.number]}>{formatPrice(lineTotal(line))}</Text>
+    <Document title={`Invoice ${number}`} author={seller.business_name}>
+      {invoice.layout === "council" ? (
+        <CouncilInvoicePage invoice={invoice} number={number} />
+      ) : (
+        <Page size="A4" style={s.page}>
+          <View style={s.rule} />
+          <View style={s.top}>
+            <View style={s.half}>
+              <Text style={s.business}>{seller.business_name}</Text>
+              {[...lines(seller.address), seller.email, seller.phone].filter(Boolean).map((line) => (
+                <Text key={line} style={s.detail}>
+                  {line}
+                </Text>
+              ))}
+              {seller.abn && <Text style={s.detail}>ABN {seller.abn}</Text>}
             </View>
-          ))}
-        </View>
-
-        <View style={s.totalRow} wrap={false}>
-          <Text style={s.totalLabel}>Total:</Text>
-          <Text style={s.totalAmount}>{formatPrice(invoiceTotal(priced))}</Text>
-        </View>
-
-        {(seller.bank_account_name || seller.bank_account_number) && (
-          <View style={s.bank} wrap={false}>
-            <Text style={s.bankTitle}>Bank Details</Text>
-            {seller.bank_account_name && <Text>Acc Name: {seller.bank_account_name}</Text>}
-            {seller.bank_account_number && <Text>Acc number: {seller.bank_account_number}</Text>}
-            {seller.bank_bsb && <Text>BSB: {seller.bank_bsb}</Text>}
+            <View style={s.half}>
+              <Text style={s.title}>Invoice # {number}</Text>
+              <Text style={s.submitted}>Submitted on {shortDate(invoice.issuedOn)}</Text>
+            </View>
           </View>
-        )}
 
-        {invoice.notes && <Text style={s.notes}>{invoice.notes}</Text>}
-      </Page>
+          <View style={s.parties}>
+            <View style={s.party}>
+              <Text style={s.label}>Invoice for</Text>
+              {lines(invoice.billTo).map((line, i) => (
+                <Text key={i} style={s.detail}>
+                  {line}
+                </Text>
+              ))}
+            </View>
+            <View style={s.partyNarrow}>
+              <Text style={s.label}>Payable to</Text>
+              <Text style={s.detail}>{seller.payable_to || seller.business_name}</Text>
+            </View>
+            <View style={s.partyNarrow}>
+              <Text style={s.label}>Due date</Text>
+              <Text style={s.detail}>{longDate(invoice.dueOn)}</Text>
+            </View>
+          </View>
+
+          <View style={s.table}>
+            <View style={s.headRow}>
+              <Text style={[s.head, s.description]}>Description</Text>
+              <Text style={[s.head, s.price]}>Price</Text>
+              <Text style={[s.head, s.qty]}>Qty</Text>
+              <Text style={[s.head, s.total]}>Total price</Text>
+            </View>
+            {priced.map((line, i) => (
+              <View key={i} style={i % 2 === 0 ? [s.row, s.shaded] : s.row} wrap={false}>
+                <Text style={s.description}>{line.description}</Text>
+                <Text style={[s.price, s.number]}>{formatPrice(line.unit_price ?? 0)}</Text>
+                <Text style={[s.qty, s.number]}>{quantity(line.quantity)}</Text>
+                <Text style={[s.total, s.number]}>{formatPrice(lineTotal(line))}</Text>
+              </View>
+            ))}
+          </View>
+
+          <View style={s.totalRow} wrap={false}>
+            <Text style={s.totalLabel}>Total:</Text>
+            <Text style={s.totalAmount}>{formatPrice(invoiceTotal(priced))}</Text>
+          </View>
+
+          {(seller.bank_account_name || seller.bank_account_number) && (
+            <View style={s.bank} wrap={false}>
+              <Text style={s.bankTitle}>Bank Details</Text>
+              {seller.bank_account_name && <Text>Acc Name: {seller.bank_account_name}</Text>}
+              {seller.bank_account_number && <Text>Acc number: {seller.bank_account_number}</Text>}
+              {seller.bank_bsb && <Text>BSB: {seller.bank_bsb}</Text>}
+            </View>
+          )}
+
+          {invoice.notes && <Text style={s.notes}>{invoice.notes}</Text>}
+        </Page>
+      )}
     </Document>
   );
 }

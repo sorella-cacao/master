@@ -26,10 +26,10 @@ type Order = {
   note: string | null;
   sent_at: string | null;
   lines: Line[];
-  invoice: { id: string; number: number } | null;
+  invoice: { id: string; number: number; number_suffix: string | null } | null;
 };
 
-const ORDER_COLUMNS = "id, customer, kind, needed_by, status, note, sent_at, lines:order_lines(stock_item_id, quantity, unit_price), invoice:invoices(id, number)";
+const ORDER_COLUMNS = "id, customer, kind, needed_by, status, note, sent_at, lines:order_lines(stock_item_id, quantity, unit_price), invoice:invoices(id, number, number_suffix)";
 
 /**
  * Chocolate in one item, in kg: its own amount when set (e.g. 90g of 75% Dark in a mandarin bar),

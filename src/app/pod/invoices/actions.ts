@@ -138,7 +138,7 @@ export async function emailInvoice(invoiceId: string): Promise<SaveState> {
   const to = row?.customer?.email?.trim();
   if (!to) return { error: `Add ${name}’s email address on the Customers page first.` };
 
-  const number = invoiceNumber(invoice.number);
+  const number = invoiceNumber(invoice.number, invoice.numberSuffix);
   const contact = row?.customer?.contact?.trim().split(/\s+/)[0];
   const pdf = await renderInvoicePdf(invoice);
 

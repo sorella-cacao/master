@@ -5,6 +5,7 @@ import { startTransition, useActionState, useState, useTransition } from "react"
 import type { SaveState } from "../actions";
 import { useConfirm } from "../confirm-dialog";
 import { createInvoice } from "../invoices/actions";
+import { invoiceNumber } from "../invoices/invoice-number";
 import { setOrderStatus } from "./actions";
 
 const STATUSES = [
@@ -23,7 +24,7 @@ export function OrderStatus({
   orderId: string;
   status: string;
   itemCount: number;
-  invoice: { id: string; number: number } | null;
+  invoice: { id: string; number: number; number_suffix: string | null } | null;
 }) {
   const [state, formAction, pending] = useActionState(setOrderStatus, undefined as SaveState);
   const { confirm, dialog } = useConfirm();
@@ -79,7 +80,7 @@ export function OrderStatus({
           href={`/pod/invoices/${invoice.id}`}
           className="eyebrow rounded-full border border-white/20 px-4 py-2 text-cream/70 transition-colors hover:border-gold hover:text-gold"
         >
-          View invoice #{String(invoice.number).padStart(3, "0")}
+          View invoice #{invoiceNumber(invoice.number, invoice.number_suffix)}
         </Link>
       ) : (
         <form action={createInvoice}>

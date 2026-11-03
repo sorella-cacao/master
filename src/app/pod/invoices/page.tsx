@@ -28,7 +28,7 @@ export default async function InvoicesPage() {
   const [list, settings, customerNames] = await Promise.all([
     supabase
       .from("invoices")
-      .select("id, number, bill_to, issued_on, due_on, paid_on, customer:customers(name), lines:invoice_lines(description, quantity, unit_price)")
+      .select("id, number, number_suffix, bill_to, issued_on, due_on, paid_on, customer:customers(name), lines:invoice_lines(description, quantity, unit_price)")
       .order("number", { ascending: false }),
     supabase.from("invoice_settings").select("*").eq("id", true).single(),
     supabase.from("customers").select("name").order("name"),
@@ -39,6 +39,7 @@ export default async function InvoicesPage() {
   const invoices = list.data.map((i) => ({
     id: i.id,
     number: i.number,
+    suffix: i.number_suffix,
     name: i.customer?.name ?? billToName(i.bill_to),
     issuedOn: i.issued_on,
     dueOn: i.due_on,
@@ -76,7 +77,7 @@ export default async function InvoicesPage() {
                   key={i.id}
                   name={
                     <Link href={`/pod/invoices/${i.id}`} className="underline decoration-white/30 underline-offset-2 hover:text-gold">
-                      {i.name} #{invoiceNumber(i.number)}
+                      {i.name} #{invoiceNumber(i.number, i.suffix)}
                     </Link>
                   }
                   cells={[
@@ -163,7 +164,7 @@ export default async function InvoicesPage() {
                         key={i.id}
                         name={
                           <Link href={`/pod/invoices/${i.id}`} className="underline decoration-white/30 underline-offset-2 hover:text-gold">
-                            #{invoiceNumber(i.number)}
+                            #{invoiceNumber(i.number, i.suffix)}
                           </Link>
                         }
                         cells={[

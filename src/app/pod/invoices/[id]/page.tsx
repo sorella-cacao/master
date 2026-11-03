@@ -45,7 +45,7 @@ export default async function InvoicePage(props: PageProps<"/pod/invoices/[id]">
         <div className="flex flex-wrap items-baseline justify-between gap-4">
           <div>
             <h2 className="text-3xl">
-              Invoice #{invoiceNumber(invoice.number)} · {billToName(invoice.billTo)}
+              Invoice #{invoiceNumber(invoice.number, invoice.numberSuffix)} · {billToName(invoice.billTo)}
             </h2>
             <p className="mt-1 text-cream/70">
               {formatPrice(invoiceTotal(invoice.lines))} · due {shortDate(invoice.dueOn)}
@@ -73,7 +73,7 @@ export default async function InvoicePage(props: PageProps<"/pod/invoices/[id]">
             <iframe
               key={invoice.updatedAt}
               src={`${pdf}?v=${encodeURIComponent(invoice.updatedAt)}#toolbar=0&navpanes=0&view=FitH`}
-              title={`Invoice ${invoiceNumber(invoice.number)} preview`}
+              title={`Invoice ${invoiceNumber(invoice.number, invoice.numberSuffix)} preview`}
               className="aspect-[1/1.414] w-full rounded-xl border border-white/15 bg-white"
             />
           </div>
@@ -88,7 +88,7 @@ export default async function InvoicePage(props: PageProps<"/pod/invoices/[id]">
             action={deleteInvoice}
             submitLabel="Delete invoice"
             variant="quiet"
-            confirmMessage={`Delete invoice #${invoiceNumber(invoice.number)}? This can’t be undone.`}
+            confirmMessage={`Delete invoice #${invoiceNumber(invoice.number, invoice.numberSuffix)}? This can’t be undone.`}
           >
             <input type="hidden" name="invoice_id" value={invoice.id} />
           </PodForm>

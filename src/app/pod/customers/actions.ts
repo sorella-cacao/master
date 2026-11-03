@@ -28,7 +28,17 @@ const details = (data: FormData) => ({
   notes: text(data, "notes") || null,
   invoice_postage: data.get("invoice_postage") === "on",
   invoice_variety: data.get("invoice_variety") === "on",
+  invoice_layout: text(data, "invoice_layout") === "council" ? "council" : "standard",
+  invoice_number_suffix: text(data, "invoice_number_suffix").toUpperCase() || null,
 });
+
+/** "Pay within (days)" from the form: null for your usual terms, undefined if it isn't a whole number. */
+function paymentTerms(data: FormData) {
+  const raw = text(data, "payment_terms_days");
+  if (!raw) return null;
+  const value = Number(raw);
+  return Number.isInteger(value) && value >= 0 ? value : undefined;
+}
 
 /** "Next invoice #" from the form, or a message if it isn't a whole number from 1. */
 function nextInvoiceNumber(data: FormData) {
@@ -43,7 +53,9 @@ export async function addCustomer(_: SaveState, data: FormData): Promise<SaveSta
   if (!customer.name) return { error: "Enter the customer’s name." };
   const next = nextInvoiceNumber(data);
   if (!next) return { error: "Enter the next invoice number as a whole number, e.g. 1." };
-  const { error } = await supabase.from("customers").insert({ ...customer, next_invoice_number: next });
+  const terms = paymentTerms(data);
+  if (terms === undefined) return { error: "Enter “Pay within” as a number of days, e.g. 30." };
+  const { error } = await supabase.from("customers").insert({ ...customer, payment_terms_days: terms, next_invoice_number: next });
   if (error) return failed(error);
   refresh();
   return { ok: `Added ${customer.name}. Open them below to set their prices.` };
@@ -73,7 +85,9 @@ export async function saveCustomer(_: SaveState, data: FormData): Promise<SaveSt
 
   const next = nextInvoiceNumber(data);
   if (!next) return { error: "Enter the next invoice number as a whole number, e.g. 13." };
-  const saved = await supabase.from("customers").update({ ...customer, next_invoice_number: next }).eq("id", id);
+  const terms = paymentTerms(data);
+  if (terms === undefined) return { error: "Enter “Pay within” as a number of days, e.g. 30." };
+  const saved = await supabase.from("customers").update({ ...customer, payment_terms_days: terms, next_invoice_number: next }).eq("id", id);
   if (saved.error) return failed(saved.error);
   if (prices.length) {
     const { error } = await supabase.from("customer_prices").upsert(prices);

@@ -20,6 +20,9 @@ type Customer = {
   notes: string | null;
   invoice_postage: boolean;
   invoice_variety: boolean;
+  invoice_layout: string;
+  invoice_number_suffix: string | null;
+  payment_terms_days: number | null;
   next_invoice_number: number;
 };
 
@@ -36,7 +39,7 @@ export default async function CustomersPage() {
 
   const [groups, list, priceRows] = await Promise.all([
     getStockGroups(supabase),
-    supabase.from("customers").select("id, name, contact, email, phone, address, notes, invoice_postage, invoice_variety, next_invoice_number").order("name"),
+    supabase.from("customers").select("id, name, contact, email, phone, address, notes, invoice_postage, invoice_variety, invoice_layout, invoice_number_suffix, payment_terms_days, next_invoice_number").order("name"),
     supabase.from("customer_prices").select("customer_id, stock_item_id, price"),
   ]);
   if (list.error) throw list.error;
@@ -134,6 +137,25 @@ function CustomerFields({ customer }: { customer?: Customer }) {
       <Field label="Email" name="email" value={customer?.email} />
       <Field label="Phone" name="phone" value={customer?.phone} />
       <Field label="Next invoice #" name="next_invoice_number" value={String(customer?.next_invoice_number ?? 1)} />
+      <Field
+        label="Invoice # ending, e.g. CULTURAL"
+        name="invoice_number_suffix"
+        value={customer?.invoice_number_suffix}
+        placeholder="Optional — makes it 02CULTURAL"
+      />
+      <label className="block">
+        <span className="eyebrow mb-1 block text-xs text-cream/70">Invoice layout</span>
+        <select name="invoice_layout" defaultValue={customer?.invoice_layout ?? "standard"} className="pod-input py-2 text-sm">
+          <option value="standard">Standard</option>
+          <option value="council">Council</option>
+        </select>
+      </label>
+      <Field
+        label="Pay within (days)"
+        name="payment_terms_days"
+        value={customer?.payment_terms_days?.toString()}
+        placeholder="Your usual terms"
+      />
       <label className="block">
         <span className="eyebrow mb-1 block text-xs text-cream/70">Address (as on invoices)</span>
         <textarea name="address" rows={3} defaultValue={customer?.address ?? ""} className="pod-input py-2 text-sm" />
@@ -154,11 +176,23 @@ function CustomerFields({ customer }: { customer?: Customer }) {
   );
 }
 
-function Field({ label, name, value, required }: { label: string; name: string; value?: string | null; required?: boolean }) {
+function Field({
+  label,
+  name,
+  value,
+  required,
+  placeholder,
+}: {
+  label: string;
+  name: string;
+  value?: string | null;
+  required?: boolean;
+  placeholder?: string;
+}) {
   return (
     <label className="block">
       <span className="eyebrow mb-1 block text-xs text-cream/70">{label}</span>
-      <input name={name} required={required} defaultValue={value ?? ""} className="pod-input py-2 text-sm" />
+      <input name={name} required={required} defaultValue={value ?? ""} placeholder={placeholder} className="pod-input py-2 text-sm" />
     </label>
   );
 }

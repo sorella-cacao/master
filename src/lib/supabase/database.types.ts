@@ -72,7 +72,10 @@ export type Database = {
           email: string | null
           id: string
           invoice_postage: boolean
+          invoice_layout: string
+          invoice_number_suffix: string | null
           invoice_variety: boolean
+          payment_terms_days: number | null
           name: string
           next_invoice_number: number
           notes: string | null
@@ -86,7 +89,10 @@ export type Database = {
           email?: string | null
           id?: string
           invoice_postage?: boolean
+          invoice_layout?: string
+          invoice_number_suffix?: string | null
           invoice_variety?: boolean
+          payment_terms_days?: number | null
           name: string
           next_invoice_number?: number
           notes?: string | null
@@ -100,7 +106,10 @@ export type Database = {
           email?: string | null
           id?: string
           invoice_postage?: boolean
+          invoice_layout?: string
+          invoice_number_suffix?: string | null
           invoice_variety?: boolean
+          payment_terms_days?: number | null
           name?: string
           next_invoice_number?: number
           notes?: string | null
@@ -150,6 +159,9 @@ export type Database = {
           address: string
           bank_account_name: string
           bank_account_number: string
+          bank_name: string
+          owner_name: string
+          street_address: string
           bank_bsb: string
           business_name: string
           email: string
@@ -164,6 +176,9 @@ export type Database = {
           address?: string
           bank_account_name?: string
           bank_account_number?: string
+          bank_name?: string
+          owner_name?: string
+          street_address?: string
           bank_bsb?: string
           business_name?: string
           email?: string
@@ -178,6 +193,9 @@ export type Database = {
           address?: string
           bank_account_name?: string
           bank_account_number?: string
+          bank_name?: string
+          owner_name?: string
+          street_address?: string
           bank_bsb?: string
           business_name?: string
           email?: string
@@ -199,6 +217,8 @@ export type Database = {
           issued_on: string
           notes: string | null
           number: number
+          layout: string
+          number_suffix: string | null
           order_id: string | null
           paid_on: string | null
           seller: Json
@@ -213,6 +233,8 @@ export type Database = {
           issued_on: string
           notes?: string | null
           number: number
+          layout?: string
+          number_suffix?: string | null
           order_id?: string | null
           paid_on?: string | null
           seller: Json
@@ -227,6 +249,8 @@ export type Database = {
           issued_on?: string
           notes?: string | null
           number?: number
+          layout?: string
+          number_suffix?: string | null
           order_id?: string | null
           paid_on?: string | null
           seller?: Json
@@ -487,6 +511,7 @@ export type Database = {
           chocolate_grams: number | null
           created_at: string
           has_varieties: boolean
+          invoice_name: string | null
           id: string
           is_active: boolean
           is_extra: boolean
@@ -504,6 +529,7 @@ export type Database = {
           chocolate_grams?: number | null
           created_at?: string
           has_varieties?: boolean
+          invoice_name?: string | null
           id?: string
           is_active?: boolean
           is_extra?: boolean
@@ -521,6 +547,7 @@ export type Database = {
           chocolate_grams?: number | null
           created_at?: string
           has_varieties?: boolean
+          invoice_name?: string | null
           id?: string
           is_active?: boolean
           is_extra?: boolean

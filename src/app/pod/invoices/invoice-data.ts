@@ -14,6 +14,10 @@ export type Seller = {
   bank_account_name: string;
   bank_bsb: string;
   bank_account_number: string;
+  // Printed on council invoices; missing from invoices made before they were added.
+  owner_name?: string;
+  street_address?: string;
+  bank_name?: string;
 };
 
 /** A line with no price yet (e.g. postage to fill in) has a null price and is left off the PDF. */
@@ -22,6 +26,9 @@ export type InvoiceLine = { description: string; quantity: number; unit_price: n
 export type Invoice = {
   id: string;
   number: number;
+  numberSuffix: string | null;
+  /** "council" invoices are laid out like the council's own template. */
+  layout: "standard" | "council";
   orderId: string | null;
   billTo: string;
   issuedOn: string;
@@ -33,8 +40,7 @@ export type Invoice = {
   updatedAt: string;
 };
 
-/** "012" */
-export const invoiceNumber = (n: number) => String(n).padStart(3, "0");
+export { invoiceNumber } from "./invoice-number";
 
 export const lineTotal = (l: InvoiceLine) => Math.round(l.quantity * (l.unit_price ?? 0) * 100) / 100;
 export const invoiceTotal = (lines: InvoiceLine[]) => Math.round(lines.reduce((n, l) => n + lineTotal(l), 0) * 100) / 100;
@@ -51,7 +57,7 @@ export function invoiceStatus(invoice: { paidOn: string | null; dueOn: string },
 export async function getInvoice(supabase: Db, id: string): Promise<Invoice | null> {
   const { data, error } = await supabase
     .from("invoices")
-    .select("id, number, order_id, bill_to, issued_on, due_on, notes, paid_on, seller, updated_at, lines:invoice_lines(description, quantity, unit_price, position)")
+    .select("id, number, number_suffix, layout, order_id, bill_to, issued_on, due_on, notes, paid_on, seller, updated_at, lines:invoice_lines(description, quantity, unit_price, position)")
     .eq("id", id)
     .maybeSingle();
   if (error) throw error;
@@ -59,6 +65,8 @@ export async function getInvoice(supabase: Db, id: string): Promise<Invoice | nu
   return {
     id: data.id,
     number: data.number,
+    numberSuffix: data.number_suffix,
+    layout: data.layout === "council" ? "council" : "standard",
     orderId: data.order_id,
     billTo: data.bill_to,
     issuedOn: data.issued_on,

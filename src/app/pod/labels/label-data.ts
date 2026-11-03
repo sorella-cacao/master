@@ -1,5 +1,6 @@
 import "server-only";
 import type { getSession } from "../session";
+import { type Layout, cleanLayout } from "./label-layout";
 
 type Db = Awaited<ReturnType<typeof getSession>>["supabase"];
 
@@ -17,16 +18,6 @@ export const NUTRITION_ROWS: [keyof Nutrition, string][] = [
   ["sodium", "Sodium"],
 ];
 
-/** Parts of a label whose text size can be changed, with what they're called in the Pod. */
-export const TEXT_PARTS = [
-  ["headline", "Headline"],
-  ["story", "Story (large labels)"],
-  ["nutrition", "Nutrition panel"],
-  ["ingredients", "Ingredients & may contain"],
-  ["details", "Best before, batch & contact"],
-] as const;
-export type TextPart = (typeof TEXT_PARTS)[number][0];
-
 export type Label = {
   id: string;
   size: "small" | "large";
@@ -38,8 +29,10 @@ export type Label = {
   servingsPerPackage: string;
   servingSize: string;
   nutrition: Nutrition;
-  /** Percentages of the standard size, e.g. { ingredients: 110 }; a missing part is 100. */
-  textSizes: Partial<Record<TextPart, number>>;
+  /** The layout it prints with: its own, or else its size's. */
+  layout: Layout;
+  /** Whether it has its own layout rather than sharing its size's. */
+  ownLayout: boolean;
   /** Its logo label, in Sorella › Logos › Current Logos, e.g. "75% Dark/Large Logo- 75% Dark (5).pdf". */
   logoFile: string;
 };
@@ -47,12 +40,23 @@ export type Label = {
 /** What changes with each print run. */
 export type PrintRun = { bestBefore: string; batch: string; phone: string };
 
+/** The layout shared by each size's labels. */
+export async function getSizeLayouts(supabase: Db): Promise<Record<"large" | "small", Layout>> {
+  const { data, error } = await supabase.from("label_layouts").select("size, layout");
+  if (error) throw error;
+  const of = (size: string) => cleanLayout(data.find((l) => l.size === size)?.layout);
+  return { large: of("large"), small: of("small") };
+}
+
 export async function getLabels(supabase: Db): Promise<Label[]> {
-  const { data, error } = await supabase
-    .from("labels")
-    .select("id, size, name, batch_code, ingredients, ingredient_notes, may_contain, servings_per_package, serving_size, nutrition, text_sizes, logo_file")
-    .order("size", { ascending: false })
-    .order("position");
+  const [{ data, error }, sizeLayouts] = await Promise.all([
+    supabase
+      .from("labels")
+      .select("id, size, name, batch_code, ingredients, ingredient_notes, may_contain, servings_per_package, serving_size, nutrition, layout, logo_file")
+      .order("size", { ascending: false })
+      .order("position"),
+    getSizeLayouts(supabase),
+  ]);
   if (error) throw error;
   return data.map((l) => ({
     id: l.id,
@@ -65,7 +69,8 @@ export async function getLabels(supabase: Db): Promise<Label[]> {
     servingsPerPackage: l.servings_per_package,
     servingSize: l.serving_size,
     nutrition: l.nutrition as Nutrition,
-    textSizes: (l.text_sizes ?? {}) as Label["textSizes"],
+    layout: l.layout ? cleanLayout(l.layout) : sizeLayouts[l.size === "small" ? "small" : "large"],
+    ownLayout: l.layout !== null,
     logoFile: l.logo_file,
   }));
 }

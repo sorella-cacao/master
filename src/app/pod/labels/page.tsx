@@ -5,7 +5,9 @@ import { PodNav } from "../pod-nav";
 import { PodPanel } from "../pod-panel";
 import { getSession } from "../session";
 import { addLabel, deleteLabel, saveLabel } from "./actions";
-import { type Label, NUTRITION_ROWS, TEXT_PARTS, getLabels, labelTitle } from "./label-data";
+import { type Label, NUTRITION_ROWS, getLabels, getSizeLayouts, labelTitle } from "./label-data";
+import type { Layout } from "./label-layout";
+import { LayoutEditor } from "./layout-editor";
 import { LabelMaker } from "./label-maker";
 
 export const metadata: Metadata = { title: "Labels" };
@@ -21,7 +23,7 @@ export default async function LabelsPage() {
     );
   }
 
-  const labels = await getLabels(supabase);
+  const [labels, sizeLayouts] = await Promise.all([getLabels(supabase), getSizeLayouts(supabase)]);
   const today = sydneyToday();
 
   return (
@@ -55,7 +57,7 @@ export default async function LabelsPage() {
           <PodPanel key={label.id} small title={`Edit ${label.size === "small" ? "Small" : "Large"} ${label.name}`} hint={label.ingredients}>
             <PodForm action={saveLabel} submitLabel="Save label">
               <input type="hidden" name="id" value={label.id} />
-              <LabelFields label={label} />
+              <LabelFields label={label} sizeLayouts={sizeLayouts} />
             </PodForm>
             <PodForm
               action={deleteLabel}
@@ -72,14 +74,14 @@ export default async function LabelsPage() {
 
       <PodPanel title="Add a label" hint="A new flavour or size. Copy the details from its current label.">
         <PodForm action={addLabel} submitLabel="Add label" resetOnSuccess>
-          <LabelFields />
+          <LabelFields sizeLayouts={sizeLayouts} />
         </PodForm>
       </PodPanel>
     </div>
   );
 }
 
-function LabelFields({ label }: { label?: Label }) {
+function LabelFields({ label, sizeLayouts }: { label?: Label; sizeLayouts: Record<"large" | "small", Layout> }) {
   return (
     <div className="space-y-6">
       <div className="grid gap-4 sm:grid-cols-2">
@@ -153,31 +155,17 @@ function LabelFields({ label }: { label?: Label }) {
         </table>
       </div>
 
-      <fieldset className="space-y-3">
-        <legend className="eyebrow mb-1 text-xs text-cream/70">Text size</legend>
-        <p className="text-sm text-cream/70">
-          Bigger text takes more room, so make a test label after changing these to check nothing overlaps.
-        </p>
-        <div className="grid gap-4 sm:grid-cols-3">
-          {TEXT_PARTS.map(([part, name]) => (
-            <label key={part} className="block">
-              <span className="mb-1 block font-sans text-sm text-cream/80">{name}</span>
-              <select name={`size:${part}`} defaultValue={label?.textSizes[part] ?? 100} className="pod-input py-2 text-sm">
-                {TEXT_SIZES.map((size) => (
-                  <option key={size} value={size}>
-                    {size === 100 ? "Standard" : `${size}%`}
-                  </option>
-                ))}
-              </select>
-            </label>
-          ))}
-        </div>
-      </fieldset>
+      <LayoutEditor
+        initialSize={label?.size ?? "large"}
+        initialLayout={label ? label.layout : sizeLayouts.large}
+        initialOwn={label?.ownLayout ?? false}
+        sizeLayouts={sizeLayouts}
+      />
     </div>
   );
 }
 
-const TEXT_SIZES = [70, 75, 80, 85, 90, 95, 100, 105, 110, 115, 120, 125, 130, 140, 150];
+
 
 function Field({
   label,

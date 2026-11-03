@@ -273,6 +273,24 @@ export type Database = {
           },
         ]
       }
+      label_layouts: {
+        Row: {
+          layout: Json
+          size: string
+          updated_at: string
+        }
+        Insert: {
+          layout?: Json
+          size: string
+          updated_at?: string
+        }
+        Update: {
+          layout?: Json
+          size?: string
+          updated_at?: string
+        }
+        Relationships: []
+      }
       labels: {
         Row: {
           batch_code: string
@@ -280,6 +298,7 @@ export type Database = {
           id: string
           ingredient_notes: string
           ingredients: string
+          layout: Json | null
           logo_file: string
           may_contain: string
           name: string
@@ -297,6 +316,7 @@ export type Database = {
           id?: string
           ingredient_notes?: string
           ingredients: string
+          layout?: Json | null
           logo_file?: string
           may_contain?: string
           name: string
@@ -314,6 +334,7 @@ export type Database = {
           id?: string
           ingredient_notes?: string
           ingredients?: string
+          layout?: Json | null
           logo_file?: string
           may_contain?: string
           name?: string

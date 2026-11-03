@@ -15,7 +15,7 @@ const nextConfig: NextConfig = {
   // The invoice PDF reads its fonts from disk, so ship them with that route.
   outputFileTracingIncludes: {
     "/pod/invoices/**": ["./src/app/pod/invoices/fonts/*.woff"],
-    "/pod/labels/**": ["./src/app/pod/labels/fonts/*.ttf"],
+    "/pod/labels/**": ["./src/app/pod/labels/fonts/*.ttf", "./src/app/pod/invoices/fonts/*.woff"],
   },
   // Keep old Squarespace links (and search rankings) working.
   async redirects() {

@@ -2,7 +2,8 @@ import "server-only";
 import path from "node:path";
 import { Circle, Document, Font, Page, Path, Rect, StyleSheet, Svg, Text, View, renderToBuffer } from "@react-pdf/renderer";
 import type { Styles } from "@react-pdf/renderer";
-import { type Label, NUTRITION_ROWS, type PrintRun, type TextPart, labelTitle } from "./label-data";
+import { type Label, NUTRITION_ROWS, type PrintRun, labelTitle } from "./label-data";
+import { type FontKey, LAYOUT_PARTS, type LayoutPart } from "./label-layout";
 
 type Style = Styles[string];
 
@@ -13,6 +14,14 @@ Font.register({
   fonts: [400, 700].map((fontWeight) => ({ src: path.join(fonts, `open-sans-${fontWeight}.ttf`), fontWeight })),
 });
 Font.register({ family: "Noto Serif Condensed", src: path.join(fonts, "noto-serif-ethiopic-condensed-700.ttf"), fontWeight: 700 });
+// The invoices' Garamond, under its own name here.
+Font.register({
+  family: "Label Garamond",
+  fonts: [400, 700].map((fontWeight) => ({
+    src: path.join(process.cwd(), "src/app/pod/invoices/fonts", `eb-garamond-latin-${fontWeight}-normal.woff`),
+    fontWeight,
+  })),
+});
 Font.registerHyphenationCallback((word) => [word]);
 
 const MM = 72 / 25.4;
@@ -25,23 +34,48 @@ const STORY = [
 const RULE = "#7d7d7d";
 
 const s = StyleSheet.create({
-  sans: { fontFamily: "Open Sans" },
   bold: { fontWeight: 700 },
   underline: { textDecoration: "underline" },
-  headline: { fontFamily: "Noto Serif Condensed", fontWeight: 700, textAlign: "center" },
-  panel: { fontFamily: "Helvetica", color: "#222" },
-  panelTitle: { fontFamily: "Helvetica-Bold", letterSpacing: 0.35 },
+  headline: { fontWeight: 700, textAlign: "center" },
+  panel: { color: "#222" },
+  panelTitle: { fontWeight: 700, letterSpacing: 0.35 },
   row: { flexDirection: "row" },
   centre: { textAlign: "center" },
 });
 
-/** A part's text size as a multiple of the standard, from the label's text size settings. */
-const sizeOf = (label: Label) => (part: TextPart) => (label.textSizes[part] ?? 100) / 100;
+const FAMILIES: Record<FontKey, string> = {
+  "serif-condensed": "Noto Serif Condensed",
+  "open-sans": "Open Sans",
+  helvetica: "Helvetica",
+  times: "Times-Roman",
+  garamond: "Label Garamond",
+};
+
+/**
+ * Where a part goes and how it looks, from the label's layout: `place` moves and widens its box
+ * (given in points, as standard), `k` is its text size as a multiple, and `font` its font family.
+ */
+function layoutOf(label: Label) {
+  const of = (part: LayoutPart) => label.layout[part] ?? {};
+  return {
+    place: (part: LayoutPart, box: { left: number; top: number; width: number }) => ({
+      position: "absolute" as const,
+      left: box.left + (of(part).x ?? 0) * MM,
+      top: box.top + (of(part).y ?? 0) * MM,
+      width: (box.width * (of(part).width ?? 100)) / 100,
+    }),
+    k: (part: LayoutPart) => (of(part).size ?? 100) / 100,
+    width: (part: LayoutPart) => (of(part).width ?? 100) / 100,
+    font: (part: LayoutPart) => ({
+      fontFamily: FAMILIES[of(part).font ?? LAYOUT_PARTS[label.size].find((p) => p.part === part)?.font ?? "open-sans"],
+    }),
+  };
+}
 
 /** "May contain: Milk & nuts", with the allergens in bold. */
 function MayContain({ text, style }: { text: string; style: Style }) {
   return (
-    <Text style={[s.sans, style]}>
+    <Text style={style}>
       May contain:{" "}
       {text.split(/(\s*&\s*|,\s*)/).map((part, i) => (
         <Text key={i} style={i % 2 === 0 ? s.bold : undefined}>
@@ -55,23 +89,23 @@ function MayContain({ text, style }: { text: string; style: Style }) {
 function Ingredients({ label, style, notesStyle }: { label: Label; style: Style; notesStyle?: Style }) {
   return (
     <>
-      <Text style={[s.sans, style]}>
+      <Text style={style}>
         <Text style={[s.bold, s.underline]}>Ingredients:</Text> {label.ingredients}
       </Text>
-      <Text style={[s.sans, style, notesStyle ?? {}]}>{label.ingredientNotes}</Text>
+      <Text style={[style, notesStyle ?? {}]}>{label.ingredientNotes}</Text>
     </>
   );
 }
 
 /**
- * The nutrition panel. Sizes are in points: `font` for the rows, `line` between rows, and the
+ * The nutrition panel. Sizes are in points: `size` for the rows' text, `line` between rows, and the
  * x of the per-serving and per-100 g columns. The empty corner can hold a note (small labels
  * put the packaging line there).
  */
 function NutritionPanel({
   label,
   width,
-  font,
+  size,
   line,
   rowLine = line,
   columns,
@@ -79,10 +113,12 @@ function NutritionPanel({
   titleSize,
   corner,
   gaps,
+  font: family,
 }: {
   label: Label;
+  font: { fontFamily: string };
   width: number;
-  font: number;
+  size: number;
   line: number;
   rowLine?: number;
   columns: [number, number];
@@ -94,9 +130,9 @@ function NutritionPanel({
   const rule = { borderTopWidth: boxed ? 1 : 1.6, borderTopColor: RULE };
   const cell = (x: number, next: number) => ({ position: "absolute" as const, left: x, width: next - x });
   return (
-    <View style={[s.panel, { width, fontSize: font, lineHeight: line / font }, boxed ? { borderWidth: 1, borderColor: "#444" } : rule]}>
+    <View style={[s.panel, family, { width, fontSize: size, lineHeight: line / size }, boxed ? { borderWidth: 1, borderColor: "#444" } : rule]}>
       <View style={{ paddingHorizontal: 3, paddingTop: gaps.top, paddingBottom: gaps.section }}>
-        <Text style={[s.panelTitle, { fontSize: titleSize, lineHeight: 1.2, marginBottom: gaps.title }]}>NUTRITION INFORMATION</Text>
+        <Text style={[s.panelTitle, family, { fontSize: titleSize, lineHeight: 1.2, marginBottom: gaps.title }]}>NUTRITION INFORMATION</Text>
         <Text>Servings Per Package: {label.servingsPerPackage}</Text>
         <Text>Serving Size: {label.servingSize}</Text>
       </View>
@@ -159,51 +195,54 @@ function InstagramIcon({ size }: { size: number }) {
 function LargeLabel({ label, run }: { label: Label; run: PrintRun }) {
   const W = 100 * MM;
   const H = 48 * MM;
-  const k = sizeOf(label);
-  const icon = 7.6 * k("details");
+  const { place, k, width, font } = layoutOf(label);
+  const icon = 7.6 * k("contact");
   return (
     <Page size={[W, H]} style={{ color: "#000" }}>
       {/* One page-sized box holds everything, so nothing that reaches the bottom edge starts a second page. */}
       <View style={{ position: "absolute", left: 0, top: 0, width: W, height: H }}>
-        <Text style={[s.headline, { position: "absolute", top: -1, left: 1, right: 1, fontSize: 8.9 * k("headline"), lineHeight: 1.26 }]}>{HEADLINE}</Text>
+        <Text style={[s.headline, font("headline"), place("headline", { left: 1, top: -1, width: W - 2 }), { fontSize: 8.9 * k("headline"), lineHeight: 1.26 }]}>
+          {HEADLINE}
+        </Text>
 
-        <View style={{ position: "absolute", left: 1.2, top: 27.4 }}>
+        <View style={place("nutrition", { left: 1.2, top: 27.4, width: 109.4 })}>
           <NutritionPanel
             label={label}
-            width={109.4}
-            font={4.2 * k("nutrition")}
+            font={font("nutrition")}
+            width={109.4 * width("nutrition")}
+            size={4.2 * k("nutrition")}
             line={6.85}
             rowLine={6.55}
-            columns={[52.6, 82]}
+            columns={[52.6 * width("nutrition"), 82 * width("nutrition")]}
             boxed
             titleSize={6.55 * k("nutrition")}
             gaps={{ top: 2.6, title: 2.6, section: 2.2 }}
           />
         </View>
 
-        <View style={{ position: "absolute", left: 113, right: 1.5, top: 27.6 }}>
+        <View style={place("story", { left: 113, top: 27.6, width: W - 114.5 })}>
           {STORY.map((p) => (
-            <Text key={p} style={[s.sans, s.centre, { fontSize: 4.85 * k("story"), lineHeight: 1.39 }]}>
+            <Text key={p} style={[s.centre, font("story"), { fontSize: 4.85 * k("story"), lineHeight: 1.39 }]}>
               {p}
             </Text>
           ))}
         </View>
 
-        <View style={{ position: "absolute", left: 112, width: 94, top: 85.4 }}>
-          <Ingredients label={label} style={{ fontSize: 4 * k("ingredients"), lineHeight: 1.5, textAlign: "center" }} />
-          <MayContain text={label.mayContain} style={{ fontSize: 4 * k("ingredients"), marginTop: 1.4, marginLeft: 3 }} />
+        <View style={place("ingredients", { left: 112, top: 85.4, width: 94 })}>
+          <Ingredients label={label} style={{ ...font("ingredients"), fontSize: 4 * k("ingredients"), lineHeight: 1.5, textAlign: "center" }} />
+          <MayContain text={label.mayContain} style={{ ...font("ingredients"), fontSize: 4 * k("ingredients"), marginTop: 1.4, marginLeft: 3 }} />
         </View>
 
-        <View style={{ position: "absolute", left: 111.6, top: 120.6 }}>
-          <Text style={[s.sans, { fontSize: 4.1 * k("details"), lineHeight: 1.7 }]}>Best Before {run.bestBefore}</Text>
-          <Text style={[s.sans, { fontSize: 4.1 * k("details"), lineHeight: 1.7, marginLeft: 1.4 }]}>Batch # {run.batch}</Text>
+        <View style={place("dates", { left: 111.6, top: 120.6, width: 50 })}>
+          <Text style={[font("dates"), { fontSize: 4.1 * k("dates"), lineHeight: 1.7 }]}>Best Before {run.bestBefore}</Text>
+          <Text style={[font("dates"), { fontSize: 4.1 * k("dates"), lineHeight: 1.7, marginLeft: 1.4 }]}>Batch # {run.batch}</Text>
         </View>
-        <Text style={[s.sans, s.centre, { position: "absolute", left: 163, width: 45, top: 113.8, fontSize: 3.25 * k("details"), lineHeight: 1.38 }]}>
+        <Text style={[s.centre, font("packaging"), place("packaging", { left: 163, top: 113.8, width: 45 }), { fontSize: 3.25 * k("packaging"), lineHeight: 1.38 }]}>
           Packaged in recycled alfoil and compostable wrapping  (ink is made by heat! No nastie dyes)
         </Text>
 
-        <View style={{ position: "absolute", left: 208, top: 93 }}>
-          <Text style={[s.sans, s.bold, { fontSize: 4.1 * k("details"), marginBottom: 4 }]}>Follow our journey..</Text>
+        <View style={place("contact", { left: 208, top: 93, width: W - 208 })}>
+          <Text style={[s.bold, font("contact"), { fontSize: 4.1 * k("contact"), marginBottom: 4 }]}>Follow our journey..</Text>
           {[
             [<PhoneIcon key="p" size={icon} />, run.phone.replace(/\s+/g, "")],
             [<GlobeIcon key="g" size={icon} />, "sorellacacao.com.au"],
@@ -211,7 +250,7 @@ function LargeLabel({ label, run }: { label: Label; run: PrintRun }) {
           ].map(([iconEl, text], i) => (
             <View key={i} style={[s.row, { alignItems: "center", marginBottom: 1.7 }]}>
               {iconEl}
-              <Text style={[s.sans, s.bold, { fontSize: 5.6 * k("details"), marginLeft: 1.2 }]}>{text}</Text>
+              <Text style={[s.bold, font("contact"), { fontSize: 5.6 * k("contact"), marginLeft: 1.2 }]}>{text}</Text>
             </View>
           ))}
         </View>
@@ -221,43 +260,50 @@ function LargeLabel({ label, run }: { label: Label; run: PrintRun }) {
 }
 
 /**
- * 50 × 32 mm page with the label turned on its side (it wraps around the bar portrait), laid out
- * like the Canva "Small Ingredients" labels.
+ * 32 × 50 mm, laid out like the Canva "Small Ingredients" labels. It prints on a 50 × 32 mm page with
+ * the label turned on its side (it wraps around the bar portrait); `upright` keeps it upright, for
+ * the preview in the Pod.
  */
-function SmallLabel({ label, run }: { label: Label; run: PrintRun }) {
+function SmallLabel({ label, run, upright }: { label: Label; run: PrintRun; upright: boolean }) {
   const W = 50 * MM;
   const H = 32 * MM;
-  const k = sizeOf(label);
-  const text = { fontSize: 3.55 * k("ingredients"), lineHeight: 1.3 };
-  const small = { fontSize: 3.3 * k("details"), lineHeight: 1.17 };
+  const { place, k, width, font } = layoutOf(label);
+  const text = { ...font("ingredients"), fontSize: 3.55 * k("ingredients"), lineHeight: 1.3 };
+  const small = { ...font("dates"), fontSize: 3.3 * k("dates"), lineHeight: 1.17 };
+  const contact = { ...font("contact"), fontSize: 3.3 * k("contact"), lineHeight: 1.17 };
+  const follow = place("contact", { left: 46, top: 122.4, width: 38 });
   return (
     // The turned label is taller than the page, so its box is kept page-height and its contents spill
     // out of it (a taller box would be pushed onto a second page).
-    <Page size={[W, H]} style={{ color: "#000" }}>
+    <Page size={upright ? [H, W] : [W, H]} style={{ color: "#000" }}>
       <View
-        style={{
-          position: "absolute",
-          left: 0,
-          top: 0,
-          width: H,
-          height: H,
-          transformOrigin: "0 0",
-          transform: `translate(0, ${H}) rotate(-90deg)`,
-        }}
+        style={
+          upright
+            ? { position: "absolute", left: 0, top: 0, width: H, height: W }
+            : { position: "absolute", left: 0, top: 0, width: H, height: H, transformOrigin: "0 0", transform: `translate(0, ${H}) rotate(-90deg)` }
+        }
       >
-        <View style={{ position: "absolute", left: 0, top: 15.3 }}>
+        <View style={place("nutrition", { left: 0, top: 15.3, width: H })}>
           <NutritionPanel
             label={label}
-            width={H}
-            font={3.15 * k("nutrition")}
+            font={font("nutrition")}
+            width={H * width("nutrition")}
+            size={3.15 * k("nutrition")}
             line={5.3}
             rowLine={5.6}
-            columns={[42.4, 62.5]}
+            columns={[42.4 * width("nutrition"), 62.5 * width("nutrition")]}
             boxed={false}
             titleSize={5.35 * k("nutrition")}
             gaps={{ top: 3, title: 3.1, section: 3 }}
             corner={
-              <Text style={[s.sans, s.centre, { fontSize: 3 * k("details"), lineHeight: 1.35, color: "#000" }]}>
+              // The note is in Open Sans, as in Canva, unless the panel is given a font.
+              <Text
+                style={[
+                  s.centre,
+                  label.layout.nutrition?.font ? font("nutrition") : { fontFamily: FAMILIES["open-sans"] },
+                  { fontSize: 3 * k("nutrition"), lineHeight: 1.35, color: "#000" },
+                ]}
+              >
                 Packaged in recycled alfoil and compostable wrapping
               </Text>
             }
@@ -265,34 +311,35 @@ function SmallLabel({ label, run }: { label: Label; run: PrintRun }) {
         </View>
 
         {/* After the panel, so its last line ("Cacao.") sits on top of the panel's first rule, as in Canva. */}
-        <Text style={[s.headline, { position: "absolute", top: 0.4, left: 0.6, right: 0.6, fontSize: 4.75 * k("headline"), lineHeight: 1.2 }]}>{HEADLINE}</Text>
+        <Text style={[s.headline, font("headline"), place("headline", { left: 0.6, top: 0.4, width: H - 1.2 }), { fontSize: 4.75 * k("headline"), lineHeight: 1.2 }]}>
+          {HEADLINE}
+        </Text>
 
-        <View style={{ position: "absolute", left: 0.8, right: 0.6, top: 108.7 }}>
+        <View style={place("ingredients", { left: 0.8, top: 108.7, width: H - 1.4 })}>
           <Ingredients label={label} style={text} />
         </View>
 
-        <Text style={[s.sans, s.bold, small, { position: "absolute", left: 46, width: 38, top: 122.4, textAlign: "right" }]}>
-          Follow our journey..
-        </Text>
-        <View style={{ position: "absolute", left: 0.8, width: 54, top: 128.5 }}>
-          <MayContain text={label.mayContain} style={{ ...small, fontSize: 3.3 * k("ingredients") }} />
-          <Text style={[s.sans, small, { marginLeft: 4.4 }]}>Batch # {run.batch}</Text>
-          <Text style={[s.sans, small]}>Best Before{run.bestBefore}</Text>
+        <Text style={[s.bold, contact, follow, { textAlign: "right" }]}>Follow our journey..</Text>
+        <View style={place("dates", { left: 0.8, top: 128.5, width: 54 })}>
+          <MayContain text={label.mayContain} style={small} />
+          <Text style={[small, { marginLeft: 4.4 }]}>Batch # {run.batch}</Text>
+          <Text style={small}>Best Before{run.bestBefore}</Text>
         </View>
-        <View style={{ position: "absolute", left: 56.8, right: 0.6, top: 128.5 }}>
-          <Text style={[s.sans, small]}>{run.phone.replace(/\s+/g, "")}</Text>
-          <Text style={[s.sans, small]}>sorellacacao.com.au</Text>
-          <Text style={[s.sans, small]}>sorella_cacao</Text>
+        <View style={place("contact", { left: 56.8, top: 128.5, width: H - 57.4 })}>
+          <Text style={contact}>{run.phone.replace(/\s+/g, "")}</Text>
+          <Text style={contact}>sorellacacao.com.au</Text>
+          <Text style={contact}>sorella_cacao</Text>
         </View>
       </View>
     </Page>
   );
 }
 
-export function renderLabelPdf(label: Label, run: PrintRun) {
+/** The label as a PDF ready to print; `upright` turns small labels the right way up, for previews. */
+export function renderLabelPdf(label: Label, run: PrintRun, { upright = false } = {}) {
   return renderToBuffer(
     <Document title={labelTitle(label)} author="Sorella Cacao">
-      {label.size === "small" ? <SmallLabel label={label} run={run} /> : <LargeLabel label={label} run={run} />}
+      {label.size === "small" ? <SmallLabel label={label} run={run} upright={upright} /> : <LargeLabel label={label} run={run} />}
     </Document>,
   );
 }

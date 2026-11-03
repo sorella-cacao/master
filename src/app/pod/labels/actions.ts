@@ -3,7 +3,7 @@
 import { revalidatePath } from "next/cache";
 import type { SaveState } from "../actions";
 import { getSession } from "../session";
-import { NUTRITION_ROWS, type Nutrition, TEXT_PARTS } from "./label-data";
+import { labelFromForm, missing } from "./label-form";
 
 const NO_ACCESS: SaveState = { error: "This account doesn't have access to the Pod." };
 
@@ -15,56 +15,38 @@ function failed(error: { code?: string }): SaveState {
   return { error: "Couldn't save. Please try again." };
 }
 
-/** The label's details from the form, or a message saying what's missing. */
-function details(data: FormData) {
-  const label = {
-    size: text(data, "size") === "small" ? "small" : "large",
-    name: text(data, "name"),
-    batch_code: text(data, "batch_code"),
-    ingredients: text(data, "ingredients"),
-    ingredient_notes: text(data, "ingredient_notes"),
-    may_contain: text(data, "may_contain"),
-    servings_per_package: text(data, "servings_per_package"),
-    serving_size: text(data, "serving_size"),
-    // Typed or pasted as a path; Finder's "Copy as Pathname" gives the whole path, so keep what's after Current Logos.
-    logo_file: text(data, "logo_file").replace(/^.*Current Logos\//, "").replace(/^\/+/, ""),
-    nutrition: Object.fromEntries(
-      NUTRITION_ROWS.map(([key]) => [key, [text(data, `${key}:serving`), text(data, `${key}:100g`)]]),
-    ) as Nutrition,
-    // Only sizes changed from the standard 100% are kept.
-    text_sizes: Object.fromEntries(
-      TEXT_PARTS.map(([part]) => [part, Number(text(data, `size:${part}`) || 100)] as const).filter(
-        ([, size]) => Number.isFinite(size) && size !== 100 && size >= 50 && size <= 200,
-      ),
-    ),
-  };
-  if (!label.name) return { error: "Enter the flavour, e.g. 84% Dark." };
-  if (!label.batch_code) return { error: "Enter the batch code, e.g. 84 or HZ." };
-  if (!label.ingredients) return { error: "Enter the ingredients." };
-  if (!label.servings_per_package) return { error: "Enter the servings per package, e.g. 2.5." };
-  return { label };
+type Db = Awaited<ReturnType<typeof getSession>>["supabase"];
+
+/**
+ * Saves a label, with its layout either as its own or as the layout every label of its size shares
+ * (which also takes away any layout of its own).
+ */
+async function save(supabase: Db, data: FormData, id?: string): Promise<SaveState> {
+  const { row, layout, ownLayout } = labelFromForm(data);
+  const problem = missing(row);
+  if (problem) return { error: problem };
+  const label = { ...row, layout: ownLayout ? layout : null };
+  const saved = id ? await supabase.from("labels").update(label).eq("id", id) : await supabase.from("labels").insert(label);
+  if (saved.error) return failed(saved.error);
+  if (!ownLayout) {
+    const shared = await supabase.from("label_layouts").update({ layout }).eq("size", row.size);
+    if (shared.error) return failed(shared.error);
+  }
+  revalidatePath("/pod/labels");
+  const which = ownLayout ? "this label’s own layout" : `the layout for all ${row.size} labels`;
+  return { ok: id ? `Saved, with ${which}.` : `Added ${row.size === "small" ? "Small" : "Large"} ${row.name}, with ${which}.` };
 }
 
 export async function saveLabel(_: SaveState, data: FormData): Promise<SaveState> {
   const { supabase, isAdmin } = await getSession();
   if (!isAdmin) return NO_ACCESS;
-  const { label, error } = details(data);
-  if (!label) return { error };
-  const saved = await supabase.from("labels").update(label).eq("id", text(data, "id"));
-  if (saved.error) return failed(saved.error);
-  revalidatePath("/pod/labels");
-  return { ok: "Saved. Labels you make from now on use these details." };
+  return save(supabase, data, text(data, "id"));
 }
 
 export async function addLabel(_: SaveState, data: FormData): Promise<SaveState> {
   const { supabase, isAdmin } = await getSession();
   if (!isAdmin) return NO_ACCESS;
-  const { label, error } = details(data);
-  if (!label) return { error };
-  const added = await supabase.from("labels").insert(label);
-  if (added.error) return failed(added.error);
-  revalidatePath("/pod/labels");
-  return { ok: `Added ${label.size === "small" ? "Small" : "Large"} ${label.name}.` };
+  return save(supabase, data);
 }
 
 export async function deleteLabel(_: SaveState, data: FormData): Promise<SaveState> {

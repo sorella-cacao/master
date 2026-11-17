@@ -3,7 +3,8 @@
 import { revalidatePath } from "next/cache";
 import type { SaveState } from "../actions";
 import { getSession } from "../session";
-import { PLACEHOLDERS, fill } from "./placeholders";
+import { renderEmail } from "../../../../supabase/functions/_shared/email-html";
+import { SAMPLES } from "./placeholders";
 
 const NO_ACCESS: SaveState = { error: "This account doesn't have access to the Pod." };
 
@@ -31,9 +32,9 @@ export async function sendTestReply(key: string, subject: string, body: string):
   const { supabase, isAdmin } = await getSession();
   if (!isAdmin) return NO_ACCESS;
   if (!subject.trim() || !body.trim()) return { error: "Write a subject and message first." };
-  const values = PLACEHOLDERS[key] ?? {};
+  const sample = SAMPLES[key] ?? { values: {}, receipts: {} };
   const { data, error } = await supabase.functions.invoke<{ ok?: boolean; to?: string; error?: string }>("test-email", {
-    body: { subject: fill(subject, values), text: fill(body, values) },
+    body: renderEmail(subject, body, sample.values, sample.receipts),
   });
   if (error || !data?.ok) {
     const reason = error && "context" in error ? await (error.context as Response).json().catch(() => null) : null;

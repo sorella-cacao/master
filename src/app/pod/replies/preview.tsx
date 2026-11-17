@@ -2,14 +2,15 @@
 
 import { useEffect, useRef, useState, useTransition } from "react";
 import { sendTestReply } from "./actions";
-import { emailHtml } from "../../../../supabase/functions/_shared/email-html";
-import { PLACEHOLDERS, fill } from "./placeholders";
+import { renderEmail } from "../../../../supabase/functions/_shared/email-html";
+import { SAMPLES, placeholderNames } from "./placeholders";
 
 /** The email as a customer would get it, with sample details, redrawn as its form is edited. */
 export function ReplyPreview({ templateKey, subject, body }: { templateKey: string; subject: string; body: string }) {
   const [text, setText] = useState({ subject, body });
   const ref = useRef<HTMLDivElement>(null);
-  const values = PLACEHOLDERS[templateKey] ?? {};
+  const sample = SAMPLES[templateKey] ?? { values: {}, receipts: {} };
+  const email = renderEmail(text.subject, text.body, sample.values, sample.receipts);
   const [sending, startSending] = useTransition();
   const [status, setStatus] = useState<{ ok?: string; error?: string }>();
 
@@ -34,16 +35,16 @@ export function ReplyPreview({ templateKey, subject, body }: { templateKey: stri
     <div ref={ref} className="space-y-2">
       <p className="eyebrow text-xs text-cream/70">Preview, with sample details</p>
       <p className="font-sans text-sm">
-        <span className="text-cream/60">Subject:</span> {fill(text.subject, values)}
+        <span className="text-cream/60">Subject:</span> {email.subject}
       </p>
       {/* The same design the email is sent with. */}
       <iframe
         title="Email preview"
-        srcDoc={emailHtml(fill(text.subject, values), fill(text.body, values))}
+        srcDoc={email.html}
         className="h-[34rem] w-full rounded-xl border border-white/15 bg-[#1c1003]"
       />
       <p className="font-sans text-xs text-cream/60">
-        You can use: {Object.keys(values).map((key) => `{${key}}`).join(" ")}
+        You can use: {placeholderNames(templateKey).map((key) => `{${key}}`).join(" ")}
       </p>
       <div className="flex flex-wrap items-center gap-x-4 gap-y-2 pt-1">
         <button

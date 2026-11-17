@@ -1,29 +1,46 @@
+import type { Receipt } from "../../../../supabase/functions/_shared/email-html";
+
 /**
- * What each automatic email can fill in, with sample values for the preview. Matches what the
- * Edge Functions fill in (supabase/functions/_shared/email.ts and contact-message).
+ * Sample details for previewing and testing each automatic email: what its placeholders are filled
+ * with, and the receipts {items} and {workshops} become. Matches what the Edge Functions fill in
+ * (orderEmail in supabase/functions/_shared/email.ts, and contact-message).
  */
-const ORDER = {
-  first_name: "Anna",
-  name: "Anna Smith",
-  items: "2 × Large Bar – 75% Dark (label: “Happy Birthday Mum”)\n1 × Small Bar – 84% Dark",
-  total: "$67.00",
-  delivery: "Post (Australia-wide) ($16.00): 12 Main St, Katoomba NSW 2780",
-  address: "12 Main St, Katoomba NSW 2780",
+const ORDER: Receipt = {
+  heading: "Your Order",
+  lines: [
+    { name: "Large Bar, 75% Dark", quantity: 2, amount: 28, note: "Happy Birthday Mum" },
+    { name: "Small Bar, 84% Dark", quantity: 1, amount: 8 },
+  ],
+  extras: [
+    { name: "Personalised label “Happy Birthday Mum”", amount: 15 },
+    { name: "Post (Australia-wide)", amount: 16 },
+  ],
+  total: 67,
 };
+const PERSON = { first_name: "Anna", name: "Anna Smith" };
+const ADDRESS = "12 Main St, Katoomba NSW 2780";
 
-export const PLACEHOLDERS: Record<string, Record<string, string>> = {
-  order_received: { first_name: ORDER.first_name, name: ORDER.name, items: ORDER.items, total: ORDER.total, delivery: ORDER.delivery },
-  workshop_booking: {
-    first_name: ORDER.first_name,
-    name: ORDER.name,
-    workshops: "2 × Chocolate Making Workshop – Adult $95",
-    total: "$190.00",
+export const SAMPLES: Record<string, { values: Record<string, string>; receipts: Record<string, Receipt> }> = {
+  order_received: {
+    values: { ...PERSON, total: "$67.00", delivery: `Post (Australia-wide) ($16.00): ${ADDRESS}`, address: ADDRESS },
+    receipts: { items: ORDER },
   },
-  order_posted: { first_name: ORDER.first_name, name: ORDER.name, items: ORDER.items, address: ORDER.address },
-  order_ready: { first_name: ORDER.first_name, name: ORDER.name, items: ORDER.items },
-  contact_reply: { first_name: ORDER.first_name, name: ORDER.name, message: "Hi! Do you make vegan chocolate?" },
+  workshop_booking: {
+    values: { ...PERSON, total: "$190.00" },
+    receipts: {
+      workshops: { heading: "Your Booking", lines: [{ name: "Chocolate Making Workshop, Adult", quantity: 2, amount: 190 }], extras: [], total: 190 },
+    },
+  },
+  order_posted: { values: { ...PERSON, address: ADDRESS, total: "$67.00" }, receipts: { items: ORDER } },
+  order_ready: {
+    values: { ...PERSON, total: "$51.00" },
+    receipts: { items: { ...ORDER, extras: [ORDER.extras[0], { name: "Pick up in Lawson", amount: 0 }], total: 51 } },
+  },
+  contact_reply: { values: { ...PERSON, message: "Hi! Do you make vegan chocolate?" }, receipts: {} },
 };
 
-/** "Hi {first_name}" → "Hi Anna". Unknown placeholders are left as they are. */
-export const fill = (text: string, values: Record<string, string>) =>
-  text.replace(/\{(\w+)\}/g, (whole, key) => (key in values ? values[key] : whole));
+/** The placeholders an email can use, for the hint under its preview. */
+export const placeholderNames = (key: string) => {
+  const sample = SAMPLES[key];
+  return sample ? [...Object.keys(sample.receipts), ...Object.keys(sample.values)] : [];
+};

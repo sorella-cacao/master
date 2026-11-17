@@ -4,7 +4,7 @@
 // sent_emails, with the reason when it couldn't be sent.
 
 import type { SupabaseClient } from "npm:@supabase/supabase-js@2";
-import { emailHtml } from "./email-html.ts";
+import { type Receipt, renderEmail } from "./email-html.ts";
 
 export const BUSINESS = { name: "Sorella Cacao", email: "chocolate@sorellacacao.com.au" };
 
@@ -97,10 +97,6 @@ export async function sendEmail(email: Outgoing) {
   }
 }
 
-/** "Hi {first_name}" → "Hi Anna". Unknown placeholders are left as they are. */
-export const fill = (text: string, values: Record<string, string>) =>
-  text.replace(/\{(\w+)\}/g, (whole, key) => (key in values ? values[key] : whole));
-
 export const firstName = (name: string) => name.trim().split(/\s+/)[0] || "there";
 
 /**
@@ -112,15 +108,14 @@ export async function sendTemplate(
   key: string,
   to: Address,
   values: Record<string, string>,
-  { orderId, replyTo }: { orderId?: string; replyTo?: Address } = {},
+  { orderId, replyTo, receipts }: { orderId?: string; replyTo?: Address; receipts?: Record<string, Receipt> } = {},
 ) {
   const { data: template } = await db.from("email_templates").select("subject, body, enabled").eq("key", key).maybeSingle();
   if (!template?.enabled) return false;
-  const subject = fill(template.subject, values);
-  const text = fill(template.body, values);
+  const { subject, text, html } = renderEmail(template.subject, template.body, values, receipts);
   let error: string | null = null;
   try {
-    await sendEmail({ to, subject, text, html: emailHtml(subject, text), replyTo });
+    await sendEmail({ to, subject, text, html, replyTo });
   } catch (e) {
     error = e instanceof Error ? e.message : String(e);
     console.error(`Couldn't send ${key} to ${to.email}:`, error);
@@ -132,20 +127,53 @@ export async function sendTemplate(
 const money = (n: number) => `$${Number(n).toFixed(2)}`;
 
 type Item = { title: string; variant: string; quantity: number; unit_price: number; label: string | null; workshop: boolean };
-export type WebOrder = { name: string; email: string; address: string; delivery: string; delivery_price: number; total: number; items: Item[] };
+export type WebOrder = {
+  name: string;
+  email: string;
+  address: string;
+  delivery: string;
+  delivery_price: number;
+  total: number;
+  items: Item[];
+  label_fees: { label: string; amount: number }[];
+};
+/** The web_orders columns orderEmail needs. */
+export const WEB_ORDER_COLUMNS = "name, email, address, delivery, delivery_price, total, items, label_fees";
 
-/** The placeholders for a website order's emails. */
-export function orderValues(order: WebOrder) {
-  const line = (i: Item) => `${i.quantity} × ${i.title} – ${i.variant}${i.label ? ` (label: “${i.label}”)` : ""}`;
+/**
+ * A website order's placeholders and receipts: {items} is the chocolate and cacao (with labels and
+ * postage), {workshops} the workshop tickets; each is blank when the order has none.
+ */
+export function orderEmail(order: WebOrder) {
+  const line = (i: Item) => ({
+    name: `${i.title}, ${i.variant}`,
+    quantity: i.quantity,
+    amount: i.quantity * Number(i.unit_price),
+    note: i.label ?? undefined,
+  });
+  const sum = (lines: { amount: number }[]) => lines.reduce((n, l) => n + Number(l.amount), 0);
+  const products = order.items.filter((i) => !i.workshop).map(line);
+  const tickets = order.items.filter((i) => i.workshop).map(line);
+  const extras = [
+    ...(order.label_fees ?? []).map((f) => ({ name: `Personalised label “${f.label}”`, amount: Number(f.amount) })),
+    ...(order.delivery ? [{ name: order.delivery, amount: Number(order.delivery_price) }] : []),
+  ];
+  const receipts: Record<string, Receipt> = {};
+  if (products.length) receipts.items = { heading: "Your Order", lines: products, extras, total: sum(products) + sum(extras) };
+  if (tickets.length) receipts.workshops = { heading: "Your Booking", lines: tickets, extras: [], total: sum(tickets) };
   return {
-    first_name: firstName(order.name),
-    name: order.name,
-    items: order.items.filter((i) => !i.workshop).map(line).join("\n"),
-    workshops: order.items.filter((i) => i.workshop).map(line).join("\n"),
-    total: money(order.total),
-    delivery: order.delivery
-      ? `${order.delivery}${Number(order.delivery_price) ? ` (${money(order.delivery_price)})` : " (free)"}${order.address ? `: ${order.address}` : ""}`
-      : "",
-    address: order.address,
+    receipts,
+    values: {
+      first_name: firstName(order.name),
+      name: order.name,
+      // Shown as receipts when there's something in them.
+      items: "",
+      workshops: "",
+      total: money(order.total),
+      delivery: order.delivery
+        ? `${order.delivery}${Number(order.delivery_price) ? ` (${money(order.delivery_price)})` : " (free)"}${order.address ? `: ${order.address}` : ""}`
+        : "",
+      address: order.address,
+    },
   };
 }

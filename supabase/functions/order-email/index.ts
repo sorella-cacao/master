@@ -3,7 +3,7 @@
 // these, once. Called by the Pod with the signed-in admin's access token.
 
 import { createClient } from "npm:@supabase/supabase-js@2";
-import { orderValues, sendTemplate, type WebOrder } from "../_shared/email.ts";
+import { orderEmail, sendTemplate, WEB_ORDER_COLUMNS, type WebOrder } from "../_shared/email.ts";
 
 const SUPABASE_URL = Deno.env.get("SUPABASE_URL")!;
 const PUBLISHABLE_KEY =
@@ -51,10 +51,11 @@ Deno.serve(async (req) => {
     .update({ update_emailed_at: new Date().toISOString() })
     .eq("order_id", orderId)
     .is("update_emailed_at", null)
-    .select("name, email, address, delivery, delivery_price, total, items");
+    .select(WEB_ORDER_COLUMNS);
   const order = claimed?.[0] as WebOrder | undefined;
   if (!order?.email) return json({ sent: false });
-  const sent = await sendTemplate(db, template, { name: order.name, email: order.email }, orderValues(order), { orderId });
+  const { values, receipts } = orderEmail(order);
+  const sent = await sendTemplate(db, template, { name: order.name, email: order.email }, values, { orderId, receipts });
   // Not sent (switched off, or Fastmail failed): free it up to be tried next time.
   if (!sent) await db.from("web_orders").update({ update_emailed_at: null }).eq("order_id", orderId);
   return json({ sent, template, to: order.email });

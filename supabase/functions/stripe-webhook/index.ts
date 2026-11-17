@@ -7,7 +7,7 @@
 // checkout.session.async_payment_succeeded and checkout.session.expired.
 
 import { createClient } from "npm:@supabase/supabase-js@2";
-import { orderValues, sendTemplate, type WebOrder } from "../_shared/email.ts";
+import { orderEmail, sendTemplate, WEB_ORDER_COLUMNS, type WebOrder } from "../_shared/email.ts";
 
 const db = createClient(Deno.env.get("SUPABASE_URL")!, Deno.env.get("SUPABASE_SERVICE_ROLE_KEY")!, {
   auth: { persistSession: false },
@@ -48,13 +48,13 @@ async function emailNewOrder(orderId: string) {
     .update({ received_emailed_at: new Date().toISOString() })
     .eq("order_id", orderId)
     .is("received_emailed_at", null)
-    .select("name, email, address, delivery, delivery_price, total, items");
+    .select(WEB_ORDER_COLUMNS);
   const order = claimed?.[0] as WebOrder | undefined;
   if (!order?.email) return;
-  const values = orderValues(order);
+  const { values, receipts } = orderEmail(order);
   const to = { name: order.name, email: order.email };
-  if (values.items) await sendTemplate(db, "order_received", to, values, { orderId });
-  if (values.workshops) await sendTemplate(db, "workshop_booking", to, values, { orderId });
+  if (receipts.items) await sendTemplate(db, "order_received", to, values, { orderId, receipts });
+  if (receipts.workshops) await sendTemplate(db, "workshop_booking", to, values, { orderId, receipts });
 }
 
 Deno.serve(async (req) => {

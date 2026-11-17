@@ -4,7 +4,6 @@
 
 import { createClient } from "npm:@supabase/supabase-js@2";
 import { BUSINESS, sendEmail } from "../_shared/email.ts";
-import { emailHtml } from "../_shared/email-html.ts";
 
 const SUPABASE_URL = Deno.env.get("SUPABASE_URL")!;
 const PUBLISHABLE_KEY =
@@ -32,12 +31,16 @@ async function isAdmin(req: Request) {
 Deno.serve(async (req) => {
   if (req.method !== "POST") return json({ error: "Use POST." }, 405);
   if (!(await isAdmin(req))) return json({ error: "Not allowed." }, 401);
-  const { subject, text } = await req.json().catch(() => ({}));
+  // Made in the Pod with renderEmail, exactly as a customer would get it.
+  const { subject, text, html } = await req.json().catch(() => ({}));
   if (!subject || !text) return json({ error: "Missing the subject or message." }, 400);
   try {
-    const testSubject = `TEST: ${String(subject).slice(0, 300)}`;
-    const body = String(text).slice(0, 20000);
-    await sendEmail({ to: BUSINESS, subject: testSubject, text: body, html: emailHtml(testSubject, body) });
+    await sendEmail({
+      to: BUSINESS,
+      subject: `TEST: ${String(subject).slice(0, 300)}`,
+      text: String(text).slice(0, 20000),
+      html: html ? String(html).slice(0, 200000) : undefined,
+    });
     return json({ ok: true, to: BUSINESS.email });
   } catch (e) {
     console.error(e);

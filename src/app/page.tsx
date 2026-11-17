@@ -25,7 +25,7 @@ export default async function Home() {
         <div className="relative px-5 pt-20 text-center">
           <h1 className="text-toffee drop-shadow-lg">
             <span className="sr-only">{site.name}</span>
-            <Wordmark className="mx-auto w-[min(88vw,46rem)]" />
+            <Wordmark className="text-[clamp(2.2rem,9.5vw,6rem)]" />
           </h1>
           <p className="mx-auto mt-6 max-w-xl text-xl italic text-cream/90 sm:text-2xl">
             {site.tagline}

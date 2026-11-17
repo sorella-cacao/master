@@ -4,15 +4,17 @@
 // sent_emails, with the reason when it couldn't be sent.
 
 import type { SupabaseClient } from "npm:@supabase/supabase-js@2";
+import { emailHtml } from "./email-html.ts";
 
 export const BUSINESS = { name: "Sorella Cacao", email: "chocolate@sorellacacao.com.au" };
 
 type Address = { name?: string | null; email: string };
-export type Outgoing = { to: Address; subject: string; text: string; replyTo?: Address };
+/** `html` is the designed version; `text` is the plain version for email apps that don't show designs. */
+export type Outgoing = { to: Address; subject: string; text: string; html?: string; replyTo?: Address };
 
 const USING = ["urn:ietf:params:jmap:core", "urn:ietf:params:jmap:mail", "urn:ietf:params:jmap:submission"];
 
-/** Sends one plain-text email from the business address, filed in Sent. */
+/** Sends one email from the business address, filed in Sent. */
 export async function sendEmail(email: Outgoing) {
   const token = Deno.env.get("FASTMAIL_API_TOKEN");
   if (!token) throw new Error("Fastmail isn't connected (no FASTMAIL_API_TOKEN secret).");
@@ -64,8 +66,9 @@ export async function sendEmail(email: Outgoing) {
             to: [email.to],
             ...(email.replyTo ? { replyTo: [email.replyTo] } : {}),
             subject: email.subject,
-            bodyValues: { text: { value: email.text } },
+            bodyValues: { text: { value: email.text }, ...(email.html ? { html: { value: email.html } } : {}) },
             textBody: [{ partId: "text", type: "text/plain" }],
+            ...(email.html ? { htmlBody: [{ partId: "html", type: "text/html" }] } : {}),
           },
         },
       },
@@ -114,9 +117,10 @@ export async function sendTemplate(
   const { data: template } = await db.from("email_templates").select("subject, body, enabled").eq("key", key).maybeSingle();
   if (!template?.enabled) return false;
   const subject = fill(template.subject, values);
+  const text = fill(template.body, values);
   let error: string | null = null;
   try {
-    await sendEmail({ to, subject, text: fill(template.body, values), replyTo });
+    await sendEmail({ to, subject, text, html: emailHtml(subject, text), replyTo });
   } catch (e) {
     error = e instanceof Error ? e.message : String(e);
     console.error(`Couldn't send ${key} to ${to.email}:`, error);

@@ -2,6 +2,7 @@
 
 import { useEffect, useRef, useState, useTransition } from "react";
 import { sendTestReply } from "./actions";
+import { emailHtml } from "../../../../supabase/functions/_shared/email-html";
 import { PLACEHOLDERS, fill } from "./placeholders";
 
 /** The email as a customer would get it, with sample details, redrawn as its form is edited. */
@@ -32,10 +33,15 @@ export function ReplyPreview({ templateKey, subject, body }: { templateKey: stri
   return (
     <div ref={ref} className="space-y-2">
       <p className="eyebrow text-xs text-cream/70">Preview, with sample details</p>
-      <div className="rounded-xl bg-[#fbf6ee] p-4 font-sans text-sm text-[#2b1a10]">
-        <p className="border-b border-[#2b1a10]/15 pb-2 font-semibold">{fill(text.subject, values)}</p>
-        <p className="mt-3 whitespace-pre-wrap leading-relaxed">{fill(text.body, values)}</p>
-      </div>
+      <p className="font-sans text-sm">
+        <span className="text-cream/60">Subject:</span> {fill(text.subject, values)}
+      </p>
+      {/* The same design the email is sent with. */}
+      <iframe
+        title="Email preview"
+        srcDoc={emailHtml(fill(text.subject, values), fill(text.body, values))}
+        className="h-[34rem] w-full rounded-xl border border-white/15 bg-[#1c1003]"
+      />
       <p className="font-sans text-xs text-cream/60">
         You can use: {Object.keys(values).map((key) => `{${key}}`).join(" ")}
       </p>

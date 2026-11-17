@@ -4,6 +4,7 @@
 
 import { createClient } from "npm:@supabase/supabase-js@2";
 import { BUSINESS, sendEmail } from "../_shared/email.ts";
+import { emailHtml } from "../_shared/email-html.ts";
 
 const SUPABASE_URL = Deno.env.get("SUPABASE_URL")!;
 const PUBLISHABLE_KEY =
@@ -34,7 +35,9 @@ Deno.serve(async (req) => {
   const { subject, text } = await req.json().catch(() => ({}));
   if (!subject || !text) return json({ error: "Missing the subject or message." }, 400);
   try {
-    await sendEmail({ to: BUSINESS, subject: `TEST: ${String(subject).slice(0, 300)}`, text: String(text).slice(0, 20000) });
+    const testSubject = `TEST: ${String(subject).slice(0, 300)}`;
+    const body = String(text).slice(0, 20000);
+    await sendEmail({ to: BUSINESS, subject: testSubject, text: body, html: emailHtml(testSubject, body) });
     return json({ ok: true, to: BUSINESS.email });
   } catch (e) {
     console.error(e);

@@ -12,8 +12,8 @@ export default function ThanksPage() {
         <ClearCart />
         <h1 className="font-script text-7xl text-gold sm:text-8xl">Thank you</h1>
         <p className="mt-8 text-2xl leading-relaxed text-cream/85">
-          Your order is in and your receipt is on its way to your email. We’ll be in touch if we need anything, and when
-          it’s on its way to you.
+          Thank you for supporting ethical chocolate, it means a lot to us! We’ve got your order and we’ll reach out once
+          it’s posted!
         </p>
         <ButtonLink href="/shop" className="mt-10">
           Back to the shop

@@ -70,10 +70,19 @@ export async function setOrderStatus(_: SaveState, data: FormData): Promise<Save
   const { supabase, isAdmin } = await getSession();
   if (!isAdmin) return NO_ACCESS;
   const status = String(data.get("status"));
-  const { error } = await supabase.rpc("pod_set_order_status", { order_id: String(data.get("order_id")), status });
+  const orderId = String(data.get("order_id"));
+  const { error } = await supabase.rpc("pod_set_order_status", { order_id: orderId, status });
   if (error) return failed(error);
   refresh();
-  return { ok: status === "sent" ? "Sent, and taken off stock" : "Updated" };
+  const done = status === "sent" ? "Sent, and taken off stock" : "Updated";
+  // Website customers hear when their order's posted or ready to pick up (Pod › Replies).
+  if (status === "sent" || status === "packed") {
+    const { data: emailed } = await supabase.functions.invoke<{ sent: boolean; to?: string }>("order-email", {
+      body: { orderId, status },
+    });
+    if (emailed?.sent) return { ok: `${done}. Emailed ${emailed.to}.` };
+  }
+  return { ok: done };
 }
 
 /** Deletes an order; if it was already sent, its items go back into stock. Its invoice, if any, is kept. */

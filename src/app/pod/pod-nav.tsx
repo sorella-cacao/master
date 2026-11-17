@@ -8,6 +8,7 @@ const sections = [
   { href: "/pod/customers", label: "Customers" },
   { href: "/pod/invoices", label: "Invoices" },
   { href: "/pod/labels", label: "Labels" },
+  { href: "/pod/replies", label: "Replies" },
   { href: "/pod/receipts", label: "Receipts" },
 ] as const;
 

@@ -78,6 +78,33 @@ export type Database = {
           },
         ]
       }
+      contact_messages: {
+        Row: {
+          created_at: string
+          email: string
+          id: string
+          message: string
+          name: string
+          sender_ip: string
+        }
+        Insert: {
+          created_at?: string
+          email: string
+          id?: string
+          message: string
+          name: string
+          sender_ip?: string
+        }
+        Update: {
+          created_at?: string
+          email?: string
+          id?: string
+          message?: string
+          name?: string
+          sender_ip?: string
+        }
+        Relationships: []
+      }
       customer_prices: {
         Row: {
           customer_id: string
@@ -200,6 +227,39 @@ export type Database = {
           needs_address?: boolean
           position?: number
           price?: number
+          updated_at?: string
+        }
+        Relationships: []
+      }
+      email_templates: {
+        Row: {
+          body: string
+          enabled: boolean
+          key: string
+          name: string
+          position: number
+          sent_when: string
+          subject: string
+          updated_at: string
+        }
+        Insert: {
+          body: string
+          enabled?: boolean
+          key: string
+          name: string
+          position?: number
+          sent_when: string
+          subject: string
+          updated_at?: string
+        }
+        Update: {
+          body?: string
+          enabled?: boolean
+          key?: string
+          name?: string
+          position?: number
+          sent_when?: string
+          subject?: string
           updated_at?: string
         }
         Relationships: []
@@ -663,6 +723,44 @@ export type Database = {
         }
         Relationships: []
       }
+      sent_emails: {
+        Row: {
+          created_at: string
+          error: string | null
+          id: number
+          order_id: string | null
+          subject: string
+          template: string
+          to_email: string
+        }
+        Insert: {
+          created_at?: string
+          error?: string | null
+          id?: never
+          order_id?: string | null
+          subject: string
+          template: string
+          to_email: string
+        }
+        Update: {
+          created_at?: string
+          error?: string | null
+          id?: never
+          order_id?: string | null
+          subject?: string
+          template?: string
+          to_email?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "sent_emails_order_id_fkey"
+            columns: ["order_id"]
+            isOneToOne: false
+            referencedRelation: "orders"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       stock_items: {
         Row: {
           base_chocolate: string | null
@@ -790,7 +888,9 @@ export type Database = {
           order_id: string
           paid_at: string
           phone: string
+          received_emailed_at: string | null
           total: number
+          update_emailed_at: string | null
         }
         Insert: {
           address?: string
@@ -804,7 +904,9 @@ export type Database = {
           order_id: string
           paid_at?: string
           phone?: string
+          received_emailed_at?: string | null
           total: number
+          update_emailed_at?: string | null
         }
         Update: {
           address?: string
@@ -818,7 +920,9 @@ export type Database = {
           order_id?: string
           paid_at?: string
           phone?: string
+          received_emailed_at?: string | null
           total?: number
+          update_emailed_at?: string | null
         }
         Relationships: [
           {

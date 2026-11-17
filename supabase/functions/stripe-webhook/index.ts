@@ -1,11 +1,13 @@
 // Stripe tells this function when a website checkout is paid; it turns the checkout into an order
-// in the Pod (record_web_order) with the customer's name, contact details and delivery address.
+// in the Pod (record_web_order) with the customer's name, contact details and delivery address, and
+// emails the customer (order received and/or workshop booking, from the Pod's Replies).
 //
 // Every request is checked against the STRIPE_WEBHOOK_SECRET signing secret, so only Stripe can
 // add orders. Set up in Stripe as a webhook endpoint for checkout.session.completed,
 // checkout.session.async_payment_succeeded and checkout.session.expired.
 
 import { createClient } from "npm:@supabase/supabase-js@2";
+import { orderValues, sendTemplate, type WebOrder } from "../_shared/email.ts";
 
 const db = createClient(Deno.env.get("SUPABASE_URL")!, Deno.env.get("SUPABASE_SERVICE_ROLE_KEY")!, {
   auth: { persistSession: false },
@@ -38,6 +40,23 @@ type Address = { line1?: string; line2?: string; city?: string; state?: string; 
 const addressText = (a?: Address | null) =>
   a ? [a.line1, a.line2, [a.city, a.state, a.postal_code].filter(Boolean).join(" ")].filter(Boolean).join(", ") : "";
 
+/** The order-received and workshop-booking emails, once per order. */
+async function emailNewOrder(orderId: string) {
+  // Claimed before sending, so the same Stripe event arriving twice doesn't send them twice.
+  const { data: claimed } = await db
+    .from("web_orders")
+    .update({ received_emailed_at: new Date().toISOString() })
+    .eq("order_id", orderId)
+    .is("received_emailed_at", null)
+    .select("name, email, address, delivery, delivery_price, total, items");
+  const order = claimed?.[0] as WebOrder | undefined;
+  if (!order?.email) return;
+  const values = orderValues(order);
+  const to = { name: order.name, email: order.email };
+  if (values.items) await sendTemplate(db, "order_received", to, values, { orderId });
+  if (values.workshops) await sendTemplate(db, "workshop_booking", to, values, { orderId });
+}
+
 Deno.serve(async (req) => {
   if (req.method !== "POST") return new Response("Not allowed", { status: 405 });
   const body = await req.text();
@@ -55,7 +74,7 @@ Deno.serve(async (req) => {
     ) {
       // Newer Stripe API versions put the delivery address under collected_information.
       const shipping = session.collected_information?.shipping_details ?? session.shipping_details;
-      const { error } = await db.rpc("record_web_order", {
+      const { data: orderId, error } = await db.rpc("record_web_order", {
         checkout_id: checkoutId,
         name: shipping?.name ?? session.customer_details?.name ?? "",
         email: session.customer_details?.email ?? "",
@@ -64,6 +83,7 @@ Deno.serve(async (req) => {
         total: (session.amount_total ?? 0) / 100,
       });
       if (error) throw error;
+      await emailNewOrder(orderId);
     } else if (event.type === "checkout.session.expired") {
       await db.from("checkouts").update({ status: "expired" }).eq("id", checkoutId).eq("status", "open");
     }

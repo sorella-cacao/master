@@ -33,7 +33,7 @@ export default async function ProductPage({ params }: PageProps<"/shop/[slug]">)
           image={product.image}
           optionName={product.optionName}
           variants={product.variants}
-          subscription={product.subscription}
+          // Subscriptions (product.subscription) come back once Stripe can bill them monthly.
           personalisedLabel={product.personalisedLabel}
           ingredientsNote={product.ingredientsNote}
           actionLabel="Add To Cart"

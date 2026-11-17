@@ -2,12 +2,54 @@
 
 import Image from "next/image";
 import Link from "next/link";
+import { useState } from "react";
 import { formatPrice } from "@/lib/format";
 import { ButtonLink, buttonClass } from "./button";
 import { useCart } from "./cart";
 
-export function CartView() {
+export type DeliveryOption = { id: string; name: string; description: string; price: number; freeOver: number | null };
+
+/** Workshop tickets aren't posted, so they don't need delivery. */
+const isWorkshop = (href: string) => href.startsWith("/workshops/");
+
+export function CartView({ deliveryOptions }: { deliveryOptions: DeliveryOption[] }) {
   const { items, labelFees, subtotal, setQuantity, removeItem } = useCart();
+  const [deliveryId, setDeliveryId] = useState(deliveryOptions[0]?.id ?? "");
+  const [paying, setPaying] = useState(false);
+  const [error, setError] = useState("");
+
+  const needsDelivery = items.some((i) => !isWorkshop(i.href));
+  // Free postage counts the products (and label fees), not workshop tickets.
+  const productsTotal =
+    items.filter((i) => !isWorkshop(i.href)).reduce((n, i) => n + i.unitPrice * i.quantity, 0) +
+    labelFees.reduce((n, f) => n + f.amount, 0);
+  const deliveryPrice = (option: DeliveryOption) => (option.freeOver !== null && productsTotal >= option.freeOver ? 0 : option.price);
+  const delivery = needsDelivery ? deliveryOptions.find((d) => d.id === deliveryId) : undefined;
+  const total = subtotal + (delivery ? deliveryPrice(delivery) : 0);
+  const hasSubscription = items.some((i) => i.frequency);
+
+  // Prices are checked again on the server, then the customer pays on Stripe's page.
+  async function checkout() {
+    setError("");
+    setPaying(true);
+    try {
+      const res = await fetch(`${process.env.NEXT_PUBLIC_SUPABASE_URL}/functions/v1/create-checkout`, {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          site: window.location.origin,
+          deliveryId: needsDelivery ? deliveryId : undefined,
+          items: items.map(({ href, variant, quantity, label, frequency }) => ({ href, variant, quantity, label, frequency })),
+        }),
+      });
+      const body = await res.json().catch(() => ({}));
+      if (!res.ok || !body.url) throw new Error(body.error || "Checkout isn’t working right now. Please try again shortly.");
+      window.location.assign(body.url);
+    } catch (e) {
+      setError(e instanceof Error ? e.message : "Checkout isn’t working right now. Please try again shortly.");
+      setPaying(false);
+    }
+  }
 
   if (items.length === 0) {
     return (
@@ -85,15 +127,71 @@ export function CartView() {
         </ul>
       )}
 
-      <div className="mt-8 flex flex-col items-end gap-6">
-        <p className="text-2xl">
+      {needsDelivery && deliveryOptions.length > 0 && (
+        <fieldset className="mt-8">
+          <legend className="eyebrow mb-3 text-cream/70">Delivery</legend>
+          <div className="space-y-2">
+            {deliveryOptions.map((option) => {
+              const price = deliveryPrice(option);
+              return (
+                <label
+                  key={option.id}
+                  className={`flex cursor-pointer items-baseline gap-4 rounded-xl border px-4 py-3 transition-colors ${
+                    option.id === deliveryId ? "border-gold bg-white/5" : "border-white/15 hover:border-white/30"
+                  }`}
+                >
+                  <input
+                    type="radio"
+                    name="delivery"
+                    value={option.id}
+                    checked={option.id === deliveryId}
+                    onChange={() => setDeliveryId(option.id)}
+                    className="accent-[#d9ad68]"
+                  />
+                  <span className="flex-1">
+                    {option.name}
+                    {option.description && <span className="block text-base text-cream/60">{option.description}</span>}
+                  </span>
+                  <span className="text-xl">{price ? formatPrice(price) : "Free"}</span>
+                </label>
+              );
+            })}
+          </div>
+        </fieldset>
+      )}
+
+      <div className="mt-8 flex flex-col items-end gap-4">
+        <p className="text-xl text-cream/80">
           <span className="eyebrow mr-4 text-cream/70">Subtotal</span>
           {formatPrice(subtotal)}
         </p>
-        {/* Checkout will hand off to Stripe Checkout once payments are wired up. */}
-        <button type="button" disabled className={`${buttonClass()} cursor-not-allowed opacity-60`}>
-          Checkout
+        {delivery && (
+          <p className="text-xl text-cream/80">
+            <span className="eyebrow mr-4 text-cream/70">{delivery.name}</span>
+            {deliveryPrice(delivery) ? formatPrice(deliveryPrice(delivery)) : "Free"}
+          </p>
+        )}
+        <p className="text-2xl">
+          <span className="eyebrow mr-4 text-cream/70">Total</span>
+          {formatPrice(total)}
+        </p>
+        {hasSubscription && (
+          <p className="max-w-md text-right text-base text-gold">
+            Subscriptions aren’t available online yet. Please remove the subscription, or add it again as a one-off.
+          </p>
+        )}
+        <button
+          type="button"
+          onClick={checkout}
+          disabled={paying || hasSubscription}
+          className={`${buttonClass()} disabled:cursor-not-allowed disabled:opacity-60`}
+        >
+          {paying ? "Opening secure checkout…" : "Checkout"}
         </button>
+        <p role="status" className="max-w-md text-right text-base text-gold">
+          {error}
+        </p>
+        <p className="text-sm text-cream/50">Secure payment by Stripe. Card, Apple Pay or Google Pay.</p>
       </div>
     </div>
   );

@@ -85,6 +85,28 @@ async function run(
   return { ok };
 }
 
+// Delivery
+
+export async function saveDeliveryOption(_: SaveState, data: FormData) {
+  return run((supabase) => {
+    const freeOver = text(data, "free_over");
+    const over = Number(freeOver);
+    if (freeOver && (!Number.isFinite(over) || over <= 0)) {
+      throw new FormError("Enter the free postage amount as a number, e.g. 150, or leave it empty.");
+    }
+    return supabase
+      .from("delivery_options")
+      .update({
+        name: required(data, "name", "a name"),
+        description: text(data, "description"),
+        price: price(data),
+        free_over: freeOver ? Math.round(over * 100) / 100 : null,
+        is_active: checked(data, "is_active"),
+      })
+      .eq("id", text(data, "id"));
+  }, "Saved. The cart uses this straight away.");
+}
+
 // Products
 
 export async function saveProduct(_: SaveState, data: FormData) {

@@ -20,11 +20,14 @@ export function OrderStatus({
   status,
   itemCount,
   invoice,
+  paidOnline = false,
 }: {
   orderId: string;
   status: string;
   itemCount: number;
   invoice: { id: string; number: number; number_suffix: string | null } | null;
+  /** Paid on the website: Stripe has sent the receipt, so there's no invoice to make. */
+  paidOnline?: boolean;
 }) {
   const [state, formAction, pending] = useActionState(setOrderStatus, undefined as SaveState);
   const { confirm, dialog } = useConfirm();
@@ -40,7 +43,7 @@ export function OrderStatus({
     data.set("status", next);
 
     // When sending an order without an invoice, offer to make the invoice too, then open it.
-    if (next === "sent" && !invoice && (await confirm("Generate the invoice now?", { yes: "Yes", no: "Not now" }))) {
+    if (next === "sent" && !invoice && !paidOnline && (await confirm("Generate the invoice now?", { yes: "Yes", no: "Not now" }))) {
       setInvoiceError("");
       startSending(async () => {
         const result = await setOrderStatus(undefined, data);
@@ -75,7 +78,7 @@ export function OrderStatus({
           </button>
         ))}
       </div>
-      {invoice ? (
+      {paidOnline ? null : invoice ? (
         <Link
           href={`/pod/invoices/${invoice.id}`}
           className="eyebrow rounded-full border border-white/20 px-4 py-2 text-cream/70 transition-colors hover:border-gold hover:text-gold"

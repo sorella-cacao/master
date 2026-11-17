@@ -8,6 +8,7 @@ import {
   deleteVariant,
   deleteWorkshop,
   duplicateWorkshop,
+  saveDeliveryOption,
   saveProduct,
   saveTicket,
   saveVariant,
@@ -35,7 +36,7 @@ export default async function PodPage() {
     );
   }
 
-  const [products, workshops] = await Promise.all([
+  const [products, workshops, delivery] = await Promise.all([
     supabase
       .from("products")
       .select(
@@ -49,9 +50,11 @@ export default async function PodPage() {
       )
       .order("event_date", { ascending: false, nullsFirst: true })
       .order("position"),
+    supabase.from("delivery_options").select("id, name, description, price, free_over, is_active").order("position"),
   ]);
   if (products.error) throw products.error;
   if (workshops.error) throw workshops.error;
+  if (delivery.error) throw delivery.error;
 
   return (
     <div className="space-y-16">
@@ -64,6 +67,55 @@ export default async function PodPage() {
         </div>
         <PodNav current="/pod" />
       </header>
+
+      <section aria-labelledby="delivery-heading" className="space-y-8">
+        <h2 id="delivery-heading" className="text-4xl">
+          Delivery
+        </h2>
+        <p className="text-cream/70">The choices customers see in their cart. Workshop tickets don’t need delivery.</p>
+        {delivery.data.map((option) => (
+          <article key={option.id} className="rounded-2xl border border-white/10 bg-cacao-950/40 p-6 sm:p-8">
+            <PodForm action={saveDeliveryOption} submitLabel="Save">
+              <input type="hidden" name="id" value={option.id} />
+              <div className="space-y-4">
+                <div className="grid gap-4 sm:grid-cols-[1fr_10rem_10rem]">
+                  <Field label="Name">
+                    <input name="name" defaultValue={option.name} required className="pod-input" />
+                  </Field>
+                  <Field label="Price ($)">
+                    <input
+                      type="number"
+                      name="price"
+                      min="0"
+                      step="0.01"
+                      inputMode="decimal"
+                      defaultValue={Number(option.price).toFixed(2)}
+                      required
+                      className="pod-input"
+                    />
+                  </Field>
+                  <Field label="Free over ($)">
+                    <input
+                      type="number"
+                      name="free_over"
+                      min="0"
+                      step="0.01"
+                      inputMode="decimal"
+                      defaultValue={option.free_over === null ? "" : Number(option.free_over).toFixed(2)}
+                      placeholder="Never"
+                      className="pod-input"
+                    />
+                  </Field>
+                </div>
+                <Field label="Note for customers">
+                  <input name="description" defaultValue={option.description} className="pod-input" />
+                </Field>
+                <Checkbox name="is_active" label="Offer this at checkout" defaultChecked={option.is_active} />
+              </div>
+            </PodForm>
+          </article>
+        ))}
+      </section>
 
       <section aria-labelledby="products-heading" className="space-y-8">
         <h2 id="products-heading" className="text-4xl">

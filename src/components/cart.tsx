@@ -33,6 +33,8 @@ type CartContextValue = {
   addItem: (item: Omit<CartItem, "key">) => void;
   setQuantity: (key: string, quantity: number) => void;
   removeItem: (key: string) => void;
+  /** Empties the cart, e.g. once it's paid for. */
+  clear: () => void;
 };
 
 const CartContext = createContext<CartContextValue | null>(null);
@@ -87,6 +89,14 @@ export function CartProvider({ children }: { children: React.ReactNode }) {
     setItems((current) => current.filter((i) => i.key !== key));
   }, []);
 
+  // Also forgets the saved cart straight away, as this can run before the saved cart is loaded.
+  const clear = useCallback(() => {
+    try {
+      localStorage.removeItem(STORAGE_KEY);
+    } catch {}
+    setItems([]);
+  }, []);
+
   const value = useMemo(() => {
     const labelFees = distinctLabels(items.map((i) => i.label)).map((label) => ({
       label,
@@ -102,8 +112,9 @@ export function CartProvider({ children }: { children: React.ReactNode }) {
       addItem,
       setQuantity,
       removeItem,
+      clear,
     };
-  }, [items, addItem, setQuantity, removeItem]);
+  }, [items, addItem, setQuantity, removeItem, clear]);
 
   return <CartContext value={value}>{children}</CartContext>;
 }

@@ -27,9 +27,24 @@ type Order = {
   sent_at: string | null;
   lines: Line[];
   invoice: { id: string; number: number; number_suffix: string | null } | null;
+  /** Paid on the website: who bought it and how it gets to them. */
+  web: WebOrder | null;
+};
+type WebOrder = {
+  name: string;
+  email: string;
+  phone: string;
+  address: string;
+  delivery: string;
+  delivery_price: number;
+  total: number;
+  paid_at: string;
+  items: { title: string; variant: string; quantity: number; unit_price: number; label: string | null; workshop: boolean }[];
+  label_fees: { label: string; amount: number }[];
 };
 
-const ORDER_COLUMNS = "id, customer, kind, needed_by, status, note, sent_at, lines:order_lines(stock_item_id, quantity, unit_price), invoice:invoices(id, number, number_suffix)";
+const ORDER_COLUMNS =
+  "id, customer, kind, needed_by, status, note, sent_at, lines:order_lines(stock_item_id, quantity, unit_price), invoice:invoices(id, number, number_suffix), web:web_orders(name, email, phone, address, delivery, delivery_price, total, paid_at, items, label_fees)";
 
 /**
  * Chocolate in one item, in kg: its own amount when set (e.g. 90g of 75% Dark in a mandarin bar),
@@ -279,33 +294,36 @@ export default async function OrdersPage(props: PageProps<"/pod/orders">) {
           {openOrders.length === 0 && sentOrders.length === 0 && <p className="text-xl text-cream/70">No orders yet.</p>}
           {openOrders.map((order) => (
             <OrderCard key={order.id} order={order} items={items} today={today} justSaved={order.id === justSavedId}>
-              <details className="mt-5 border-t border-white/10 pt-4">
-                <summary className="eyebrow cursor-pointer text-cream/70 hover:text-gold">Edit order</summary>
-                <div className="mt-4">
-                  <PodForm action={saveOrder} submitLabel="Save changes">
-                    <input type="hidden" name="order_id" value={order.id} />
-                    <OrderFields
-                      groups={formGroups(groups, order)}
-                      customers={customers}
-                      initial={{
-                        customer: order.customer,
-                        neededBy: order.needed_by,
-                        note: order.note,
-                        quantities: Object.fromEntries(order.lines.map((l) => [l.stock_item_id, l.quantity])),
-                        prices: Object.fromEntries(order.lines.map((l) => [l.stock_item_id, Number(l.unit_price)])),
-                      }}
-                    />
-                  </PodForm>
-                  <PodForm
-                    action={deleteOrder}
-                    submitLabel="Delete order"
-                    variant="quiet"
-                    confirmMessage={`Delete the order for ${order.customer}? This can’t be undone.`}
-                  >
-                    <input type="hidden" name="order_id" value={order.id} />
-                  </PodForm>
-                </div>
-              </details>
+              {/* Website orders are as paid for: changes and refunds are made in Stripe. */}
+              {!order.web && (
+                <details className="mt-5 border-t border-white/10 pt-4">
+                  <summary className="eyebrow cursor-pointer text-cream/70 hover:text-gold">Edit order</summary>
+                  <div className="mt-4">
+                    <PodForm action={saveOrder} submitLabel="Save changes">
+                      <input type="hidden" name="order_id" value={order.id} />
+                      <OrderFields
+                        groups={formGroups(groups, order)}
+                        customers={customers}
+                        initial={{
+                          customer: order.customer,
+                          neededBy: order.needed_by,
+                          note: order.note,
+                          quantities: Object.fromEntries(order.lines.map((l) => [l.stock_item_id, l.quantity])),
+                          prices: Object.fromEntries(order.lines.map((l) => [l.stock_item_id, Number(l.unit_price)])),
+                        }}
+                      />
+                    </PodForm>
+                    <PodForm
+                      action={deleteOrder}
+                      submitLabel="Delete order"
+                      variant="quiet"
+                      confirmMessage={`Delete the order for ${order.customer}? This can’t be undone.`}
+                    >
+                      <input type="hidden" name="order_id" value={order.id} />
+                    </PodForm>
+                  </div>
+                </details>
+              )}
             </OrderCard>
           ))}
           {sentOrders.map((order) => (
@@ -360,6 +378,7 @@ function OrderCard({
 }) {
   const overdue = order.status !== "sent" && order.needed_by && order.needed_by < today;
   const sale = SALE_KINDS[order.kind];
+  const { web } = order;
   return (
     <details
       id={`order-${order.id}`}
@@ -370,14 +389,14 @@ function OrderCard({
         <div className="flex flex-wrap items-baseline justify-between gap-4">
           <h3 className="text-xl text-gold">
             {order.customer}
-            {sale && order.customer !== sale && (
+            {((sale && order.customer !== sale) || web) && (
               <span className="eyebrow ml-3 rounded-full border border-white/20 px-2 py-0.5 align-middle text-[0.65rem] text-cream/70">
-                {sale}
+                {web ? "Website" : sale}
               </span>
             )}
           </h3>
           <p className="flex items-baseline gap-3 font-sans text-base">
-            {formatPrice(orderTotal(order))}
+            {formatPrice(web ? Number(web.total) : orderTotal(order))}
             <span aria-hidden className="text-base text-cream/70 transition-transform group-open:rotate-180">
               ▾
             </span>
@@ -386,18 +405,22 @@ function OrderCard({
         <p className="mt-1 text-cream/80">
           {order.status === "sent" && order.sent_at
             ? `${sale ? "Sold" : "Sent"} ${new Date(order.sent_at).toLocaleDateString("en-AU", { timeZone: "Australia/Sydney", day: "numeric", month: "short" })}`
-            : order.needed_by
-              ? `Needed by ${shortDate(order.needed_by)}`
-              : "No date set"}
+            : web
+              ? `Paid ${new Date(web.paid_at).toLocaleDateString("en-AU", { timeZone: "Australia/Sydney", day: "numeric", month: "short" })} · ${web.delivery || "Workshop tickets"}`
+              : order.needed_by
+                ? `Needed by ${shortDate(order.needed_by)}`
+                : "No date set"}
           {overdue && <span className="eyebrow ml-3 rounded-full bg-gold/15 px-2 py-0.5 text-gold">Overdue</span>}
         </p>
       </summary>
       <div className="px-4 pb-4 sm:px-6 sm:pb-6">
         {!sale && (
           <div>
-            <OrderStatus orderId={order.id} status={order.status} itemCount={itemCount(order)} invoice={order.invoice} />
+            <OrderStatus orderId={order.id} status={order.status} itemCount={itemCount(order)} invoice={order.invoice} paidOnline={!!web} />
           </div>
         )}
+
+        {web && <WebOrderDetails web={web} />}
 
         <div className={sale ? "" : "mt-4"}>
           <ItemTable headings={["Item", "Qty", "Each", "Total"]} columnWidth="w-28">
@@ -443,5 +466,45 @@ function WeekLink({ href, children }: { href: string; children: React.ReactNode 
     <Link href={href} className="eyebrow rounded-full border border-white/20 px-4 py-2 text-cream/70 hover:border-gold hover:text-gold">
       {children}
     </Link>
+  );
+}
+
+/** A website order's customer, delivery and everything bought (personalised labels and workshop tickets included). */
+function WebOrderDetails({ web }: { web: WebOrder }) {
+  return (
+    <div className="mt-4 grid gap-4 font-sans text-sm sm:grid-cols-2">
+      <div className="space-y-1">
+        <p className="eyebrow text-xs text-cream/70">Customer</p>
+        <p className="text-base">{web.name || "No name given"}</p>
+        {web.email && (
+          <a href={`mailto:${web.email}`} className="block underline decoration-white/30 underline-offset-2 hover:text-gold">
+            {web.email}
+          </a>
+        )}
+        {web.phone && (
+          <a href={`tel:${web.phone}`} className="block underline decoration-white/30 underline-offset-2 hover:text-gold">
+            {web.phone}
+          </a>
+        )}
+      </div>
+      <div className="space-y-1">
+        <p className="eyebrow text-xs text-cream/70">{web.delivery || "Delivery"}</p>
+        <p className="text-base">{web.address || (web.delivery ? "Picking up" : "Nothing to send")}</p>
+        {web.delivery && <p className="text-cream/70">{Number(web.delivery_price) ? formatPrice(Number(web.delivery_price)) : "Free"}</p>}
+      </div>
+      <ul className="space-y-1 sm:col-span-2">
+        {web.items.map((item, i) => (
+          <li key={i}>
+            {item.quantity} × {item.title} – {item.variant}
+            {item.label && <span className="text-gold"> · label “{item.label}”</span>}
+          </li>
+        ))}
+        {web.label_fees.map((fee) => (
+          <li key={fee.label} className="text-cream/70">
+            Personalised label “{fee.label}” · {formatPrice(fee.amount)}
+          </li>
+        ))}
+      </ul>
+    </div>
   );
 }

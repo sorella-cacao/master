@@ -31,6 +31,53 @@ export type Database = {
         }
         Relationships: []
       }
+      checkouts: {
+        Row: {
+          created_at: string
+          delivery: Json | null
+          id: string
+          items: Json
+          label_fees: Json
+          order_id: string | null
+          status: string
+          stripe_session_id: string | null
+          total: number
+          updated_at: string
+        }
+        Insert: {
+          created_at?: string
+          delivery?: Json | null
+          id?: string
+          items: Json
+          label_fees?: Json
+          order_id?: string | null
+          status?: string
+          stripe_session_id?: string | null
+          total: number
+          updated_at?: string
+        }
+        Update: {
+          created_at?: string
+          delivery?: Json | null
+          id?: string
+          items?: Json
+          label_fees?: Json
+          order_id?: string | null
+          status?: string
+          stripe_session_id?: string | null
+          total?: number
+          updated_at?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "checkouts_order_id_fkey"
+            columns: ["order_id"]
+            isOneToOne: false
+            referencedRelation: "orders"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       customer_prices: {
         Row: {
           customer_id: string
@@ -114,6 +161,45 @@ export type Database = {
           next_invoice_number?: number
           notes?: string | null
           phone?: string | null
+          updated_at?: string
+        }
+        Relationships: []
+      }
+      delivery_options: {
+        Row: {
+          created_at: string
+          description: string
+          free_over: number | null
+          id: string
+          is_active: boolean
+          name: string
+          needs_address: boolean
+          position: number
+          price: number
+          updated_at: string
+        }
+        Insert: {
+          created_at?: string
+          description?: string
+          free_over?: number | null
+          id?: string
+          is_active?: boolean
+          name: string
+          needs_address?: boolean
+          position?: number
+          price: number
+          updated_at?: string
+        }
+        Update: {
+          created_at?: string
+          description?: string
+          free_over?: number | null
+          id?: string
+          is_active?: boolean
+          name?: string
+          needs_address?: boolean
+          position?: number
+          price?: number
           updated_at?: string
         }
         Relationships: []
@@ -691,6 +777,66 @@ export type Database = {
           },
         ]
       }
+      web_orders: {
+        Row: {
+          address: string
+          checkout_id: string
+          delivery: string
+          delivery_price: number
+          email: string
+          items: Json
+          label_fees: Json
+          name: string
+          order_id: string
+          paid_at: string
+          phone: string
+          total: number
+        }
+        Insert: {
+          address?: string
+          checkout_id: string
+          delivery?: string
+          delivery_price?: number
+          email?: string
+          items: Json
+          label_fees?: Json
+          name?: string
+          order_id: string
+          paid_at?: string
+          phone?: string
+          total: number
+        }
+        Update: {
+          address?: string
+          checkout_id?: string
+          delivery?: string
+          delivery_price?: number
+          email?: string
+          items?: Json
+          label_fees?: Json
+          name?: string
+          order_id?: string
+          paid_at?: string
+          phone?: string
+          total?: number
+        }
+        Relationships: [
+          {
+            foreignKeyName: "web_orders_checkout_id_fkey"
+            columns: ["checkout_id"]
+            isOneToOne: true
+            referencedRelation: "checkouts"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "web_orders_order_id_fkey"
+            columns: ["order_id"]
+            isOneToOne: true
+            referencedRelation: "orders"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       workshop_variants: {
         Row: {
           created_at: string
@@ -813,6 +959,17 @@ export type Database = {
       pod_set_order_status: { Args: { order_id: string; status: string }; Returns: undefined }
       pod_undo_sale: { Args: { order_id: string }; Returns: undefined }
       receipts_cron_secret_matches: { Args: { secret: string }; Returns: boolean }
+      record_web_order: {
+        Args: {
+          address: string
+          checkout_id: string
+          email: string
+          name: string
+          phone: string
+          total: number
+        }
+        Returns: string
+      }
     }
     Enums: {
       [_ in never]: never

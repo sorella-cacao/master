@@ -441,6 +441,9 @@ export type Database = {
         Row: {
           batch_code: string
           created_at: string
+          back_file: string
+          front_file: string
+          stamps: Json
           id: string
           ingredient_notes: string
           ingredients: string
@@ -456,25 +459,30 @@ export type Database = {
           updated_at: string
         }
         Insert: {
-          batch_code: string
+          batch_code?: string
+          back_file?: string
           created_at?: string
+          front_file?: string
+          stamps?: Json
           id?: string
           ingredient_notes?: string
-          ingredients: string
+          ingredients?: string
           layout?: Json | null
           logo_file?: string
           may_contain?: string
           name: string
-          nutrition: Json
+          nutrition?: Json
           position?: number
           serving_size?: string
-          servings_per_package: string
+          servings_per_package?: string
           size: string
           updated_at?: string
         }
         Update: {
+          back_file?: string
           batch_code?: string
           created_at?: string
+          front_file?: string
           id?: string
           ingredient_notes?: string
           ingredients?: string
@@ -482,6 +490,7 @@ export type Database = {
           logo_file?: string
           may_contain?: string
           name?: string
+          stamps?: Json
           nutrition?: Json
           position?: number
           serving_size?: string

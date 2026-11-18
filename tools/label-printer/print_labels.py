@@ -2,9 +2,11 @@
 """Prints label runs saved by the Pod's Labels page on the TSC label printer.
 
 The Pod saves each run's PDFs into Sorella/Labels/Print Runs/<date>/ (or Sorella/Print Runs/<date>/) and then a print list,
-print-HHMMSS.json: {"labels": [{"file", "logo", "copies", "size"}]}. Each label prints in pairs
-with its logo from Sorella/Logos/Current Logos (logo, ingredients, logo, ingredients...), then the
-list is renamed printed-HHMMSS.json (or failed-HHMMSS.json) so it never prints twice.
+print-HHMMSS.json: {"labels": [{"file", "front", "copies", "size"}]}: "file" is the stamped back
+(ingredients) and "front" the Canva front (logo), both in the run's folder, and either may be empty.
+Each label prints in pairs (front, back, front, back...), then the list is renamed
+printed-HHMMSS.json (or failed-HHMMSS.json) so it never prints twice. Older lists name a "logo" in
+Sorella/Logos/Current Logos instead of a "front".
 
 Run every few seconds by launchd (com.sorellacacao.label-printer). DRY_RUN=1 logs instead of printing.
 """
@@ -35,22 +37,29 @@ def print_list(path):
     labels = json.loads(path.read_text())["labels"]
     for label in labels:
         copies = int(label["copies"])
-        ingredients = path.parent / label["file"]
-        if not ingredients.is_file():
-            raise FileNotFoundError(f"{ingredients.name} isn't in {path.parent.name}")
-        pair = [ingredients]
-        logo = LOGOS / label["logo"] if label.get("logo") else None
-        if logo and logo.is_file():
-            pair = [logo, ingredients]
+        back = path.parent / label["file"] if label.get("file") else None
+        if label.get("front"):
+            front = path.parent / label["front"]
         else:
-            log(f"No logo found for {ingredients.name} ({label.get('logo') or 'none set'}), printing it alone")
-        command = ["lp", "-d", PRINTER, "-o", f"PageSize={PAGE_SIZES[label['size']]}", "-t", f"{copies} x {ingredients.stem}"]
+            front = LOGOS / label["logo"] if label.get("logo") else None
+        pair = []
+        for side in (front, back):
+            if side and not side.is_file():
+                raise FileNotFoundError(f"{side.name} isn't in {side.parent.name}")
+            if side:
+                pair.append(side)
+        if not pair:
+            continue
+        name = (back or front).stem
+        if len(pair) == 1:
+            log(f"{name} has only a {'back' if back else 'front'}, printing it alone")
+        command = ["lp", "-d", PRINTER, "-o", f"PageSize={PAGE_SIZES[label['size']]}", "-t", f"{copies} x {name}"]
         command += [str(p) for p in pair] * copies
         if DRY_RUN:
             log("Would run: " + " ".join(command[:8]) + f" ... ({len(pair) * copies} pages)")
         else:
             subprocess.run(command, check=True, capture_output=True, text=True)
-            log(f"Printed {copies} x {ingredients.stem}" + (" with its logo" if len(pair) == 2 else ""))
+            log(f"Printed {copies} x {name}" + (" front and back" if len(pair) == 2 else ""))
 
 
 def print_lists():

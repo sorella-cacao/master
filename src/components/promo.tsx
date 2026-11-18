@@ -31,7 +31,8 @@ export function PromoBanner({ promo }: { promo: Promo }) {
   const { product } = promo;
   return (
     <section className="bg-[#7a1f1f] px-4 py-8 text-cream sm:px-8 md:py-12">
-      <div className="mx-auto grid max-w-5xl items-center gap-6 rounded-2xl border-[3px] border-double border-gold p-6 text-center sm:p-8 md:grid-cols-[11rem_1fr_1fr] md:gap-10 md:text-left lg:grid-cols-[13rem_1fr_1fr]">
+      <div className="relative mx-auto grid max-w-5xl items-center gap-6 rounded-2xl border-[3px] border-double border-gold px-6 py-9 text-center sm:px-8 md:grid-cols-[11rem_1fr_1fr] md:gap-10 md:py-10 md:text-left lg:grid-cols-[13rem_1fr_1fr]">
+        <FestiveTrim />
         <Link
           href={`/shop/${product.slug}`}
           className="relative mx-auto block aspect-square w-40 overflow-hidden rounded-xl md:w-full"
@@ -56,5 +57,21 @@ export function PromoBanner({ promo }: { promo: Promo }) {
         </div>
       </div>
     </section>
+  );
+}
+
+/** Snowflakes on the banner's gold frame: one on each corner, and a row set into the top and bottom edges. */
+function FestiveTrim() {
+  const corner = "absolute flex h-7 w-7 items-center justify-center rounded-full bg-[#7a1f1f] text-lg leading-none";
+  const edge = "absolute left-1/2 -translate-x-1/2 bg-[#7a1f1f] px-3 text-sm leading-none tracking-[0.4em]";
+  return (
+    <div aria-hidden className="pointer-events-none absolute inset-0 text-gold">
+      <span className={`${corner} -left-3.5 -top-3.5`}>❄</span>
+      <span className={`${corner} -right-3.5 -top-3.5`}>❄</span>
+      <span className={`${corner} -bottom-3.5 -left-3.5`}>❄</span>
+      <span className={`${corner} -bottom-3.5 -right-3.5`}>❄</span>
+      <span className={`${edge} -top-2.5`}>❄ ✦ ❄</span>
+      <span className={`${edge} -bottom-2.5`}>❄ ✦ ❄</span>
+    </div>
   );
 }

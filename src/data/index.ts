@@ -9,7 +9,7 @@ import type { ContentBlock, Product, Promo, Variant, Workshop } from "./types";
 export { fromPrice } from "@/lib/format";
 
 const PRODUCT_COLUMNS =
-  "slug, title, image, option_name, subscription_discount, subscription_interval, label_size, label_default_flavour, ingredients_note, available_until, description, variants:product_variants(label, price, sold_out, ingredients, label_image, position)";
+  "slug, title, image, option_name, subscription_discount, subscription_interval, label_size, label_default_flavour, ingredients_note, available_until, subheading, description, variants:product_variants(label, price, sold_out, ingredients, label_image, position)";
 const WORKSHOP_COLUMNS =
   "slug, title, images, sold_out, option_name, description, variants:workshop_variants(label, price, sold_out, position)";
 
@@ -44,6 +44,7 @@ type ProductRow = {
   label_default_flavour: string | null;
   ingredients_note: string | null;
   available_until: string | null;
+  subheading: string;
   description: unknown;
   variants: VariantRow[];
 };
@@ -75,6 +76,7 @@ function toProduct(row: ProductRow): Product {
       }),
     ...(row.ingredients_note && { ingredientsNote: row.ingredients_note }),
     ...(row.available_until && { availableUntil: row.available_until }),
+    ...(row.subheading && { subheading: row.subheading }),
     description: row.description as ContentBlock[],
   };
 }

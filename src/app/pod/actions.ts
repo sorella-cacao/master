@@ -119,6 +119,7 @@ export async function saveProduct(_: SaveState, data: FormData) {
           description: textToBlocks(text(data, "description")),
           is_published: checked(data, "is_published"),
           available_until: eventDate(data, "available_until"),
+          subheading: text(data, "subheading"),
         })
         .eq("id", text(data, "id")),
     "Saved",

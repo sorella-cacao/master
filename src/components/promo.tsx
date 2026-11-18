@@ -33,13 +33,15 @@ export function PromoBanner({ promo }: { promo: Promo }) {
         <span className="w-14 border-t border-gold sm:w-20" />
       </div>
       <h2 className="mt-3 font-script text-5xl leading-tight text-gold sm:text-6xl">{promo.bannerTitle}</h2>
-      {promo.bannerText && <p className="mx-auto mt-3 max-w-xl text-xl italic text-cream/85">{promo.bannerText}</p>}
-      <p className="mt-3 text-lg text-cream/80">
-        {product.priceFrom && "From "}
-        <span className="font-semibold text-gold">{formatPrice(product.price)}</span>
-        {product.availableUntil && ` · order by ${orderByDate(product.availableUntil)}`}
+      <p className="mx-auto mt-3 max-w-xl text-xl text-cream/85">
+        {promo.bannerText}{" "}
+        <span className="whitespace-nowrap">
+          {product.priceFrom && "from "}
+          <span className="font-semibold text-gold">{formatPrice(product.price)}</span>
+          {product.availableUntil && ` · order by ${orderByDate(product.availableUntil)}`}
+        </span>
       </p>
-      <ButtonLink href={`/shop/${product.slug}`} variant="outline" className="mt-5 text-gold">
+      <ButtonLink href={`/shop/${product.slug}`} variant="outline" className="mt-6 text-gold">
         Shop the bundles
       </ButtonLink>
     </section>

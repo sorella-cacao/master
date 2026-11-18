@@ -5,12 +5,14 @@ import Link from "next/link";
 export function DetailLayout({
   crumb,
   title,
+  subheading,
   images,
   purchase,
   children,
 }: {
   crumb: { label: string; href: string };
   title: string;
+  subheading?: string;
   images: string[];
   purchase: React.ReactNode;
   children: React.ReactNode;
@@ -44,6 +46,7 @@ export function DetailLayout({
 
           <div>
             <h1 className="text-5xl leading-tight sm:text-6xl">{title}</h1>
+            {subheading && <p className="mt-3 text-xl italic text-cream/85">{subheading}</p>}
             <div className="mt-8 rounded-2xl border border-white/10 bg-cacao-950/40 p-6 sm:p-8">
               {purchase}
             </div>

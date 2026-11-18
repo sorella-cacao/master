@@ -27,6 +27,7 @@ export default async function ProductPage({ params }: PageProps<"/shop/[slug]">)
     <DetailLayout
       crumb={{ label: site.shop.title, href: "/shop" }}
       title={product.title}
+      subheading={product.subheading}
       images={[product.image]}
       purchase={
         <div className="space-y-4">

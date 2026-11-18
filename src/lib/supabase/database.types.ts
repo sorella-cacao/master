@@ -636,6 +636,7 @@ export type Database = {
       products: {
         Row: {
           available_until: string | null
+          subheading: string
           created_at: string
           description: Json
           id: string
@@ -655,6 +656,7 @@ export type Database = {
         }
         Insert: {
           available_until?: string | null
+          subheading?: string
           created_at?: string
           description?: Json
           id?: string
@@ -674,6 +676,7 @@ export type Database = {
         }
         Update: {
           available_until?: string | null
+          subheading?: string
           created_at?: string
           description?: Json
           id?: string

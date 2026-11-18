@@ -41,7 +41,7 @@ export default async function PodPage() {
     supabase
       .from("products")
       .select(
-        "id, slug, title, description, is_published, available_until, option_name, ingredients_note, options:product_variants(id, label, price, sold_out, ingredients, position)",
+        "id, slug, title, description, is_published, available_until, subheading, option_name, ingredients_note, options:product_variants(id, label, price, sold_out, ingredients, position)",
       )
       .order("position"),
     supabase
@@ -177,6 +177,9 @@ export default async function PodPage() {
                 <div className="space-y-4">
                   <Field label="Name">
                     <input name="title" defaultValue={product.title} required className="pod-input" />
+                  </Field>
+                  <Field label="Subheading" hint="A line under the name on its page. Optional.">
+                    <input name="subheading" defaultValue={product.subheading} className="pod-input" />
                   </Field>
                   <Field label="Description" hint="Leave a blank line between paragraphs.">
                     <textarea

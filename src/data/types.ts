@@ -32,6 +32,8 @@ export type Product = {
   ingredientsNote?: string;
   /** The last day it can be ordered ("2026-12-20"), for seasonal products like the Christmas bundle. */
   availableUntil?: string;
+  /** A line under the heading on its page. */
+  subheading?: string;
   description: ContentBlock[];
 };
 

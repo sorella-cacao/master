@@ -36,6 +36,7 @@ export function PromoBanner({ promo }: { promo: Promo }) {
       <p className="mx-auto mt-3 max-w-xl text-xl text-cream/85">
         {promo.bannerText}{" "}
         <span className="whitespace-nowrap">
+          {product.priceFrom && "from "}
           <span className="font-semibold text-gold">{formatPrice(product.price)}</span>
           {product.availableUntil && ` · order by ${orderByDate(product.availableUntil)}`}
         </span>

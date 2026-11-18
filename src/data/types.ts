@@ -40,7 +40,8 @@ export type Promo = {
   stripText: string;
   bannerTitle: string;
   bannerText: string;
-  product: { slug: string; title: string; image: string; price: number; availableUntil?: string };
+  /** `price` is the lowest; `priceFrom` when there are dearer options too (shown as "from $24"). */
+  product: { slug: string; title: string; image: string; price: number; priceFrom: boolean; availableUntil?: string };
 };
 
 export type Workshop = {

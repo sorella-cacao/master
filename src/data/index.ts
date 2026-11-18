@@ -166,6 +166,7 @@ export const getPromo = cache(async (): Promise<Promo | undefined> => {
       title: product.title,
       image: product.image,
       price: Math.min(...product.variants.map((v) => Number(v.price))),
+      priceFrom: new Set(product.variants.map((v) => Number(v.price))).size > 1,
       availableUntil,
     },
   };

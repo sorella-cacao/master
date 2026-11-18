@@ -5,7 +5,7 @@
 //
 // Used by the Edge Functions to send and by the Pod to preview, so it imports nothing.
 
-const SITE = "https://sorella-cacao.vercel.app";
+const SITE = "https://sorellacacao.com.au";
 const C = { page: "#1c1003", row: "#2a1805", text: "#f6eee2", soft: "#d8c6a8", gold: "#d9ad68" };
 const SERIF = "'Cormorant Garamond', Georgia, 'Times New Roman', serif";
 const DECORATIVE = "'Cinzel Decorative', Georgia, serif";

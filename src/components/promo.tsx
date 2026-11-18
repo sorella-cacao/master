@@ -30,11 +30,11 @@ export function PromoStrip({ promo }: { promo: Promo }) {
 export function PromoBanner({ promo }: { promo: Promo }) {
   const { product } = promo;
   return (
-    <section className="bg-[#7a1f1f] px-5 py-12 text-cream sm:px-8 md:py-14">
-      <div className="mx-auto grid max-w-5xl items-center gap-6 text-center md:grid-cols-[11rem_1fr_1fr] md:gap-10 md:text-left lg:grid-cols-[13rem_1fr_1fr]">
+    <section className="bg-[#7a1f1f] px-4 py-8 text-cream sm:px-8 md:py-12">
+      <div className="mx-auto grid max-w-5xl items-center gap-6 rounded-2xl border-[3px] border-double border-gold p-6 text-center sm:p-8 md:grid-cols-[11rem_1fr_1fr] md:gap-10 md:text-left lg:grid-cols-[13rem_1fr_1fr]">
         <Link
           href={`/shop/${product.slug}`}
-          className="relative mx-auto block aspect-square w-40 overflow-hidden rounded-xl border-[3px] border-double border-gold md:w-full"
+          className="relative mx-auto block aspect-square w-40 overflow-hidden rounded-xl md:w-full"
         >
           <Image src={product.image} alt={product.title} fill sizes="(min-width: 1024px) 13rem, 11rem" className="object-cover" />
         </Link>

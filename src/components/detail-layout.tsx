@@ -7,6 +7,7 @@ export function DetailLayout({
   title,
   subheading,
   images,
+  smallImage = false,
   purchase,
   children,
 }: {
@@ -14,6 +15,8 @@ export function DetailLayout({
   title: string;
   subheading?: string;
   images: string[];
+  /** A narrower photo column (product pages). */
+  smallImage?: boolean;
   purchase: React.ReactNode;
   children: React.ReactNode;
 }) {
@@ -28,16 +31,16 @@ export function DetailLayout({
           <span className="text-cream/90">{title}</span>
         </nav>
 
-        <div className="mt-8 grid gap-12 lg:grid-cols-2 lg:gap-20">
-          <div className="space-y-4 lg:sticky lg:top-28 lg:self-start">
+        <div className={`mt-8 grid gap-12 lg:gap-20 ${smallImage ? "lg:grid-cols-[2fr_3fr]" : "lg:grid-cols-2"}`}>
+          <div className={`space-y-4 lg:sticky lg:top-28 lg:self-start ${smallImage ? "mx-auto w-full max-w-sm lg:max-w-none" : ""}`}>
             {images.map((src, i) => (
-              <div key={src} className="relative aspect-[4/5] overflow-hidden rounded-2xl bg-cacao-800">
+              <div key={src} className={`relative overflow-hidden rounded-2xl bg-cacao-800 ${smallImage ? "aspect-square" : "aspect-[4/5]"}`}>
                 <Image
                   src={src}
                   alt={i === 0 ? title : ""}
                   fill
                   priority={i === 0}
-                  sizes="(min-width: 1024px) 45vw, 100vw"
+                  sizes={smallImage ? "(min-width: 1024px) 36vw, 384px" : "(min-width: 1024px) 45vw, 100vw"}
                   className="object-cover"
                 />
               </div>

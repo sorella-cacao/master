@@ -29,6 +29,7 @@ export default async function ProductPage({ params }: PageProps<"/shop/[slug]">)
       title={product.title}
       subheading={product.subheading}
       images={[product.image]}
+      smallImage
       purchase={
         <div className="space-y-4">
           {product.availableUntil && (

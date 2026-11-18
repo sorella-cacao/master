@@ -50,7 +50,7 @@ export function Header() {
           <Wordmark className="text-[15px] text-toffee sm:text-2xl" />
         </Link>
 
-        <nav className="hidden items-center gap-9 md:flex" aria-label="Main">
+        <nav className="hidden items-center gap-6 lg:flex xl:gap-9" aria-label="Main">
           {site.nav.map((item) => (
             <Link
               key={item.href}
@@ -65,7 +65,7 @@ export function Header() {
           <CartLink count={count} />
         </nav>
 
-        <div className="flex items-center gap-5 md:hidden">
+        <div className="flex items-center gap-5 lg:hidden">
           <CartLink count={count} />
           <button
             type="button"
@@ -88,7 +88,7 @@ export function Header() {
       {open && (
         <nav
           id="mobile-menu"
-          className="border-t border-white/5 bg-cacao-950 px-5 pb-8 pt-4 md:hidden"
+          className="border-t border-white/5 bg-cacao-950 px-5 pb-8 pt-4 lg:hidden"
           aria-label="Mobile"
         >
           {site.nav.map((item) => (

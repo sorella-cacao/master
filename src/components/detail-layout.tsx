@@ -46,7 +46,15 @@ export function DetailLayout({
 
           <div>
             <h1 className="text-5xl leading-tight sm:text-6xl">{title}</h1>
-            {subheading && <p className="mt-3 text-xl italic text-cream/85">{subheading}</p>}
+            {subheading && (
+              <div className="mt-4 space-y-4 text-xl italic leading-snug text-cream/85">
+                {subheading.split(/\n\s*\n/).map((part) => (
+                  <p key={part} className="whitespace-pre-line">
+                    {part.trim()}
+                  </p>
+                ))}
+              </div>
+            )}
             <div className="mt-8 rounded-2xl border border-white/10 bg-cacao-950/40 p-6 sm:p-8">
               {purchase}
             </div>

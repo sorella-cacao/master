@@ -178,8 +178,8 @@ export default async function PodPage() {
                   <Field label="Name">
                     <input name="title" defaultValue={product.title} required className="pod-input" />
                   </Field>
-                  <Field label="Subheading" hint="A line under the name on its page. Optional.">
-                    <input name="subheading" defaultValue={product.subheading} className="pod-input" />
+                  <Field label="Under the name" hint="Words under the name on its page, in italics. Optional. Leave a blank line between paragraphs.">
+                    <textarea name="subheading" defaultValue={product.subheading} rows={4} className="pod-input" />
                   </Field>
                   <Field label="Description" hint="Leave a blank line between paragraphs.">
                     <textarea

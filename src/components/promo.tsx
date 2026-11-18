@@ -26,24 +26,25 @@ export function PromoStrip({ promo }: { promo: Promo }) {
 export function PromoBanner({ promo }: { promo: Promo }) {
   const { product } = promo;
   return (
-    <section className="grain bg-cacao-900 px-5 py-12 text-center sm:px-8 md:py-16">
-      <div aria-hidden className="flex items-center justify-center gap-4 tracking-[0.5em] text-gold">
-        <span className="w-14 border-t border-gold sm:w-20" />
-        ❄ ✦ ❄
-        <span className="w-14 border-t border-gold sm:w-20" />
-      </div>
-      <h2 className="mt-3 font-script text-5xl leading-tight text-gold sm:text-6xl">{promo.bannerTitle}</h2>
-      <p className="mx-auto mt-3 max-w-xl text-xl text-cream/85">
-        {promo.bannerText}{" "}
-        <span className="whitespace-nowrap">
-          {product.priceFrom && "from "}
+    <section className="bg-cacao-950 px-5 py-10 sm:px-8 md:py-14">
+      <div className="grain mx-auto max-w-2xl rounded-2xl border-[3px] border-double border-gold bg-cacao-800 px-5 py-8 text-center shadow-2xl sm:px-10">
+        <div aria-hidden className="flex items-center justify-center gap-3 text-sm tracking-[0.4em] text-gold">
+          <span className="w-12 border-t border-gold sm:w-16" />
+          ❄ ✦ ❄
+          <span className="w-12 border-t border-gold sm:w-16" />
+        </div>
+        <h2 className="mt-2 font-script text-4xl leading-tight text-gold sm:text-5xl">{promo.bannerTitle}</h2>
+        <p className="mt-2 text-lg text-cream/85">
+          {promo.bannerText} {product.priceFrom ? "from" : "for"}{" "}
           <span className="font-semibold text-gold">{formatPrice(product.price)}</span>
-          {product.availableUntil && ` · order by ${orderByDate(product.availableUntil)}`}
-        </span>
-      </p>
-      <ButtonLink href={`/shop/${product.slug}`} variant="outline" className="mt-6 text-gold">
-        Shop the bundles
-      </ButtonLink>
+          {product.availableUntil && (
+            <span className="whitespace-nowrap"> · order by {orderByDate(product.availableUntil)}</span>
+          )}
+        </p>
+        <ButtonLink href={`/shop/${product.slug}`} variant="outline" className="mt-5 text-gold">
+          Shop the bundles
+        </ButtonLink>
+      </div>
     </section>
   );
 }

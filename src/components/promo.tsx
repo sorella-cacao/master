@@ -1,3 +1,4 @@
+import Image from "next/image";
 import Link from "next/link";
 import type { Promo } from "@/data";
 import { formatPrice } from "@/lib/format";
@@ -22,12 +23,18 @@ export function PromoStrip({ promo }: { promo: Promo }) {
   );
 }
 
-/** The promoted product's banner on the home page: a slim band of words between gold rules (the photo is on its page). */
+/** The promoted product's banner on the home page: a red band with its photo, title, words and a Shop now button. */
 export function PromoBanner({ promo }: { promo: Promo }) {
   const { product } = promo;
   return (
     <section className="bg-[#7a1f1f] px-5 py-12 text-cream sm:px-8 md:py-14">
-      <div className="mx-auto grid max-w-4xl items-center gap-6 text-center md:grid-cols-2 md:gap-12 md:text-left">
+      <div className="mx-auto grid max-w-5xl items-center gap-6 text-center md:grid-cols-[11rem_1fr_1fr] md:gap-10 md:text-left lg:grid-cols-[13rem_1fr_1fr]">
+        <Link
+          href={`/shop/${product.slug}`}
+          className="relative mx-auto block aspect-square w-40 overflow-hidden rounded-xl border-[3px] border-double border-gold md:w-full"
+        >
+          <Image src={product.image} alt={product.title} fill sizes="(min-width: 1024px) 13rem, 11rem" className="object-cover" />
+        </Link>
         <div>
           <p className="eyebrow text-[0.7rem] text-[#f3d9d9] sm:text-xs">
             {product.availableUntil ? `Limited · order by ${orderByDate(product.availableUntil)}` : "Limited · this Christmas only"}

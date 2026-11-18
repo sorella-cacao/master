@@ -30,7 +30,17 @@ export type Product = {
   personalisedLabel?: PersonalisedLabel;
   /** Key to the asterisks in the variants' ingredients. */
   ingredientsNote?: string;
+  /** The last day it can be ordered ("2026-12-20"), for seasonal products like the Christmas bundle. */
+  availableUntil?: string;
   description: ContentBlock[];
+};
+
+/** The strip across the top of every page and the banner on the home page, for one product. */
+export type Promo = {
+  stripText: string;
+  bannerTitle: string;
+  bannerText: string;
+  product: { slug: string; title: string; image: string; price: number; availableUntil?: string };
 };
 
 export type Workshop = {

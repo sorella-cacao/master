@@ -635,6 +635,7 @@ export type Database = {
       }
       products: {
         Row: {
+          available_until: string | null
           created_at: string
           description: Json
           id: string
@@ -653,6 +654,7 @@ export type Database = {
           updated_at: string
         }
         Insert: {
+          available_until?: string | null
           created_at?: string
           description?: Json
           id?: string
@@ -671,6 +673,7 @@ export type Database = {
           updated_at?: string
         }
         Update: {
+          available_until?: string | null
           created_at?: string
           description?: Json
           id?: string
@@ -766,6 +769,44 @@ export type Database = {
             columns: ["order_id"]
             isOneToOne: false
             referencedRelation: "orders"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      site_promo: {
+        Row: {
+          banner_text: string
+          banner_title: string
+          enabled: boolean
+          id: boolean
+          product_id: string | null
+          strip_text: string
+          updated_at: string
+        }
+        Insert: {
+          banner_text?: string
+          banner_title?: string
+          enabled?: boolean
+          id?: boolean
+          product_id?: string | null
+          strip_text?: string
+          updated_at?: string
+        }
+        Update: {
+          banner_text?: string
+          banner_title?: string
+          enabled?: boolean
+          id?: boolean
+          product_id?: string | null
+          strip_text?: string
+          updated_at?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "site_promo_product_id_fkey"
+            columns: ["product_id"]
+            isOneToOne: false
+            referencedRelation: "products"
             referencedColumns: ["id"]
           },
         ]

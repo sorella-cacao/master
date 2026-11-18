@@ -30,8 +30,8 @@ function price(data: FormData) {
   return Math.round(value * 100) / 100;
 }
 
-function eventDate(data: FormData) {
-  const value = text(data, "event_date");
+function eventDate(data: FormData, name = "event_date") {
+  const value = text(data, name);
   if (value && !/^\d{4}-\d{2}-\d{2}$/.test(value)) throw new FormError("Choose a valid date.");
   return value || null;
 }
@@ -118,9 +118,30 @@ export async function saveProduct(_: SaveState, data: FormData) {
           title: required(data, "title", "a name"),
           description: textToBlocks(text(data, "description")),
           is_published: checked(data, "is_published"),
+          available_until: eventDate(data, "available_until"),
         })
         .eq("id", text(data, "id")),
     "Saved",
+  );
+}
+
+// Promotion
+
+/** The strip across the top of every page and the banner on the home page. */
+export async function savePromo(_: SaveState, data: FormData) {
+  return run(
+    (supabase) =>
+      supabase
+        .from("site_promo")
+        .update({
+          enabled: checked(data, "enabled"),
+          product_id: text(data, "product_id") || null,
+          strip_text: required(data, "strip_text", "the words for the strip"),
+          banner_title: required(data, "banner_title", "the banner's heading"),
+          banner_text: text(data, "banner_text"),
+        })
+        .eq("id", true),
+    "Saved. The website shows it straight away.",
   );
 }
 

@@ -3,12 +3,13 @@
 
 import { cache } from "react";
 import { createPublicClient } from "@/lib/supabase/public";
-import type { ContentBlock, Product, Variant, Workshop } from "./types";
+import { sydneyToday } from "@/lib/weeks";
+import type { ContentBlock, Product, Promo, Variant, Workshop } from "./types";
 
 export { fromPrice } from "@/lib/format";
 
 const PRODUCT_COLUMNS =
-  "slug, title, image, option_name, subscription_discount, subscription_interval, label_size, label_default_flavour, ingredients_note, description, variants:product_variants(label, price, sold_out, ingredients, label_image, position)";
+  "slug, title, image, option_name, subscription_discount, subscription_interval, label_size, label_default_flavour, ingredients_note, available_until, description, variants:product_variants(label, price, sold_out, ingredients, label_image, position)";
 const WORKSHOP_COLUMNS =
   "slug, title, images, sold_out, option_name, description, variants:workshop_variants(label, price, sold_out, position)";
 
@@ -42,9 +43,14 @@ type ProductRow = {
   label_size: string | null;
   label_default_flavour: string | null;
   ingredients_note: string | null;
+  available_until: string | null;
   description: unknown;
   variants: VariantRow[];
 };
+
+/** Whether a product's last day to order has passed (Sydney time). */
+export const orderingClosed = (product: { availableUntil?: string }) =>
+  !!product.availableUntil && product.availableUntil < sydneyToday();
 
 function toProduct(row: ProductRow): Product {
   return {
@@ -68,6 +74,7 @@ function toProduct(row: ProductRow): Product {
         },
       }),
     ...(row.ingredients_note && { ingredientsNote: row.ingredients_note }),
+    ...(row.available_until && { availableUntil: row.available_until }),
     description: row.description as ContentBlock[],
   };
 }
@@ -101,7 +108,8 @@ export const getProducts = cache(async () => {
     .eq("is_published", true)
     .order("position");
   if (error) throw error;
-  return data.map(toProduct);
+  // Seasonal products leave the shop after their last day to order.
+  return data.map(toProduct).filter((p) => !orderingClosed(p));
 });
 
 export const getProduct = cache(async (slug: string) => {
@@ -136,7 +144,34 @@ export const getWorkshop = cache(async (slug: string) => {
   return data ? toWorkshop(data) : undefined;
 });
 
-export type { ContentBlock, Product, Variant, Workshop } from "./types";
+/** The promotion, while it's switched on and its product can be ordered. */
+export const getPromo = cache(async (): Promise<Promo | undefined> => {
+  const { data, error } = await createPublicClient()
+    .from("site_promo")
+    .select(
+      "enabled, strip_text, banner_title, banner_text, product:products(slug, title, image, is_published, available_until, variants:product_variants(price))",
+    )
+    .maybeSingle();
+  if (error) throw error;
+  const product = data?.product;
+  if (!data?.enabled || !product?.is_published) return undefined;
+  const availableUntil = product.available_until ?? undefined;
+  if (orderingClosed({ availableUntil })) return undefined;
+  return {
+    stripText: data.strip_text,
+    bannerTitle: data.banner_title,
+    bannerText: data.banner_text,
+    product: {
+      slug: product.slug,
+      title: product.title,
+      image: product.image,
+      price: Math.min(...product.variants.map((v) => Number(v.price))),
+      availableUntil,
+    },
+  };
+});
+
+export type { ContentBlock, Product, Promo, Variant, Workshop } from "./types";
 export { site } from "./site";
 
 /** Date and time lines from a workshop's original description. */

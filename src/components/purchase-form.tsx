@@ -38,7 +38,8 @@ export function PurchaseForm({
   actionLabel,
 }: Props) {
   const { items, addItem } = useCart();
-  const [variantIndex, setVariantIndex] = useState<number | "">("");
+  // With only one option (e.g. a bundle) it's chosen already.
+  const [variantIndex, setVariantIndex] = useState<number | "">(variants.length === 1 ? 0 : "");
   const [quantity, setQuantity] = useState(1);
   const [subscribe, setSubscribe] = useState(false);
   /** null until the customer answers Yes or No. */

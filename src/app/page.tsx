@@ -2,11 +2,12 @@ import Image from "next/image";
 import Link from "next/link";
 import { ButtonLink } from "@/components/button";
 import { ProductCard } from "@/components/product-card";
+import { PromoBanner } from "@/components/promo";
 import { Wordmark } from "@/components/wordmark";
-import { fromPrice, getProducts, getWorkshops, site, workshopWhen } from "@/data";
+import { fromPrice, getProducts, getPromo, getWorkshops, site, workshopWhen } from "@/data";
 
 export default async function Home() {
-  const [products, workshops] = await Promise.all([getProducts(), getWorkshops()]);
+  const [products, workshops, promo] = await Promise.all([getProducts(), getWorkshops(), getPromo()]);
   const nextWorkshop = workshops.find((w) => !w.soldOut) ?? workshops[0];
 
   return (
@@ -38,6 +39,8 @@ export default async function Home() {
           </div>
         </div>
       </section>
+
+      {promo && <PromoBanner promo={promo} />}
 
       {/* Welcome */}
       <section className="bg-cream text-cacao-900">

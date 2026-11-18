@@ -40,6 +40,8 @@ type Priced = {
 };
 
 const cents = (dollars: number) => Math.round(dollars * 100);
+/** Today in Sydney, as "2026-12-20". */
+const sydneyToday = () => new Intl.DateTimeFormat("en-CA", { timeZone: "Australia/Sydney" }).format(new Date());
 
 /** Each cart line with its catalogue price. */
 async function price(lines: CartLine[]): Promise<Priced[]> {
@@ -55,13 +57,16 @@ async function price(lines: CartLine[]): Promise<Priced[]> {
     if (section === "shop") {
       const { data: product } = await db
         .from("products")
-        .select("title, image, label_size, product_variants(id, label, price, sold_out)")
+        .select("title, image, label_size, available_until, product_variants(id, label, price, sold_out)")
         .eq("slug", slug)
         .eq("is_published", true)
         .maybeSingle();
       const variant = product?.product_variants.find((v) => v.label === line.variant);
       if (!product || !variant) throw new CartError(`${product?.title ?? "Something"} in your cart is no longer available. Please remove it and add it again.`);
       if (variant.sold_out) throw new CartError(`${product.title} (${variant.label}) has sold out. Please remove it from your cart.`);
+      if (product.available_until && product.available_until < sydneyToday()) {
+        throw new CartError(`Orders for the ${product.title} have closed. Please remove it from your cart.`);
+      }
       const { data: stock } = await db.from("stock_items").select("id").eq("variant_id", variant.id).maybeSingle();
       const label = product.label_size && line.label ? String(line.label).trim().replace(/\s+/g, " ") : "";
       if (label.split(" ").length > MAX_LABEL_WORDS) throw new CartError("Personalised labels can be up to three words.");

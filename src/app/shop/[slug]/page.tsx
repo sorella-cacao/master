@@ -2,8 +2,9 @@ import type { Metadata } from "next";
 import { notFound } from "next/navigation";
 import { DetailLayout } from "@/components/detail-layout";
 import { PurchaseForm } from "@/components/purchase-form";
+import { orderByDate } from "@/components/promo";
 import { RichText } from "@/components/rich-text";
-import { getProduct, getProducts, site } from "@/data";
+import { getProduct, getProducts, orderingClosed, site } from "@/data";
 
 export async function generateStaticParams() {
   const products = await getProducts();
@@ -20,6 +21,7 @@ export async function generateMetadata({
 export default async function ProductPage({ params }: PageProps<"/shop/[slug]">) {
   const product = await getProduct((await params).slug);
   if (!product) notFound();
+  const closed = orderingClosed(product);
 
   return (
     <DetailLayout
@@ -27,17 +29,25 @@ export default async function ProductPage({ params }: PageProps<"/shop/[slug]">)
       title={product.title}
       images={[product.image]}
       purchase={
-        <PurchaseForm
-          href={`/shop/${product.slug}`}
-          title={product.title}
-          image={product.image}
-          optionName={product.optionName}
-          variants={product.variants}
-          // Subscriptions (product.subscription) come back once Stripe can bill them monthly.
-          personalisedLabel={product.personalisedLabel}
-          ingredientsNote={product.ingredientsNote}
-          actionLabel="Add To Cart"
-        />
+        <div className="space-y-4">
+          {product.availableUntil && (
+            <p className="eyebrow inline-block rounded-full bg-[#2f4a35] px-3 py-1 text-xs text-cream">
+              {closed ? "Orders have closed" : `Order by ${orderByDate(product.availableUntil)}`}
+            </p>
+          )}
+          <PurchaseForm
+            href={`/shop/${product.slug}`}
+            title={product.title}
+            image={product.image}
+            optionName={product.optionName}
+            variants={product.variants}
+            // Subscriptions (product.subscription) come back once Stripe can bill them monthly.
+            personalisedLabel={product.personalisedLabel}
+            ingredientsNote={product.ingredientsNote}
+            soldOut={closed}
+            actionLabel="Add To Cart"
+          />
+        </div>
       }
     >
       <RichText blocks={product.description} />

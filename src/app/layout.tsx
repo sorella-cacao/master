@@ -3,7 +3,8 @@ import { Carattere, Cormorant_Garamond, Jost } from "next/font/google";
 import { CartProvider } from "@/components/cart";
 import { Footer } from "@/components/footer";
 import { Header } from "@/components/header";
-import { site } from "@/data";
+import { PromoStrip } from "@/components/promo";
+import { getPromo, site } from "@/data";
 import "./globals.css";
 
 const cormorant = Cormorant_Garamond({
@@ -33,7 +34,8 @@ export const metadata: Metadata = {
   description: site.tagline,
 };
 
-export default function RootLayout({ children }: LayoutProps<"/">) {
+export default async function RootLayout({ children }: LayoutProps<"/">) {
+  const promo = await getPromo();
   return (
     <html
       lang="en-AU"
@@ -41,6 +43,7 @@ export default function RootLayout({ children }: LayoutProps<"/">) {
     >
       <body className="flex min-h-screen flex-col font-serif text-lg">
         <CartProvider>
+          {promo && <PromoStrip promo={promo} />}
           <Header />
           <main className="flex-1">{children}</main>
           <Footer />

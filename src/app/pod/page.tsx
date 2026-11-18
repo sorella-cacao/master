@@ -9,6 +9,7 @@ import {
   deleteWorkshop,
   duplicateWorkshop,
   saveDeliveryOption,
+  savePromo,
   saveProduct,
   saveTicket,
   saveVariant,
@@ -36,11 +37,11 @@ export default async function PodPage() {
     );
   }
 
-  const [products, workshops, delivery] = await Promise.all([
+  const [products, workshops, delivery, promo] = await Promise.all([
     supabase
       .from("products")
       .select(
-        "id, slug, title, description, is_published, option_name, ingredients_note, options:product_variants(id, label, price, sold_out, ingredients, position)",
+        "id, slug, title, description, is_published, available_until, option_name, ingredients_note, options:product_variants(id, label, price, sold_out, ingredients, position)",
       )
       .order("position"),
     supabase
@@ -51,10 +52,12 @@ export default async function PodPage() {
       .order("event_date", { ascending: false, nullsFirst: true })
       .order("position"),
     supabase.from("delivery_options").select("id, name, description, price, free_over, is_active").order("position"),
+    supabase.from("site_promo").select("enabled, product_id, strip_text, banner_title, banner_text").maybeSingle(),
   ]);
   if (products.error) throw products.error;
   if (workshops.error) throw workshops.error;
   if (delivery.error) throw delivery.error;
+  if (promo.error) throw promo.error;
 
   return (
     <div className="space-y-16">
@@ -67,6 +70,44 @@ export default async function PodPage() {
         </div>
         <PodNav current="/pod" />
       </header>
+
+      {promo.data && (
+        <section aria-labelledby="promo-heading" className="space-y-8">
+          <h2 id="promo-heading" className="text-4xl">
+            Promotion
+          </h2>
+          <p className="text-cream/70">
+            A red strip across the top of every page and a banner on the home page, for one product. It hides itself once
+            the product’s last day to order has passed, or while the product isn’t shown on the website.
+          </p>
+          <article className="rounded-2xl border border-white/10 bg-cacao-950/40 p-6 sm:p-8">
+            <PodForm action={savePromo} submitLabel="Save promotion">
+              <div className="space-y-4">
+                <Field label="Product">
+                  <select name="product_id" defaultValue={promo.data.product_id ?? ""} className="pod-input">
+                    <option value="">None</option>
+                    {products.data.map((p) => (
+                      <option key={p.id} value={p.id}>
+                        {p.title}
+                      </option>
+                    ))}
+                  </select>
+                </Field>
+                <Field label="Strip across the top" hint="“· Order by …” is added when the product has a last day to order.">
+                  <input name="strip_text" defaultValue={promo.data.strip_text} required className="pod-input" />
+                </Field>
+                <Field label="Banner heading">
+                  <input name="banner_title" defaultValue={promo.data.banner_title} required className="pod-input" />
+                </Field>
+                <Field label="Banner words">
+                  <textarea name="banner_text" defaultValue={promo.data.banner_text} rows={3} className="pod-input" />
+                </Field>
+                <Checkbox name="enabled" label="Show the promotion" defaultChecked={promo.data.enabled} />
+              </div>
+            </PodForm>
+          </article>
+        </section>
+      )}
 
       <section aria-labelledby="delivery-heading" className="space-y-8">
         <h2 id="delivery-heading" className="text-4xl">
@@ -144,6 +185,9 @@ export default async function PodPage() {
                       rows={8}
                       className="pod-input"
                     />
+                  </Field>
+                  <Field label="Last day to order" hint="For seasonal products, e.g. the Christmas bundle. Leave empty to always sell it.">
+                    <input type="date" name="available_until" defaultValue={product.available_until ?? ""} className="pod-input" />
                   </Field>
                   <Checkbox name="is_published" label="Show on the website" defaultChecked={product.is_published} />
                 </div>

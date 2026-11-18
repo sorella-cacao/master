@@ -1,8 +1,11 @@
+import { Cinzel_Decorative } from "next/font/google";
 import Image from "next/image";
 import Link from "next/link";
 import type { Promo } from "@/data";
 import { formatPrice } from "@/lib/format";
 import { ButtonLink } from "./button";
+
+const cinzel = Cinzel_Decorative({ subsets: ["latin"], weight: "400" });
 
 /** "20 December" from "2026-12-20". */
 export const orderByDate = (date: string) =>
@@ -39,7 +42,7 @@ export function PromoBanner({ promo }: { promo: Promo }) {
           <p className="eyebrow text-[0.7rem] text-[#f3d9d9] sm:text-xs">
             {product.availableUntil ? `Limited · order by ${orderByDate(product.availableUntil)}` : "Limited · this Christmas only"}
           </p>
-          <h2 className="mt-2 font-script text-5xl leading-tight text-gold sm:text-6xl">{promo.bannerTitle}</h2>
+          <h2 className={`${cinzel.className} mt-3 text-4xl leading-tight text-gold sm:text-[2.6rem]`}>{promo.bannerTitle}</h2>
         </div>
         <div>
           {promo.bannerText && <p className="text-xl italic leading-snug">{promo.bannerText}</p>}

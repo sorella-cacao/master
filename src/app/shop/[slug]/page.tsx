@@ -34,7 +34,7 @@ export default async function ProductPage({ params }: PageProps<"/shop/[slug]">)
         <div className="space-y-4">
           {product.availableUntil && (
             <p className="eyebrow inline-block rounded-full bg-[#2f4a35] px-3 py-1 text-xs text-cream">
-              {closed ? "Orders have closed" : `Order by ${orderByDate(product.availableUntil)}`}
+              {closed ? "Orders have closed" : `Order by ${orderByDate(product.availableUntil)} or until sold out`}
             </p>
           )}
           <PurchaseForm

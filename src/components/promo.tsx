@@ -20,8 +20,8 @@ export function PromoStrip({ promo }: { promo: Promo }) {
       className="eyebrow block bg-[#7a1f1f] px-4 py-2 text-center text-[0.7rem] text-cream transition-colors hover:bg-[#8e2a2a] sm:text-xs"
     >
       ✦ {promo.stripText}
-      {until && ` · Order by ${orderByDate(until)}`}
-      <span className="underline underline-offset-4"> · Shop now</span> ✦
+      {until && ` · Order by ${orderByDate(until)} or until sold out`}
+      <span className="hidden underline underline-offset-4 sm:inline"> · Shop now</span> ✦
     </Link>
   );
 }
@@ -41,7 +41,7 @@ export function PromoBanner({ promo }: { promo: Promo }) {
         </Link>
         <div>
           <p className="eyebrow text-[0.7rem] text-[#f3d9d9] sm:text-xs">
-            {product.availableUntil ? `Limited · order by ${orderByDate(product.availableUntil)}` : "Limited · this Christmas only"}
+            {product.availableUntil ? `Limited · order by ${orderByDate(product.availableUntil)} or until sold out` : "Limited · this Christmas only"}
           </p>
           <h2 className={`${cinzel.className} mt-3 text-4xl leading-tight text-gold sm:text-[2.6rem]`}>{promo.bannerTitle}</h2>
         </div>

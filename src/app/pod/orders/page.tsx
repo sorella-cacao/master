@@ -106,7 +106,7 @@ export default async function OrdersPage(props: PageProps<"/pod/orders">) {
   const weekEnd = addDays(weekStart, 6);
 
   const [groups, open, sent, customerRows, customerList, priceRows] = await Promise.all([
-    getStockGroups(supabase, { includeHidden: true }),
+    getStockGroups(supabase, { includeHidden: true, includeUntracked: true }),
     supabase
       .from("orders")
       .select(ORDER_COLUMNS)

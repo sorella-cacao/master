@@ -829,6 +829,7 @@ export type Database = {
           position: number
           product_id: string
           quantity: number
+          tracks_stock: boolean
           updated_at: string
           variant_id: string | null
           wholesale_price: number
@@ -847,6 +848,7 @@ export type Database = {
           position?: number
           product_id: string
           quantity?: number
+          tracks_stock?: boolean
           updated_at?: string
           variant_id?: string | null
           wholesale_price?: number
@@ -865,6 +867,7 @@ export type Database = {
           position?: number
           product_id?: string
           quantity?: number
+          tracks_stock?: boolean
           updated_at?: string
           variant_id?: string | null
           wholesale_price?: number

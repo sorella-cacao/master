@@ -21,15 +21,20 @@ export type StockItem = {
   /** For a variety: the item it belongs to, and the variety on its own ("Fig"). `name` reads in full. */
   parentId: string | null;
   variety: string | null;
+  /** False for things listed on orders but not counted in stock, like the Christmas bundles. */
+  tracksStock: boolean;
 };
 
 export type StockGroup = { productId: string; title: string; items: StockItem[] };
 
-/** Stock items grouped by product (Large Bar, Small Bar, Pure Cacao), in shop order. */
-export async function getStockGroups(supabase: Db, { includeHidden = false } = {}) {
+/**
+ * Stock items grouped by product (Large Bar, Small Bar, Pure Cacao), in shop order. Items that
+ * aren't counted in stock (the Christmas bundles) are left out unless `includeUntracked`.
+ */
+export async function getStockGroups(supabase: Db, { includeHidden = false, includeUntracked = false } = {}) {
   const { data, error } = await supabase
     .from("stock_items")
-    .select("id, name, quantity, wholesale_price, is_extra, is_active, position, chocolate_grams, base_chocolate, has_varieties, parent_id, product:products(id, title, position), variant:product_variants(price)")
+    .select("id, name, quantity, wholesale_price, is_extra, is_active, position, chocolate_grams, base_chocolate, has_varieties, parent_id, tracks_stock, product:products(id, title, position), variant:product_variants(price)")
     .order("position");
   if (error) throw error;
 
@@ -37,6 +42,7 @@ export async function getStockGroups(supabase: Db, { includeHidden = false } = {
   const groups = new Map<string, StockGroup & { position: number }>();
   for (const row of data) {
     if (!row.is_active && !includeHidden) continue;
+    if (!row.tracks_stock && !includeUntracked) continue;
     const product = row.product;
     if (!groups.has(product.id)) {
       groups.set(product.id, { productId: product.id, title: product.title, position: product.position, items: [] });
@@ -54,6 +60,7 @@ export async function getStockGroups(supabase: Db, { includeHidden = false } = {
       hasVarieties: row.has_varieties,
       parentId: row.parent_id,
       variety: row.parent_id ? row.name : null,
+      tracksStock: row.tracks_stock,
     });
   }
   // Varieties sit straight after the item they belong to, in name order.

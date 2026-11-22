@@ -200,20 +200,6 @@ export default async function OrdersPage(props: PageProps<"/pod/orders">) {
             <WeekLink href={`/pod/orders?week=${addDays(weekStart, 7)}`}>Next →</WeekLink>
           </nav>
 
-          <PodForm key={weekStart} action={saveWeekNote} submitLabel="Save notes">
-            <input type="hidden" name="week" value={weekStart} />
-            <label className="block">
-              <span className="eyebrow mb-2 block text-cream/70">Notes for this week</span>
-              <textarea
-                name="note"
-                rows={3}
-                defaultValue={weekNote.data?.note ?? ""}
-                placeholder="e.g. Council order goes out Thursday; use the new wrappers for the Christmas bundles"
-                className="pod-input"
-              />
-            </label>
-          </PodForm>
-
           {plan.length === 0 ? (
             <p className="text-xl text-cream/80">Nothing ordered for this week yet.</p>
           ) : makeList.length === 0 ? (
@@ -278,6 +264,21 @@ export default async function OrdersPage(props: PageProps<"/pod/orders">) {
             Counts every order not yet sent that’s needed by {shortDate(weekEnd)}, including overdue ones.
             {laterOrders > 0 && ` ${laterOrders} later ${laterOrders === 1 ? "order isn’t" : "orders aren’t"} included yet.`}
           </p>
+
+          <PodForm key={weekStart} action={saveWeekNote} submitLabel="Save notes">
+            <input type="hidden" name="week" value={weekStart} />
+            <label className="block">
+              <span className="eyebrow mb-2 block text-cream/70">Notes for this week</span>
+              <textarea
+                name="note"
+                // Grows with what's written, so all of it shows (rows covers browsers without field-sizing).
+                rows={Math.max(3, (weekNote.data?.note ?? "").split("\n").length + 1)}
+                defaultValue={weekNote.data?.note ?? ""}
+                placeholder="e.g. Council order goes out Thursday; use the new wrappers for the Christmas bundles"
+                className="pod-input min-h-24 resize-y [field-sizing:content]"
+              />
+            </label>
+          </PodForm>
         </div>
       </PodPanel>
 

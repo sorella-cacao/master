@@ -1098,7 +1098,7 @@ export type Database = {
         Returns: string
       }
       pod_delete_order: { Args: { order_id: string }; Returns: undefined }
-      pod_record_sale: { Args: { customer: string; kind: string; lines: Json; note: string; price_list: string }; Returns: string }
+      pod_record_sale: { Args: { customer: string; kind: string; lines: Json; made?: boolean; note: string; price_list: string }; Returns: string }
       pod_save_order: {
         Args: { customer: string; lines: Json; needed_by: string | null; note: string | null; order_id: string | null }
         Returns: string

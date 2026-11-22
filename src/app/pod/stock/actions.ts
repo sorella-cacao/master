@@ -128,6 +128,8 @@ export async function recordSale(_: SaveState, data: FormData): Promise<SaveStat
   if (quantities.some((q) => !Number.isInteger(q) || q <= 0)) return { error: "Use whole numbers for quantities, e.g. 2." };
   const lines = ids.map((id, i) => ({ stock_item_id: id, quantity: quantities[i] }));
   if (!lines.length) return { error: "Add at least one item." };
+  // Odd buys can still need making: then they're an open order, taken off stock once sent.
+  const made = kind === "market" || data.get("made") !== "no";
 
   const { error } = await supabase.rpc("pod_record_sale", {
     kind,
@@ -135,9 +137,14 @@ export async function recordSale(_: SaveState, data: FormData): Promise<SaveStat
     note: String(data.get("note") ?? ""),
     lines,
     price_list: priceList,
+    made,
   });
   if (error) return failed(error);
   refresh();
   const total = quantities.reduce((n, q) => n + q, 0);
-  return { ok: `Saved. ${total} taken off stock and added to order history.` };
+  return {
+    ok: made
+      ? `Saved. ${total} taken off stock and added to order history.`
+      : `Saved to Orders as to make. ${total} will come off stock when you mark it sent.`,
+  };
 }

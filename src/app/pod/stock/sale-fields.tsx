@@ -27,6 +27,7 @@ export function SaleFields({ kind, groups }: { kind: "odd" | "market"; groups: S
   const [lines, setLines] = useState<Line[]>([blank(0)]);
   const [oddType, setOddType] = useState<(typeof ODD_BUYS)[number]["value"]>("spontaneous");
   const [priceList, setPriceList] = useState<PriceList>(kind === "market" ? "retail" : "wholesale");
+  const [made, setMade] = useState(true);
   const odd = ODD_BUYS.find((o) => o.value === oddType)!;
 
   const items = new Map(groups.flatMap((g) => g.items.map((i) => [i.id, i] as const)));
@@ -43,6 +44,7 @@ export function SaleFields({ kind, groups }: { kind: "odd" | "market"; groups: S
       setLines([{ key: nextKey.current++, group: groups[0]?.title ?? "", item: "", qty: "" }]);
       setPriceList(kind === "market" ? "retail" : "wholesale");
       setOddType("spontaneous");
+      setMade(true);
     };
     form?.addEventListener("reset", onReset);
     return () => form?.removeEventListener("reset", onReset);
@@ -100,6 +102,29 @@ export function SaleFields({ kind, groups }: { kind: "odd" | "market"; groups: S
           </label>
         )}
       </div>
+
+      {kind === "odd" && (
+        <fieldset className="space-y-2">
+          <legend className="eyebrow mb-2 block text-cream/70">Made yet?</legend>
+          <div className="flex flex-wrap gap-2 font-sans text-sm">
+            {[
+              { value: true, label: "Already made", hint: "Takes it off stock now and puts it in order history." },
+              { value: false, label: "Still to make", hint: "Adds it to Orders to make. It comes off stock when you mark it sent." },
+            ].map((o) => (
+              <label
+                key={String(o.value)}
+                className={`flex max-w-xs cursor-pointer gap-2 rounded-xl border px-3 py-2 ${made === o.value ? "border-gold bg-white/5" : "border-white/15"}`}
+              >
+                <input type="radio" name="made" value={o.value ? "yes" : "no"} checked={made === o.value} onChange={() => setMade(o.value)} className="mt-1 accent-[#d9ad68]" />
+                <span>
+                  <span className="block text-base text-cream">{o.label}</span>
+                  <span className="text-cream/70">{o.hint}</span>
+                </span>
+              </label>
+            ))}
+          </div>
+        </fieldset>
+      )}
 
       <div className="space-y-3">
         {lines.map((line, index) => {

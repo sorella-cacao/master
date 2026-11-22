@@ -61,6 +61,22 @@ function itemKg(groupTitle: string, itemName: string, chocolateGrams: number | n
   return size[2] === "kg" ? Number(size[1]) : Number(size[1]) / 1000;
 }
 
+/** The small bars' names for flavours the large bars call something else. */
+const SAME_FLAVOUR: Record<string, string> = {
+  "60% Goats Milk": "Goats Milk",
+  "Local Roasted Hazelnut Gianduja": "Local Roasted Hazelnut Gianduja & Salt",
+  "White Choc & Local Peaches": "White Choc w/ Local Peaches",
+};
+
+/**
+ * The row a bar goes on in "Chocolate by flavour": 75% Dark and every 75% Dark & Local Fruit
+ * (whatever the fruit) share one, as they're made from the same chocolate.
+ */
+function chocolateFlavour(name: string) {
+  if (name === "75% Dark" || name.startsWith("75% Dark & Local Fruit")) return "75% Dark & Local Fruit (all fruit)";
+  return SAME_FLAVOUR[name] ?? name;
+}
+
 const formatKg = (kg: number) => kg.toLocaleString("en-AU", { maximumFractionDigits: 2 });
 
 /** "600g", or "1,980g" for larger amounts. */
@@ -175,9 +191,10 @@ export default async function OrdersPage(props: PageProps<"/pod/orders">) {
   const flavourKg = new Map<string, { large: number; small: number }>();
   for (const g of makeList.filter((g) => BAR_SIZES.includes(g.title))) {
     for (const r of g.rows) {
-      const entry = flavourKg.get(r.name) ?? { large: 0, small: 0 };
+      const flavour = chocolateFlavour(r.name);
+      const entry = flavourKg.get(flavour) ?? { large: 0, small: 0 };
       entry[g.title === "Large Bar" ? "large" : "small"] += r.kg;
-      flavourKg.set(r.name, entry);
+      flavourKg.set(flavour, entry);
     }
   }
   const laterOrders = openOrders.filter((o) => o.needed_by && o.needed_by > weekEnd).length;

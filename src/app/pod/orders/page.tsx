@@ -8,7 +8,9 @@ import { PodForm } from "../pod-form";
 import { PodNav } from "../pod-nav";
 import { PodPanel } from "../pod-panel";
 import { getSession } from "../session";
-import { type StockGroup, getStockGroups } from "../stock-items";
+import { type StockGroup, getStockGroups, saleGroups } from "../stock-items";
+import { recordSale } from "../stock/actions";
+import { SaleFields } from "../stock/sale-fields";
 import { deleteOrder, saveOrder, undoSale } from "./actions";
 import { type OrderCustomer, type OrderGroup, OrderFields } from "./order-fields";
 import { OrderStatus } from "./order-status";
@@ -272,6 +274,16 @@ export default async function OrdersPage(props: PageProps<"/pod/orders">) {
       <PodPanel small title="New order" hint="Copy in an order from your email.">
         <PodForm action={saveOrder} submitLabel="Save order" resetOnSuccess>
           <OrderFields groups={formGroups(groups)} customers={customers} />
+        </PodForm>
+      </PodPanel>
+
+      <PodPanel
+        small
+        title="Odd buys"
+        hint="Bars that leave without an order: a spontaneous buy, a gift, personal use or staff. If they’re already made they come off stock and go into order history; if not, they go to Orders to make."
+      >
+        <PodForm action={recordSale} submitLabel="Save" resetOnSuccess>
+          <SaleFields kind="odd" groups={saleGroups(groups)} />
         </PodForm>
       </PodPanel>
 

@@ -28,6 +28,20 @@ export type StockItem = {
 export type StockGroup = { productId: string; title: string; items: StockItem[] };
 
 /**
+ * Sizes and flavours for the sale forms (odd buys, markets), with both prices (one-off flavours have
+ * no website price, so use wholesale). Only what's counted in stock.
+ */
+export const saleGroups = (groups: StockGroup[]) =>
+  groups
+    .map((g) => ({
+      title: g.title,
+      items: g.items
+        .filter((i) => i.tracksStock)
+        .map((i) => ({ id: i.id, name: i.name, inStock: i.quantity, wholesale: i.wholesalePrice, retail: i.retailPrice ?? i.wholesalePrice })),
+    }))
+    .filter((g) => g.items.length);
+
+/**
  * Stock items grouped by product (Large Bar, Small Bar, Pure Cacao), in shop order. Items that
  * aren't counted in stock (the Christmas bundles) are left out unless `includeUntracked`.
  */

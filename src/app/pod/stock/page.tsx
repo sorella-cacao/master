@@ -4,9 +4,9 @@ import { PodForm } from "../pod-form";
 import { PodNav } from "../pod-nav";
 import { PodPanel } from "../pod-panel";
 import { getSession } from "../session";
-import { type StockGroup, getStockGroups } from "../stock-items";
+import { type StockGroup, getStockGroups, saleGroups } from "../stock-items";
 import { addMade, addOneOffFlavour, addToMainStock, recordSale, saveStockTake, setFlavourHidden } from "./actions";
-import { type SaleGroup, SaleFields } from "./sale-fields";
+import { SaleFields } from "./sale-fields";
 
 export const metadata: Metadata = { title: "Stock" };
 
@@ -166,15 +166,6 @@ export default async function StockPage() {
         )}
       </PodPanel>
 
-      <PodPanel small
-        title="Odd buys"
-        hint="Bars that leave without an order: a spontaneous buy, a gift, personal use or staff. If they’re already made they come off stock and go into order history; if not, they go to Orders to make."
-      >
-        <PodForm action={recordSale} submitLabel="Save" resetOnSuccess>
-          <SaleFields kind="odd" groups={saleGroups(groups)} />
-        </PodForm>
-      </PodPanel>
-
       <PodPanel small title="Market" hint="Add what sold at a market. It comes off stock and goes into order history.">
         <PodForm action={recordSale} submitLabel="Save and take off stock" resetOnSuccess>
           <input type="hidden" name="kind" value="market" />
@@ -184,19 +175,6 @@ export default async function StockPage() {
     </div>
   );
 }
-
-/** Sizes and flavours for the sale forms, with both prices (one-off flavours have no website price, so use wholesale). */
-const saleGroups = (groups: StockGroup[]): SaleGroup[] =>
-  groups.map((g) => ({
-    title: g.title,
-    items: g.items.map((i) => ({
-      id: i.id,
-      name: i.name,
-      inStock: i.quantity,
-      wholesale: i.wholesalePrice,
-      retail: i.retailPrice ?? i.wholesalePrice,
-    })),
-  }));
 
 const itemHeading = (group: StockGroup) => (group.title === "Pure Cacao" ? "Size" : "Flavour");
 

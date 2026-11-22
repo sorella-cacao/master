@@ -103,3 +103,16 @@ export async function undoSale(_: SaveState, data: FormData): Promise<SaveState>
   refresh();
   return { ok: "Removed, and put back in stock" };
 }
+
+/** Saves the notes for a week's orders (an empty note clears them). */
+export async function saveWeekNote(_: SaveState, data: FormData): Promise<SaveState> {
+  const { supabase, isAdmin } = await getSession();
+  if (!isAdmin) return NO_ACCESS;
+  const week = String(data.get("week") ?? "");
+  if (!isDate(week)) return { error: "Couldn't save. Please try again." };
+  const note = String(data.get("note") ?? "").trim();
+  const { error } = await supabase.from("week_notes").upsert({ week_start: week, note, updated_at: new Date().toISOString() });
+  if (error) return failed(error);
+  revalidatePath("/pod/orders");
+  return { ok: note ? "Notes saved" : "Notes cleared" };
+}

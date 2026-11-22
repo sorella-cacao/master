@@ -931,6 +931,24 @@ export type Database = {
           },
         ]
       }
+      week_notes: {
+        Row: {
+          note: string
+          updated_at: string
+          week_start: string
+        }
+        Insert: {
+          note?: string
+          updated_at?: string
+          week_start: string
+        }
+        Update: {
+          note?: string
+          updated_at?: string
+          week_start?: string
+        }
+        Relationships: []
+      }
       web_orders: {
         Row: {
           address: string

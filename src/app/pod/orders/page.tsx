@@ -11,7 +11,7 @@ import { getSession } from "../session";
 import { type StockGroup, getStockGroups, saleGroups } from "../stock-items";
 import { recordSale } from "../stock/actions";
 import { SaleFields } from "../stock/sale-fields";
-import { deleteOrder, saveOrder, undoSale } from "./actions";
+import { deleteOrder, saveOrder, saveWeekNote, undoSale } from "./actions";
 import { type OrderCustomer, type OrderGroup, OrderFields } from "./order-fields";
 import { OrderStatus } from "./order-status";
 import { ScrollTo } from "./scroll-to";
@@ -107,7 +107,7 @@ export default async function OrdersPage(props: PageProps<"/pod/orders">) {
   const weekStart = mondayOf(typeof week === "string" && isDate(week) ? week : today);
   const weekEnd = addDays(weekStart, 6);
 
-  const [groups, open, sent, customerRows, customerList, priceRows] = await Promise.all([
+  const [groups, open, sent, customerRows, customerList, priceRows, weekNote] = await Promise.all([
     getStockGroups(supabase, { includeHidden: true, includeUntracked: true }),
     supabase
       .from("orders")
@@ -119,6 +119,7 @@ export default async function OrdersPage(props: PageProps<"/pod/orders">) {
     supabase.from("orders").select("customer").eq("kind", "order").order("created_at", { ascending: false }).limit(500),
     supabase.from("customers").select("id, name").order("name"),
     supabase.from("customer_prices").select("customer_id, stock_item_id, price"),
+    supabase.from("week_notes").select("note").eq("week_start", weekStart).maybeSingle(),
   ]);
   if (open.error) throw open.error;
   if (sent.error) throw sent.error;
@@ -169,6 +170,16 @@ export default async function OrdersPage(props: PageProps<"/pod/orders">) {
   const makeList = plan
     .map((g) => ({ ...g, rows: g.rows.filter((r) => r.toMake > 0) }))
     .filter((g) => g.rows.length);
+  // Bars are weighed by flavour across both sizes, in their own table, rather than in each size's table.
+  const BAR_SIZES = ["Large Bar", "Small Bar"];
+  const flavourKg = new Map<string, { large: number; small: number }>();
+  for (const g of makeList.filter((g) => BAR_SIZES.includes(g.title))) {
+    for (const r of g.rows) {
+      const entry = flavourKg.get(r.name) ?? { large: 0, small: 0 };
+      entry[g.title === "Large Bar" ? "large" : "small"] += r.kg;
+      flavourKg.set(r.name, entry);
+    }
+  }
   const laterOrders = openOrders.filter((o) => o.needed_by && o.needed_by > weekEnd).length;
 
   return (
@@ -189,6 +200,20 @@ export default async function OrdersPage(props: PageProps<"/pod/orders">) {
             <WeekLink href={`/pod/orders?week=${addDays(weekStart, 7)}`}>Next →</WeekLink>
           </nav>
 
+          <PodForm key={weekStart} action={saveWeekNote} submitLabel="Save notes">
+            <input type="hidden" name="week" value={weekStart} />
+            <label className="block">
+              <span className="eyebrow mb-2 block text-cream/70">Notes for this week</span>
+              <textarea
+                name="note"
+                rows={3}
+                defaultValue={weekNote.data?.note ?? ""}
+                placeholder="e.g. Council order goes out Thursday; use the new wrappers for the Christmas bundles"
+                className="pod-input"
+              />
+            </label>
+          </PodForm>
+
           {plan.length === 0 ? (
             <p className="text-xl text-cream/80">Nothing ordered for this week yet.</p>
           ) : makeList.length === 0 ? (
@@ -202,32 +227,39 @@ export default async function OrdersPage(props: PageProps<"/pod/orders">) {
                 </p>
               )}
               <div className="space-y-3">
-                {makeList.map((g) => (
-                  <ItemTable
-                    key={g.title}
-                    caption={g.title}
-                    headings={[g.title === "Pure Cacao" ? "Size" : "Flavour", "To make", "Weight"]}
-                    highlight={[1, 2]}
-                    collapsible
-                  >
-                    {g.rows.map((r, index) => (
-                      <Fragment key={r.id}>
-                        <ItemRow name={r.name} highlight={[1, 2]} accent={!!r.base} cells={[r.toMake, formatGrams(r.kg)]} />
-                        {r.base && g.rows[index + 1]?.base !== r.base && (
-                          <tr className="border-t border-white/30">
-                            <td aria-hidden />
-                            <th scope="row" className="whitespace-nowrap border-l border-white/30 bg-[#e7b28e] px-2 py-1 text-right font-sans text-[0.7rem] font-semibold">
-                              {r.base} total
-                            </th>
-                            <td className="border-l border-white/30 bg-[#d9966a] px-3 py-1 text-right font-semibold tabular-nums">
-                              {formatGrams(g.rows.filter((x) => x.base === r.base).reduce((n, x) => n + x.kg, 0))}
-                            </td>
-                          </tr>
-                        )}
-                      </Fragment>
+                {makeList.map((g) =>
+                  BAR_SIZES.includes(g.title) ? (
+                    <ItemTable key={g.title} caption={g.title} headings={["Flavour", "To make"]} highlight={[1]} collapsible>
+                      {g.rows.map((r) => (
+                        <ItemRow key={r.id} name={r.name} highlight={[1]} accent={!!r.base} cells={[r.toMake]} />
+                      ))}
+                    </ItemTable>
+                  ) : (
+                    <ItemTable
+                      key={g.title}
+                      caption={g.title}
+                      headings={[g.title === "Pure Cacao" ? "Size" : "Item", "To make", "Weight"]}
+                      highlight={[1, 2]}
+                      collapsible
+                    >
+                      {g.rows.map((r) => (
+                        <ItemRow key={r.id} name={r.name} highlight={[1, 2]} accent={!!r.base} cells={[r.toMake, formatGrams(r.kg)]} />
+                      ))}
+                    </ItemTable>
+                  ),
+                )}
+                {flavourKg.size > 0 && (
+                  <ItemTable caption="Chocolate by flavour" headings={["Flavour", "Large", "Small", "Total"]} highlight={[3]} collapsible>
+                    {[...flavourKg].map(([name, kg]) => (
+                      <ItemRow
+                        key={name}
+                        name={name}
+                        highlight={[3]}
+                        cells={[kg.large ? formatGrams(kg.large) : "–", kg.small ? formatGrams(kg.small) : "–", formatGrams(kg.large + kg.small)]}
+                      />
                     ))}
                   </ItemTable>
-                ))}
+                )}
               </div>
               <p className="font-sans text-lg">
                 Make <strong className="text-gold">{totalToMake}</strong> in total, which is{" "}

@@ -116,3 +116,19 @@ export async function saveWeekNote(_: SaveState, data: FormData): Promise<SaveSt
   revalidatePath("/pod/orders");
   return { ok: note ? "Notes saved" : "Notes cleared" };
 }
+
+/** Ticks an item off (or back on) the week's "To make" list. Only a checklist: stock isn't changed. */
+export async function setMadeThisWeek(week: string, stockItemId: string, made: boolean): Promise<{ error?: string }> {
+  const { supabase, isAdmin } = await getSession();
+  if (!isAdmin) return { error: "This account doesn't have access to the Pod." };
+  if (!isDate(week)) return { error: "Couldn't save. Please try again." };
+  const { error } = made
+    ? await supabase.from("week_made").upsert({ week_start: week, stock_item_id: stockItemId })
+    : await supabase.from("week_made").delete().eq("week_start", week).eq("stock_item_id", stockItemId);
+  if (error) {
+    console.error(error);
+    return { error: "Couldn't save the tick. Please try again." };
+  }
+  revalidatePath("/pod/orders");
+  return {};
+}

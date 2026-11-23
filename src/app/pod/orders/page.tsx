@@ -14,6 +14,7 @@ import { SaleFields } from "../stock/sale-fields";
 import { deleteOrder, saveOrder, saveWeekNote, undoSale } from "./actions";
 import { type OrderCustomer, type OrderGroup, OrderFields } from "./order-fields";
 import { OrderStatus } from "./order-status";
+import { MakeChecklist } from "./make-checklist";
 import { ScrollTo } from "./scroll-to";
 
 export const metadata: Metadata = { title: "Orders" };
@@ -123,7 +124,7 @@ export default async function OrdersPage(props: PageProps<"/pod/orders">) {
   const weekStart = mondayOf(typeof week === "string" && isDate(week) ? week : today);
   const weekEnd = addDays(weekStart, 6);
 
-  const [groups, open, sent, customerRows, customerList, priceRows, weekNote] = await Promise.all([
+  const [groups, open, sent, customerRows, customerList, priceRows, weekNote, madeRows] = await Promise.all([
     getStockGroups(supabase, { includeHidden: true, includeUntracked: true }),
     supabase
       .from("orders")
@@ -136,6 +137,7 @@ export default async function OrdersPage(props: PageProps<"/pod/orders">) {
     supabase.from("customers").select("id, name").order("name"),
     supabase.from("customer_prices").select("customer_id, stock_item_id, price"),
     supabase.from("week_notes").select("note").eq("week_start", weekStart).maybeSingle(),
+    supabase.from("week_made").select("stock_item_id").eq("week_start", weekStart),
   ]);
   if (open.error) throw open.error;
   if (sent.error) throw sent.error;
@@ -230,27 +232,15 @@ export default async function OrdersPage(props: PageProps<"/pod/orders">) {
                 </p>
               )}
               <div className="space-y-3">
-                {makeList.map((g) =>
-                  BAR_SIZES.includes(g.title) ? (
-                    <ItemTable key={g.title} caption={g.title} headings={["Flavour", "To make"]} highlight={[1]} collapsible>
-                      {g.rows.map((r) => (
-                        <ItemRow key={r.id} name={r.name} highlight={[1]} accent={!!r.base} cells={[r.toMake]} />
-                      ))}
-                    </ItemTable>
-                  ) : (
-                    <ItemTable
-                      key={g.title}
-                      caption={g.title}
-                      headings={[g.title === "Pure Cacao" ? "Size" : "Item", "To make", "Weight"]}
-                      highlight={[1, 2]}
-                      collapsible
-                    >
-                      {g.rows.map((r) => (
-                        <ItemRow key={r.id} name={r.name} highlight={[1, 2]} accent={!!r.base} cells={[r.toMake, formatGrams(r.kg)]} />
-                      ))}
-                    </ItemTable>
-                  ),
-                )}
+                <MakeChecklist
+                  week={weekStart}
+                  made={(madeRows.data ?? []).map((m) => m.stock_item_id)}
+                  groups={makeList.map((g) => ({
+                    title: g.title,
+                    weighed: !BAR_SIZES.includes(g.title),
+                    rows: g.rows.map((r) => ({ id: r.id, name: r.name, toMake: r.toMake, accent: !!r.base, weight: formatGrams(r.kg) })),
+                  }))}
+                />
                 {flavourKg.size > 0 && (
                   <ItemTable caption="Chocolate by flavour" headings={["Flavour", "Large", "Small", "Total"]} highlight={[3]} collapsible>
                     {[...flavourKg].map(([name, kg]) => (

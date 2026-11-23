@@ -931,6 +931,24 @@ export type Database = {
           },
         ]
       }
+      week_made: {
+        Row: {
+          made_at: string
+          stock_item_id: string
+          week_start: string
+        }
+        Insert: {
+          made_at?: string
+          stock_item_id: string
+          week_start: string
+        }
+        Update: {
+          made_at?: string
+          stock_item_id?: string
+          week_start?: string
+        }
+        Relationships: []
+      }
       week_notes: {
         Row: {
           note: string

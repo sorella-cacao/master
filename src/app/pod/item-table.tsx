@@ -82,7 +82,10 @@ export function ItemRow({
   cells,
   highlight = [],
   accent = false,
+  done = false,
 }: {
+  /** Ticked off: shown faded and struck through. */
+  done?: boolean;
   name: React.ReactNode;
   cells: React.ReactNode[];
   /** Colour the highlighted boxes terracotta instead of honey, e.g. flavours made from 75% Dark. */
@@ -91,7 +94,7 @@ export function ItemRow({
   highlight?: number[];
 }) {
   return (
-    <tr className="border-t border-white/10 odd:bg-cacao-950/60">
+    <tr className={`border-t border-white/10 odd:bg-cacao-950/60 ${done ? "opacity-50 line-through" : ""}`}>
       <th scope="row" className="px-3 py-1 text-left font-normal">
         {name}
       </th>

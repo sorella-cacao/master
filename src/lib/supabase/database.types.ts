@@ -934,16 +934,22 @@ export type Database = {
       week_made: {
         Row: {
           made_at: string
+          quantity: number
+          stock_before: number
           stock_item_id: string
           week_start: string
         }
         Insert: {
           made_at?: string
+          quantity?: number
+          stock_before?: number
           stock_item_id: string
           week_start: string
         }
         Update: {
           made_at?: string
+          quantity?: number
+          stock_before?: number
           stock_item_id?: string
           week_start?: string
         }
@@ -1152,6 +1158,11 @@ export type Database = {
         Returns: undefined
       }
       pod_save_stock_take: { Args: { counts: Json }; Returns: undefined }
+      pod_set_week_made: { Args: { item: string; made: number; week: string }; Returns: undefined }
+      pod_week_made: {
+        Args: { week: string }
+        Returns: { need_offset: number; quantity: number; stock_item_id: string }[]
+      }
       pod_set_order_status: { Args: { order_id: string; status: string }; Returns: undefined }
       pod_undo_sale: { Args: { order_id: string }; Returns: undefined }
       receipts_cron_secret_matches: { Args: { secret: string }; Returns: boolean }

@@ -137,10 +137,13 @@ export default async function OrdersPage(props: PageProps<"/pod/orders">) {
     supabase.from("customers").select("id, name").order("name"),
     supabase.from("customer_prices").select("customer_id, stock_item_id, price"),
     supabase.from("week_notes").select("note").eq("week_start", weekStart).maybeSingle(),
-    supabase.from("week_made").select("stock_item_id").eq("week_start", weekStart),
+    supabase.rpc("pod_week_made", { week: weekStart }),
   ]);
   if (open.error) throw open.error;
   if (sent.error) throw sent.error;
+  if (madeRows.error) throw madeRows.error;
+  // How many of each are noted as made so far this week, until they're counted into stock.
+  const notedMade = new Map(madeRows.data.map((m) => [m.stock_item_id, m]));
   const openOrders = open.data as Order[];
   const sentOrders = sent.data as Order[];
   // Saved customers (with their own prices), then anyone else orders have been for.
@@ -234,11 +237,20 @@ export default async function OrdersPage(props: PageProps<"/pod/orders">) {
               <div className="space-y-3">
                 <MakeChecklist
                   week={weekStart}
-                  made={(madeRows.data ?? []).map((m) => m.stock_item_id)}
                   groups={makeList.map((g) => ({
                     title: g.title,
                     weighed: !BAR_SIZES.includes(g.title),
-                    rows: g.rows.map((r) => ({ id: r.id, name: r.name, toMake: r.toMake, accent: !!r.base, weight: formatGrams(r.kg) })),
+                    rows: g.rows.map((r) => {
+                      const note = notedMade.get(r.id);
+                      return {
+                        id: r.id,
+                        name: r.name,
+                        need: note ? Math.max(0, r.ordered - r.inStock + note.need_offset) : r.toMake,
+                        made: note?.quantity ?? 0,
+                        accent: !!r.base,
+                        weight: formatGrams(r.kg),
+                      };
+                    }),
                   }))}
                 />
                 {flavourKg.size > 0 && (

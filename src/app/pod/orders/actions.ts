@@ -117,17 +117,16 @@ export async function saveWeekNote(_: SaveState, data: FormData): Promise<SaveSt
   return { ok: note ? "Notes saved" : "Notes cleared" };
 }
 
-/** Ticks an item off (or back on) the week's "To make" list. Only a checklist: stock isn't changed. */
-export async function setMadeThisWeek(week: string, stockItemId: string, made: boolean): Promise<{ error?: string }> {
+/** Notes how many of an item are made so far for the week's "To make" list. Stock isn't changed. */
+export async function setMadeThisWeek(week: string, stockItemId: string, made: number): Promise<{ error?: string }> {
   const { supabase, isAdmin } = await getSession();
   if (!isAdmin) return { error: "This account doesn't have access to the Pod." };
   if (!isDate(week)) return { error: "Couldn't save. Please try again." };
-  const { error } = made
-    ? await supabase.from("week_made").upsert({ week_start: week, stock_item_id: stockItemId })
-    : await supabase.from("week_made").delete().eq("week_start", week).eq("stock_item_id", stockItemId);
+  if (!Number.isInteger(made) || made < 0) return { error: "Use whole numbers, e.g. 16." };
+  const { error } = await supabase.rpc("pod_set_week_made", { week, item: stockItemId, made });
   if (error) {
     console.error(error);
-    return { error: "Couldn't save the tick. Please try again." };
+    return { error: "Couldn't save what you made. Please try again." };
   }
   revalidatePath("/pod/orders");
   return {};

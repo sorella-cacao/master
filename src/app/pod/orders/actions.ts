@@ -151,18 +151,18 @@ export async function editOrderNote(id: string, text: string): Promise<{ error?:
   return {};
 }
 
-/** Notes how many of an item are made so far for the week's "To make" list. Stock isn't changed. */
+/** Notes how many of an item are made so far for the week's "To make" list, and adds them to stock. */
 export async function setMadeThisWeek(week: string, stockItemId: string, made: number): Promise<{ error?: string }> {
   const { supabase, isAdmin } = await getSession();
   if (!isAdmin) return { error: "This account doesn't have access to the Pod." };
   if (!isDate(week)) return { error: "Couldn't save. Please try again." };
   if (!Number.isInteger(made) || made < 0) return { error: "Use whole numbers, e.g. 16." };
-  const { error } = await supabase.rpc("pod_set_week_made", { week, item: stockItemId, made });
+  const { error } = await supabase.rpc("pod_set_made", { week, item: stockItemId, made });
   if (error) {
     console.error(error);
     return { error: "Couldn't save what you made. Please try again." };
   }
-  revalidatePath("/pod/orders");
+  refresh();
   return {};
 }
 

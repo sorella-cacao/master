@@ -1,6 +1,7 @@
 "use client";
 
 import { useOptimistic, useState, useTransition } from "react";
+import { useConfirm } from "../confirm-dialog";
 import { ItemRow, ItemTable } from "../item-table";
 import { setMadeThisWeek } from "./actions";
 
@@ -19,7 +20,7 @@ const BAR_TOTALS = [
 
 /**
  * The week's "To make" tables. Each row has a box for how many are made so far and shows how many
- * are left; its tick marks the lot as made. Saved as they're changed. Beside the tables is how many
+ * are left; its tick marks the lot as made. Saved as they're changed, and added to stock. Beside the tables is how many
  * large and small bars are still left to make.
  */
 export function MakeChecklist({ week, groups }: { week: string; groups: MakeGroup[] }) {
@@ -37,6 +38,12 @@ export function MakeChecklist({ week, groups }: { week: string; groups: MakeGrou
       const result = await setMadeThisWeek(week, id, quantity);
       setError(result.error ?? "");
     });
+  const { confirm, dialog } = useConfirm();
+  // Unticking takes what was made back out of stock, so it asks first.
+  async function tick(r: { id: string; name: string; need: number }, checked: boolean) {
+    if (checked) return save(r.id, r.need);
+    if (await confirm(`Untick ${r.name}?`, { yes: "Yes", no: "No" }, `The ${made[r.id]} you made come back off your stock.`)) save(r.id, 0);
+  }
   const leftOf = (r: { id: string; need: number }) => Math.max(0, r.need - made[r.id]);
 
   const totals = BAR_TOTALS.map(({ title, label }) => {
@@ -93,7 +100,7 @@ export function MakeChecklist({ week, groups }: { week: string; groups: MakeGrou
                         <input
                           type="checkbox"
                           checked={done}
-                          onChange={(e) => save(r.id, e.target.checked ? r.need : 0)}
+                          onChange={(e) => tick(r, e.target.checked)}
                           className="h-4 w-4 shrink-0 accent-[#5e9a4a]"
                           aria-label={`All of ${r.name} made`}
                         />
@@ -106,7 +113,7 @@ export function MakeChecklist({ week, groups }: { week: string; groups: MakeGrou
                       r.need,
                       ...(g.weighed ? [r.weight] : []),
                       <MadeBox key={made[r.id]} label={`${r.name} made so far`} value={made[r.id]} onSave={(quantity) => save(r.id, quantity)} />,
-                      left,
+                      made[r.id] > r.need ? <span className="inline-block">{made[r.id] - r.need} extra</span> : left,
                     ]}
                   />
                 );
@@ -115,6 +122,7 @@ export function MakeChecklist({ week, groups }: { week: string; groups: MakeGrou
           );
         })}
       </div>
+      {dialog}
     </div>
   );
 }

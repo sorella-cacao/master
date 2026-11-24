@@ -100,7 +100,7 @@ export default async function StockPage() {
         </PodPanel>
       )}
 
-      <PodPanel small title="Add what I made this week" hint="Type how many of each you made. They’re added to the stock above.">
+      <PodPanel small title="Add what I made this week" hint="Type how many of each you made. They’re added to the stock above. Leave out anything you’ve marked as made in Orders, as that’s already added.">
         <PodForm action={addMade} submitLabel="Add to stock" resetOnSuccess>
           <CountTables groups={groups} name="made" />
         </PodForm>

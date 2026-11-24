@@ -149,13 +149,13 @@ export default async function OrdersPage(props: PageProps<"/pod/orders">) {
       .or(`done_week.is.null,done_week.gte.${weekStart}`)
       .order("created_at")
       .order("position"),
-    supabase.rpc("pod_week_made", { week: weekStart }),
+    supabase.rpc("pod_made", { week: weekStart }),
   ]);
   if (open.error) throw open.error;
   if (sent.error) throw sent.error;
   if (madeRows.error) throw madeRows.error;
   if (noteRows.error) throw noteRows.error;
-  // How many of each are noted as made so far this week, until they're counted into stock.
+  // How many of each are noted as made so far this week.
   const notedMade = new Map(madeRows.data.map((m) => [m.stock_item_id, m]));
   const openOrders = open.data as Order[];
   const sentOrders = sent.data as Order[];
@@ -184,9 +184,13 @@ export default async function OrdersPage(props: PageProps<"/pod/orders">) {
         .filter((i) => ordered.has(i.id))
         .map((i) => {
           const need = ordered.get(i.id)!;
-          const toMake = Math.max(0, need - Math.max(i.quantity, 0));
+          // What's made this week is already in stock, so it's put back to show the week's full amount.
+          const note = notedMade.get(i.id);
+          const toMake = note
+            ? Math.max(0, need - i.quantity + note.added + note.need_offset)
+            : Math.max(0, need - Math.max(i.quantity, 0));
           const kg = toMake * itemKg(g.title, i.name, i.chocolateGrams);
-          return { id: i.id, name: i.name, base: i.baseChocolate, ordered: need, inStock: i.quantity, toMake, kg };
+          return { id: i.id, name: i.name, base: i.baseChocolate, ordered: need, inStock: i.quantity, toMake, made: note?.quantity ?? 0, kg };
         })
         // Flavours made from a shared chocolate (e.g. 75% Dark) go last, so they can be totalled together.
         .sort((a, b) => Number(!!a.base) - Number(!!b.base) || (a.base ?? "").localeCompare(b.base ?? "")),
@@ -202,7 +206,7 @@ export default async function OrdersPage(props: PageProps<"/pod/orders">) {
   }
   // Just what still needs making.
   const makeList = plan
-    .map((g) => ({ ...g, rows: g.rows.filter((r) => r.toMake > 0) }))
+    .map((g) => ({ ...g, rows: g.rows.filter((r) => r.toMake > 0 || r.made > 0) }))
     .filter((g) => g.rows.length);
   // Bars are weighed by flavour across both sizes, in their own table, rather than in each size's table.
   const BAR_SIZES = ["Large Bar", "Small Bar"];
@@ -253,17 +257,14 @@ export default async function OrdersPage(props: PageProps<"/pod/orders">) {
                   groups={makeList.map((g) => ({
                     title: g.title,
                     weighed: !BAR_SIZES.includes(g.title),
-                    rows: g.rows.map((r) => {
-                      const note = notedMade.get(r.id);
-                      return {
-                        id: r.id,
-                        name: r.name,
-                        need: note ? Math.max(0, r.ordered - r.inStock + note.need_offset) : r.toMake,
-                        made: note?.quantity ?? 0,
-                        accent: !!r.base,
-                        weight: formatGrams(r.kg),
-                      };
-                    }),
+                    rows: g.rows.map((r) => ({
+                      id: r.id,
+                      name: r.name,
+                      need: r.toMake,
+                      made: r.made,
+                      accent: !!r.base,
+                      weight: formatGrams(r.kg),
+                    })),
                   }))}
                 />
                 {flavourKg.size > 0 && (

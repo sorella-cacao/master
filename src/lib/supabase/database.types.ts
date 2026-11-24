@@ -1002,6 +1002,7 @@ export type Database = {
       }
       week_made: {
         Row: {
+          added: number
           made_at: string
           quantity: number
           stock_before: number
@@ -1009,6 +1010,7 @@ export type Database = {
           week_start: string
         }
         Insert: {
+          added?: number
           made_at?: string
           quantity?: number
           stock_before?: number
@@ -1229,6 +1231,11 @@ export type Database = {
       pod_save_stock_take: { Args: { counts: Json }; Returns: undefined }
       pod_set_sold: { Args: { line: string; sold: number }; Returns: undefined }
       pod_invoice_sold: { Args: { customer: string }; Returns: string }
+      pod_made: {
+        Args: { week: string }
+        Returns: { added: number; need_offset: number; quantity: number; stock_item_id: string }[]
+      }
+      pod_set_made: { Args: { item: string; made: number; week: string }; Returns: undefined }
       pod_set_week_made: { Args: { item: string; made: number; week: string }; Returns: undefined }
       pod_week_made: {
         Args: { week: string }

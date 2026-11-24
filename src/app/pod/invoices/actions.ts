@@ -6,6 +6,7 @@ import { isDate, sydneyToday } from "@/lib/weeks";
 import type { SaveState } from "../actions";
 import { getSession } from "../session";
 import { billToName, getInvoice, invoiceNumber } from "./invoice-data";
+import { readInvoiceNumber } from "./invoice-number";
 import { renderInvoicePdf } from "./invoice-pdf";
 
 const NO_ACCESS: SaveState = { error: "This account doesn't have access to the Pod." };
@@ -39,8 +40,11 @@ export async function saveInvoice(_: SaveState, data: FormData): Promise<SaveSta
   const { supabase, isAdmin } = await getSession();
   if (!isAdmin) return NO_ACCESS;
 
-  const number = Number(text(data, "number"));
-  if (!Number.isInteger(number) || number <= 0) return { error: "Enter the invoice number, e.g. 12." };
+  const invoiceId = text(data, "invoice_id");
+  const { data: was } = await supabase.from("invoices").select("number, number_suffix").eq("id", invoiceId).maybeSingle();
+  if (!was) return { error: "That invoice no longer exists." };
+  const numbered = readInvoiceNumber(text(data, "number"), { number: was.number, suffix: was.number_suffix });
+  if (!numbered) return { error: "Enter the invoice number using letters and numbers, e.g. 012 or RR01." };
   const issuedOn = text(data, "issued_on");
   const dueOn = text(data, "due_on");
   if (!isDate(issuedOn) || !isDate(dueOn)) return { error: "Choose both dates." };
@@ -62,8 +66,8 @@ export async function saveInvoice(_: SaveState, data: FormData): Promise<SaveSta
   if (!lines.some((l) => l.unit_price !== null)) return { error: "Add at least one line with a price." };
 
   const { error } = await supabase.rpc("pod_save_invoice", {
-    invoice_id: text(data, "invoice_id"),
-    number,
+    invoice_id: invoiceId,
+    number: numbered.number,
     issued_on: issuedOn,
     due_on: dueOn,
     bill_to: text(data, "bill_to"),
@@ -71,6 +75,8 @@ export async function saveInvoice(_: SaveState, data: FormData): Promise<SaveSta
     lines,
   });
   if (error) return failed(error);
+  const labelled = await supabase.from("invoices").update({ number_label: numbered.label }).eq("id", invoiceId);
+  if (labelled.error) return failed(labelled.error);
   refresh();
   return { ok: "Saved" };
 }
@@ -141,7 +147,7 @@ export async function emailInvoice(invoiceId: string): Promise<SaveState> {
   // Invoices for what a sale-or-return shop has sold aren’t for a delivery.
   const { count: sales } = await supabase.from("consignment_sales").select("id", { count: "exact", head: true }).eq("invoice_id", invoiceId);
 
-  const number = invoiceNumber(invoice.number, invoice.numberSuffix);
+  const number = invoiceNumber(invoice.number, invoice.numberSuffix, invoice.numberLabel);
   const contact = row?.customer?.contact?.trim().split(/\s+/)[0];
   const pdf = await renderInvoicePdf(invoice);
 

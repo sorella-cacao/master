@@ -61,7 +61,7 @@ function InvoiceDocument({ invoice }: { invoice: Invoice }) {
   const { seller } = invoice;
   // Lines left without a price (e.g. postage not needed this time) aren't printed.
   const priced = invoice.lines.filter((l) => l.unit_price !== null);
-  const number = invoiceNumber(invoice.number, invoice.numberSuffix);
+  const number = invoiceNumber(invoice.number, invoice.numberSuffix, invoice.numberLabel);
   return (
     <Document title={`Invoice ${number}`} author={seller.business_name}>
       {invoice.layout === "council" ? (

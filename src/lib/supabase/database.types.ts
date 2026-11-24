@@ -406,6 +406,7 @@ export type Database = {
           notes: string | null
           number: number
           layout: string
+          number_label: string | null
           number_suffix: string | null
           order_id: string | null
           paid_on: string | null
@@ -422,6 +423,7 @@ export type Database = {
           notes?: string | null
           number: number
           layout?: string
+          number_label?: string | null
           number_suffix?: string | null
           order_id?: string | null
           paid_on?: string | null
@@ -438,6 +440,7 @@ export type Database = {
           notes?: string | null
           number?: number
           layout?: string
+          number_label?: string | null
           number_suffix?: string | null
           order_id?: string | null
           paid_on?: string | null

@@ -2,6 +2,7 @@
 
 import { useRef, useState } from "react";
 import { formatPrice } from "@/lib/format";
+import { invoiceNumber } from "./invoice-number";
 
 type Line = { key: number; description: string; price: string; qty: string };
 
@@ -14,6 +15,8 @@ export function InvoiceFields({
   invoice: {
     id: string;
     number: number;
+    numberSuffix: string | null;
+    numberLabel: string | null;
     issuedOn: string;
     dueOn: string;
     billTo: string;
@@ -37,7 +40,14 @@ export function InvoiceFields({
       <div className="grid grid-cols-3 gap-3">
         <label className="block">
           <span className="eyebrow mb-1 block text-xs text-cream/70">Invoice #</span>
-          <input name="number" type="number" min="1" step="1" required defaultValue={invoice.number} className="pod-input py-2 text-sm" />
+          <input
+            name="number"
+            required
+            maxLength={30}
+            defaultValue={invoiceNumber(invoice.number, invoice.numberSuffix, invoice.numberLabel)}
+            placeholder="e.g. 012 or RR01"
+            className="pod-input py-2 text-sm"
+          />
         </label>
         <label className="block">
           <span className="eyebrow mb-1 block text-xs text-cream/70">Date</span>

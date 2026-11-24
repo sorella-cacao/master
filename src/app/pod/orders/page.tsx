@@ -30,7 +30,7 @@ type Order = {
   note: string | null;
   sent_at: string | null;
   lines: Line[];
-  invoice: { id: string; number: number; number_suffix: string | null } | null;
+  invoice: { id: string; number: number; number_suffix: string | null; number_label: string | null } | null;
   shop: { id: string; name: string; sale_or_return: boolean } | null;
   /** Paid on the website: who bought it and how it gets to them. */
   web: WebOrder | null;
@@ -49,7 +49,7 @@ type WebOrder = {
 };
 
 const ORDER_COLUMNS =
-  "id, customer, kind, needed_by, status, note, sent_at, lines:order_lines(stock_item_id, quantity, unit_price), invoice:invoices!invoices_order_id_fkey(id, number, number_suffix), shop:customers!orders_customer_id_fkey(id, name, sale_or_return), web:web_orders(name, email, phone, address, delivery, delivery_price, total, paid_at, items, label_fees)";
+  "id, customer, kind, needed_by, status, note, sent_at, lines:order_lines(stock_item_id, quantity, unit_price), invoice:invoices!invoices_order_id_fkey(id, number, number_suffix, number_label), shop:customers!orders_customer_id_fkey(id, name, sale_or_return), web:web_orders(name, email, phone, address, delivery, delivery_price, total, paid_at, items, label_fees)";
 
 /** Whether the customer pays later for what they sell, rather than for the whole order. */
 const isSaleOrReturn = (order: Order) => !!order.shop?.sale_or_return && !order.invoice;

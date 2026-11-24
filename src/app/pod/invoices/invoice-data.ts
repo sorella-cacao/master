@@ -27,6 +27,8 @@ export type Invoice = {
   id: string;
   number: number;
   numberSuffix: string | null;
+  /** The number as typed, when it has letters of its own, e.g. "RR01". */
+  numberLabel: string | null;
   /** "council" invoices are laid out like the council's own template. */
   layout: "standard" | "council";
   orderId: string | null;
@@ -57,7 +59,7 @@ export function invoiceStatus(invoice: { paidOn: string | null; dueOn: string },
 export async function getInvoice(supabase: Db, id: string): Promise<Invoice | null> {
   const { data, error } = await supabase
     .from("invoices")
-    .select("id, number, number_suffix, layout, order_id, bill_to, issued_on, due_on, notes, paid_on, seller, updated_at, lines:invoice_lines(description, quantity, unit_price, position)")
+    .select("id, number, number_suffix, number_label, layout, order_id, bill_to, issued_on, due_on, notes, paid_on, seller, updated_at, lines:invoice_lines(description, quantity, unit_price, position)")
     .eq("id", id)
     .maybeSingle();
   if (error) throw error;
@@ -66,6 +68,7 @@ export async function getInvoice(supabase: Db, id: string): Promise<Invoice | nu
     id: data.id,
     number: data.number,
     numberSuffix: data.number_suffix,
+    numberLabel: data.number_label,
     layout: data.layout === "council" ? "council" : "standard",
     orderId: data.order_id,
     billTo: data.bill_to,

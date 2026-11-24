@@ -26,7 +26,7 @@ export function OrderStatus({
   orderId: string;
   status: string;
   itemCount: number;
-  invoice: { id: string; number: number; number_suffix: string | null } | null;
+  invoice: { id: string; number: number; number_suffix: string | null; number_label: string | null } | null;
   /** Paid on the website: Stripe has sent the receipt, so there's no invoice to make. */
   paidOnline?: boolean;
   /** Pays later for what they sell: invoiced from Stock › With shops rather than in full. */
@@ -95,7 +95,7 @@ export function OrderStatus({
           href={`/pod/invoices/${invoice.id}`}
           className="eyebrow rounded-full border border-white/20 px-4 py-2 text-cream/70 transition-colors hover:border-gold hover:text-gold"
         >
-          View invoice #{invoiceNumber(invoice.number, invoice.number_suffix)}
+          View invoice #{invoiceNumber(invoice.number, invoice.number_suffix, invoice.number_label)}
         </Link>
       ) : (
         <form action={createInvoice}>

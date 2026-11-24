@@ -167,7 +167,7 @@ function CustomerFields({ customer }: { customer?: Customer }) {
       </label>
       <label className="flex items-center gap-3 font-sans text-sm sm:col-span-2">
         <input type="checkbox" name="sale_or_return" defaultChecked={customer?.sale_or_return} className="size-4 accent-[#8a5226]" />
-        Sale or return: they pay for what they sell (tick what’s sold on Orders › With shops, and only that is invoiced)
+        Sale or return: they pay for what they sell (tick what’s sold on Stock › With shops, and only that is invoiced)
       </label>
       <label className="flex items-center gap-3 font-sans text-sm sm:col-span-2">
         <input type="checkbox" name="invoice_postage" defaultChecked={customer?.invoice_postage} className="size-4 accent-[#8a5226]" />

@@ -173,7 +173,7 @@ export async function setSold(lineId: string, sold: number): Promise<{ error?: s
   if (!Number.isInteger(sold) || sold < 0) return { error: "Use whole numbers, e.g. 3." };
   const { error } = await supabase.rpc("pod_set_sold", { line: lineId, sold });
   if (error) return { error: failed(error)?.error };
-  revalidatePath("/pod/orders");
+  refresh();
   return {};
 }
 
@@ -184,6 +184,6 @@ export async function invoiceSold(customerId: string): Promise<{ error?: string 
   const { data: id, error } = await supabase.rpc("pod_invoice_sold", { customer: customerId });
   if (error) return { error: failed(error)?.error };
   revalidatePath("/pod/invoices", "layout");
-  revalidatePath("/pod/orders");
+  refresh();
   redirect(`/pod/invoices/${id}`);
 }

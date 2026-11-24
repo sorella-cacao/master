@@ -7,6 +7,8 @@ import { getSession } from "../session";
 import { type StockGroup, getStockGroups, saleGroups } from "../stock-items";
 import { addMade, addOneOffFlavour, addToMainStock, recordSale, saveStockTake, setFlavourHidden } from "./actions";
 import { SaleFields } from "./sale-fields";
+import { ShopSales } from "./shop-sales";
+import { getShops } from "./shops";
 
 export const metadata: Metadata = { title: "Stock" };
 
@@ -31,8 +33,9 @@ export default async function StockPage() {
     );
   }
 
-  const [allGroups, lastTake, lastMade] = await Promise.all([
+  const [allGroups, shops, lastTake, lastMade] = await Promise.all([
     getStockGroups(supabase, { includeHidden: true }),
+    getShops(supabase),
     supabase.from("stock_movements").select("created_at").eq("reason", "stock_take").order("created_at", { ascending: false }).limit(1).maybeSingle(),
     supabase.from("stock_movements").select("created_at").eq("reason", "made").order("created_at", { ascending: false }).limit(1).maybeSingle(),
   ]);
@@ -79,6 +82,23 @@ export default async function StockPage() {
           ))}
         </div>
       </PodPanel>
+
+      {shops.length > 0 && (
+        <PodPanel
+          small
+          title="With shops"
+          hint="Sale or return: stock shops have now and pay for once it’s sold. Open an order, tick what’s sold, then invoice it."
+        >
+          <div className="space-y-8">
+            {shops.map((shop) => (
+              <section key={shop.id} className="space-y-3">
+                <h3 className="text-xl text-gold">{shop.name}</h3>
+                <ShopSales customerId={shop.id} name={shop.name} orders={shop.orders} />
+              </section>
+            ))}
+          </div>
+        </PodPanel>
+      )}
 
       <PodPanel small title="Add what I made this week" hint="Type how many of each you made. They’re added to the stock above.">
         <PodForm action={addMade} submitLabel="Add to stock" resetOnSuccess>

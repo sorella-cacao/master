@@ -29,7 +29,7 @@ export function OrderStatus({
   invoice: { id: string; number: number; number_suffix: string | null } | null;
   /** Paid on the website: Stripe has sent the receipt, so there's no invoice to make. */
   paidOnline?: boolean;
-  /** Pays later for what they sell: invoiced from "With shops" rather than in full. */
+  /** Pays later for what they sell: invoiced from Stock › With shops rather than in full. */
   saleOrReturn?: boolean;
 }) {
   const [state, formAction, pending] = useActionState(setOrderStatus, undefined as SaveState);
@@ -83,20 +83,12 @@ export function OrderStatus({
       </div>
       {paidOnline ? null : saleOrReturn ? (
         status === "sent" ? (
-          <a
-            href={`#sold-${orderId}`}
-            onClick={() => {
-              // Open the order in "With shops", and the section around it.
-              let el = document.getElementById(`sold-${orderId}`);
-              while (el) {
-                if (el instanceof HTMLDetailsElement) el.open = true;
-                el = el.parentElement;
-              }
-            }}
+          <Link
+            href={`/pod/stock#sold-${orderId}`}
             className="eyebrow rounded-full border border-white/20 px-4 py-2 text-cream/70 transition-colors hover:border-gold hover:text-gold"
           >
             Tick what’s sold
-          </a>
+          </Link>
         ) : null
       ) : invoice ? (
         <Link

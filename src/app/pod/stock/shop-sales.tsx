@@ -1,11 +1,11 @@
 "use client";
 
-import { useOptimistic, useRef, useState, useTransition } from "react";
+import { useEffect, useOptimistic, useRef, useState, useTransition } from "react";
 import { formatPrice } from "@/lib/format";
 import { useConfirm } from "../confirm-dialog";
 import { ItemTable, ItemRow } from "../item-table";
-import { MadeBox } from "./make-checklist";
-import { invoiceSold, setSold } from "./actions";
+import { MadeBox } from "../orders/make-checklist";
+import { invoiceSold, setSold } from "../orders/actions";
 
 export type ShopOrder = {
   id: string;
@@ -43,6 +43,14 @@ export function ShopSales({ customerId, name, orders }: { customerId: string; na
     });
   };
 
+  // Coming from an order's "Tick what's sold" opens that order here, and the section around it.
+  useEffect(() => {
+    if (!location.hash.startsWith("#sold-")) return;
+    const target = document.getElementById(location.hash.slice(1));
+    for (let el: HTMLElement | null = target; el; el = el.parentElement) if (el instanceof HTMLDetailsElement) el.open = true;
+    target?.scrollIntoView({ block: "start" });
+  }, []);
+
   const count = lines.reduce((n, l) => n + sold[l.id], 0);
   const total = lines.reduce((n, l) => n + sold[l.id] * l.price, 0);
 
@@ -61,7 +69,7 @@ export function ShopSales({ customerId, name, orders }: { customerId: string; na
       {orders.map((o) => {
         const left = o.lines.reduce((n, l) => n + l.quantity - l.invoiced - sold[l.id], 0);
         return (
-          <details key={o.id} id={`sold-${o.id}`} className="group scroll-mt-6 rounded-2xl border border-l-[6px] border-white/15 border-l-[#8a5226] bg-[#ead8c4]">
+          <details key={o.id} suppressHydrationWarning id={`sold-${o.id}`} className="group scroll-mt-6 rounded-2xl border border-l-[6px] border-white/15 border-l-[#8a5226] bg-[#ead8c4]">
             <summary className="flex cursor-pointer list-none flex-wrap items-baseline justify-between gap-3 px-4 py-3 sm:px-5 [&::-webkit-details-marker]:hidden">
               <span className="text-xl text-gold">{o.sent}</span>
               <span className="flex items-baseline gap-3 font-sans text-base text-cream/80">

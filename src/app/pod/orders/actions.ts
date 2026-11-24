@@ -104,17 +104,51 @@ export async function undoSale(_: SaveState, data: FormData): Promise<SaveState>
   return { ok: "Removed, and put back in stock" };
 }
 
-/** Saves the notes for a week's orders (an empty note clears them). */
-export async function saveWeekNote(_: SaveState, data: FormData): Promise<SaveState> {
+/** Adds notes about a week's orders: one for each line. */
+export async function addOrderNotes(_: SaveState, data: FormData): Promise<SaveState> {
   const { supabase, isAdmin } = await getSession();
   if (!isAdmin) return NO_ACCESS;
   const week = String(data.get("week") ?? "");
   if (!isDate(week)) return { error: "Couldn't save. Please try again." };
-  const note = String(data.get("note") ?? "").trim();
-  const { error } = await supabase.from("week_notes").upsert({ week_start: week, note, updated_at: new Date().toISOString() });
+  const notes = String(data.get("note") ?? "")
+    .split("\n")
+    .map((line) => line.replace(/^\s*[-•*]\s+/, "").trim())
+    .filter(Boolean);
+  if (!notes.length) return { error: "Write a note first." };
+  const { error } = await supabase.from("order_notes").insert(notes.map((note, position) => ({ note, position, week_start: week })));
   if (error) return failed(error);
   revalidatePath("/pod/orders");
-  return { ok: note ? "Notes saved" : "Notes cleared" };
+  return { ok: notes.length === 1 ? "Note saved" : `${notes.length} notes saved` };
+}
+
+/** Ticks a note off (in the week it's ticked) or back on, so it carries on again. */
+export async function setOrderNoteDone(week: string, id: string, done: boolean): Promise<{ error?: string }> {
+  const { supabase, isAdmin } = await getSession();
+  if (!isAdmin) return { error: "This account doesn't have access to the Pod." };
+  if (!isDate(week)) return { error: "Couldn't save. Please try again." };
+  const { error } = await supabase.from("order_notes").update({ done_week: done ? week : null }).eq("id", id);
+  if (error) {
+    console.error(error);
+    return { error: "Couldn't save the tick. Please try again." };
+  }
+  revalidatePath("/pod/orders");
+  return {};
+}
+
+/** Changes a note's words; clearing them removes the note. */
+export async function editOrderNote(id: string, text: string): Promise<{ error?: string }> {
+  const { supabase, isAdmin } = await getSession();
+  if (!isAdmin) return { error: "This account doesn't have access to the Pod." };
+  const note = text.trim();
+  const { error } = note
+    ? await supabase.from("order_notes").update({ note }).eq("id", id)
+    : await supabase.from("order_notes").delete().eq("id", id);
+  if (error) {
+    console.error(error);
+    return { error: "Couldn't save the note. Please try again." };
+  }
+  revalidatePath("/pod/orders");
+  return {};
 }
 
 /** Notes how many of an item are made so far for the week's "To make" list. Stock isn't changed. */

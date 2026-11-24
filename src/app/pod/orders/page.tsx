@@ -11,8 +11,9 @@ import { getSession } from "../session";
 import { type StockGroup, getStockGroups, saleGroups } from "../stock-items";
 import { recordSale } from "../stock/actions";
 import { SaleFields } from "../stock/sale-fields";
-import { deleteOrder, saveOrder, saveWeekNote, undoSale } from "./actions";
+import { deleteOrder, saveOrder, undoSale } from "./actions";
 import { type OrderCustomer, type OrderGroup, OrderFields } from "./order-fields";
+import { OrderNotes } from "./order-notes";
 import { OrderStatus } from "./order-status";
 import { MakeChecklist } from "./make-checklist";
 import { ScrollTo } from "./scroll-to";
@@ -124,7 +125,7 @@ export default async function OrdersPage(props: PageProps<"/pod/orders">) {
   const weekStart = mondayOf(typeof week === "string" && isDate(week) ? week : today);
   const weekEnd = addDays(weekStart, 6);
 
-  const [groups, open, sent, customerRows, customerList, priceRows, weekNote, madeRows] = await Promise.all([
+  const [groups, open, sent, customerRows, customerList, priceRows, noteRows, madeRows] = await Promise.all([
     getStockGroups(supabase, { includeHidden: true, includeUntracked: true }),
     supabase
       .from("orders")
@@ -136,12 +137,20 @@ export default async function OrdersPage(props: PageProps<"/pod/orders">) {
     supabase.from("orders").select("customer").eq("kind", "order").order("created_at", { ascending: false }).limit(500),
     supabase.from("customers").select("id, name").order("name"),
     supabase.from("customer_prices").select("customer_id, stock_item_id, price"),
-    supabase.from("week_notes").select("note").eq("week_start", weekStart).maybeSingle(),
+    // Notes written by this week and not ticked off before it.
+    supabase
+      .from("order_notes")
+      .select("id, note, week_start, done_week")
+      .lte("week_start", weekStart)
+      .or(`done_week.is.null,done_week.gte.${weekStart}`)
+      .order("created_at")
+      .order("position"),
     supabase.rpc("pod_week_made", { week: weekStart }),
   ]);
   if (open.error) throw open.error;
   if (sent.error) throw sent.error;
   if (madeRows.error) throw madeRows.error;
+  if (noteRows.error) throw noteRows.error;
   // How many of each are noted as made so far this week, until they're counted into stock.
   const notedMade = new Map(madeRows.data.map((m) => [m.stock_item_id, m]));
   const openOrders = open.data as Order[];
@@ -284,20 +293,16 @@ export default async function OrdersPage(props: PageProps<"/pod/orders">) {
             {laterOrders > 0 && ` ${laterOrders} later ${laterOrders === 1 ? "order isn’t" : "orders aren’t"} included yet.`}
           </p>
 
-          <PodForm key={weekStart} action={saveWeekNote} submitLabel="Save notes">
-            <input type="hidden" name="week" value={weekStart} />
-            <label className="block">
-              <span className="eyebrow mb-2 block text-cream/70">Notes for this week</span>
-              <textarea
-                name="note"
-                // Grows with what's written, so all of it shows (rows covers browsers without field-sizing).
-                rows={Math.max(3, (weekNote.data?.note ?? "").split("\n").length + 1)}
-                defaultValue={weekNote.data?.note ?? ""}
-                placeholder="e.g. Council order goes out Thursday; use the new wrappers for the Christmas bundles"
-                className="pod-input min-h-24 resize-y [field-sizing:content]"
-              />
-            </label>
-          </PodForm>
+          <OrderNotes
+            key={weekStart}
+            week={weekStart}
+            notes={noteRows.data.map((n) => ({
+              id: n.id,
+              note: n.note,
+              done: n.done_week !== null,
+              carriedFrom: n.week_start < weekStart ? `week of ${shortDate(n.week_start)}` : null,
+            }))}
+          />
         </div>
       </PodPanel>
 

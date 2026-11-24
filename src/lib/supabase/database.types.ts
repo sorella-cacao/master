@@ -500,6 +500,33 @@ export type Database = {
         }
         Relationships: []
       }
+      order_notes: {
+        Row: {
+          created_at: string
+          done_week: string | null
+          id: string
+          note: string
+          position: number
+          week_start: string
+        }
+        Insert: {
+          created_at?: string
+          done_week?: string | null
+          id?: string
+          note: string
+          position?: number
+          week_start: string
+        }
+        Update: {
+          created_at?: string
+          done_week?: string | null
+          id?: string
+          note?: string
+          position?: number
+          week_start?: string
+        }
+        Relationships: []
+      }
       order_lines: {
         Row: {
           id: string

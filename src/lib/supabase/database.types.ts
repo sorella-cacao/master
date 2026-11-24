@@ -138,6 +138,45 @@ export type Database = {
           },
         ]
       }
+      consignment_sales: {
+        Row: {
+          created_at: string
+          id: string
+          invoice_id: string | null
+          order_line_id: string
+          quantity: number
+        }
+        Insert: {
+          created_at?: string
+          id?: string
+          invoice_id?: string | null
+          order_line_id: string
+          quantity: number
+        }
+        Update: {
+          created_at?: string
+          id?: string
+          invoice_id?: string | null
+          order_line_id?: string
+          quantity?: number
+        }
+        Relationships: [
+          {
+            foreignKeyName: "consignment_sales_invoice_id_fkey"
+            columns: ["invoice_id"]
+            isOneToOne: false
+            referencedRelation: "invoices"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "consignment_sales_order_line_id_fkey"
+            columns: ["order_line_id"]
+            isOneToOne: false
+            referencedRelation: "order_lines"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       customers: {
         Row: {
           address: string | null
@@ -154,6 +193,7 @@ export type Database = {
           next_invoice_number: number
           notes: string | null
           phone: string | null
+          sale_or_return: boolean
           updated_at: string
         }
         Insert: {
@@ -171,6 +211,7 @@ export type Database = {
           next_invoice_number?: number
           notes?: string | null
           phone?: string | null
+          sale_or_return?: boolean
           updated_at?: string
         }
         Update: {
@@ -188,6 +229,7 @@ export type Database = {
           next_invoice_number?: number
           notes?: string | null
           phone?: string | null
+          sale_or_return?: boolean
           updated_at?: string
         }
         Relationships: []
@@ -1185,6 +1227,8 @@ export type Database = {
         Returns: undefined
       }
       pod_save_stock_take: { Args: { counts: Json }; Returns: undefined }
+      pod_set_sold: { Args: { line: string; sold: number }; Returns: undefined }
+      pod_invoice_sold: { Args: { customer: string }; Returns: string }
       pod_set_week_made: { Args: { item: string; made: number; week: string }; Returns: undefined }
       pod_week_made: {
         Args: { week: string }

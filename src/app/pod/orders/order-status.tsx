@@ -21,6 +21,7 @@ export function OrderStatus({
   itemCount,
   invoice,
   paidOnline = false,
+  saleOrReturn = false,
 }: {
   orderId: string;
   status: string;
@@ -28,6 +29,8 @@ export function OrderStatus({
   invoice: { id: string; number: number; number_suffix: string | null } | null;
   /** Paid on the website: Stripe has sent the receipt, so there's no invoice to make. */
   paidOnline?: boolean;
+  /** Pays later for what they sell: invoiced from "With shops" rather than in full. */
+  saleOrReturn?: boolean;
 }) {
   const [state, formAction, pending] = useActionState(setOrderStatus, undefined as SaveState);
   const { confirm, dialog } = useConfirm();
@@ -43,7 +46,7 @@ export function OrderStatus({
     data.set("status", next);
 
     // When sending an order without an invoice, offer to make the invoice too, then open it.
-    if (next === "sent" && !invoice && !paidOnline && (await confirm("Generate the invoice now?", { yes: "Yes", no: "Not now" }))) {
+    if (next === "sent" && !invoice && !paidOnline && !saleOrReturn && (await confirm("Generate the invoice now?", { yes: "Yes", no: "Not now" }))) {
       setInvoiceError("");
       startSending(async () => {
         const result = await setOrderStatus(undefined, data);
@@ -78,7 +81,24 @@ export function OrderStatus({
           </button>
         ))}
       </div>
-      {paidOnline ? null : invoice ? (
+      {paidOnline ? null : saleOrReturn ? (
+        status === "sent" ? (
+          <a
+            href={`#sold-${orderId}`}
+            onClick={() => {
+              // Open the order in "With shops", and the section around it.
+              let el = document.getElementById(`sold-${orderId}`);
+              while (el) {
+                if (el instanceof HTMLDetailsElement) el.open = true;
+                el = el.parentElement;
+              }
+            }}
+            className="eyebrow rounded-full border border-white/20 px-4 py-2 text-cream/70 transition-colors hover:border-gold hover:text-gold"
+          >
+            Tick what’s sold
+          </a>
+        ) : null
+      ) : invoice ? (
         <Link
           href={`/pod/invoices/${invoice.id}`}
           className="eyebrow rounded-full border border-white/20 px-4 py-2 text-cream/70 transition-colors hover:border-gold hover:text-gold"

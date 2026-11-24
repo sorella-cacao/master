@@ -138,6 +138,9 @@ export async function emailInvoice(invoiceId: string): Promise<SaveState> {
   const to = row?.customer?.email?.trim();
   if (!to) return { error: `Add ${name}’s email address on the Customers page first.` };
 
+  // Invoices for what a sale-or-return shop has sold aren’t for a delivery.
+  const { count: sales } = await supabase.from("consignment_sales").select("id", { count: "exact", head: true }).eq("invoice_id", invoiceId);
+
   const number = invoiceNumber(invoice.number, invoice.numberSuffix);
   const contact = row?.customer?.contact?.trim().split(/\s+/)[0];
   const pdf = await renderInvoicePdf(invoice);
@@ -148,7 +151,7 @@ export async function emailInvoice(invoiceId: string): Promise<SaveState> {
       toName: row?.customer?.contact?.trim() || name,
       subject: `Invoice ${number} – ${invoice.seller.business_name || "Sorella Cacao"}`,
       // Greets the contact person by name (from the Customers page), not the business.
-      text: `Hi${contact ? ` ${contact}` : ""},\n\nInvoice ${number} attached for the week’s delivery.\n\nWarmly,\nSarah`,
+      text: `Hi${contact ? ` ${contact}` : ""},\n\nInvoice ${number} attached for ${sales ? "what’s sold" : "the week’s delivery"}.\n\nWarmly,\nSarah`,
       filename: `Invoice ${number} - ${billToName(invoice.billTo)}.pdf`.replace(/[^\w .&()-]/g, ""),
       pdf: Buffer.from(pdf).toString("base64"),
     },

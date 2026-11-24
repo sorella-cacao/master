@@ -17,10 +17,17 @@ import { OrderNotes } from "./order-notes";
 import { OrderStatus } from "./order-status";
 import { MakeChecklist } from "./make-checklist";
 import { ScrollTo } from "./scroll-to";
+import { ShopSales } from "./shop-sales";
 
 export const metadata: Metadata = { title: "Orders" };
 
-type Line = { stock_item_id: string; quantity: number; unit_price: number };
+type Line = {
+  id: string;
+  stock_item_id: string;
+  quantity: number;
+  unit_price: number;
+  sales: { quantity: number; invoice_id: string | null }[];
+};
 type Order = {
   id: string;
   customer: string;
@@ -31,6 +38,7 @@ type Order = {
   sent_at: string | null;
   lines: Line[];
   invoice: { id: string; number: number; number_suffix: string | null } | null;
+  shop: { id: string; name: string; sale_or_return: boolean } | null;
   /** Paid on the website: who bought it and how it gets to them. */
   web: WebOrder | null;
 };
@@ -48,7 +56,14 @@ type WebOrder = {
 };
 
 const ORDER_COLUMNS =
-  "id, customer, kind, needed_by, status, note, sent_at, lines:order_lines(stock_item_id, quantity, unit_price), invoice:invoices(id, number, number_suffix), web:web_orders(name, email, phone, address, delivery, delivery_price, total, paid_at, items, label_fees)";
+  "id, customer, kind, needed_by, status, note, sent_at, lines:order_lines(id, stock_item_id, quantity, unit_price, sales:consignment_sales(quantity, invoice_id)), invoice:invoices!invoices_order_id_fkey(id, number, number_suffix), shop:customers!orders_customer_id_fkey(id, name, sale_or_return), web:web_orders(name, email, phone, address, delivery, delivery_price, total, paid_at, items, label_fees)";
+
+/** Whether the customer pays later for what they sell, rather than for the whole order. */
+const isSaleOrReturn = (order: Order) => !!order.shop?.sale_or_return && !order.invoice;
+
+/** How many of a line have been invoiced as sold, or are marked as sold and waiting for an invoice. */
+const soldOf = (line: Line, invoiced: boolean) =>
+  line.sales.filter((s) => (s.invoice_id !== null) === invoiced).reduce((n, s) => n + s.quantity, 0);
 
 /**
  * Chocolate in one item, in kg: its own amount when set (e.g. 90g of 75% Dark in a mandarin bar),
@@ -125,7 +140,7 @@ export default async function OrdersPage(props: PageProps<"/pod/orders">) {
   const weekStart = mondayOf(typeof week === "string" && isDate(week) ? week : today);
   const weekEnd = addDays(weekStart, 6);
 
-  const [groups, open, sent, customerRows, customerList, priceRows, noteRows, madeRows] = await Promise.all([
+  const [groups, open, sent, customerRows, customerList, priceRows, noteRows, madeRows, shopOrders] = await Promise.all([
     getStockGroups(supabase, { includeHidden: true, includeUntracked: true }),
     supabase
       .from("orders")
@@ -146,15 +161,31 @@ export default async function OrdersPage(props: PageProps<"/pod/orders">) {
       .order("created_at")
       .order("position"),
     supabase.rpc("pod_week_made", { week: weekStart }),
+    // Everything out with sale-or-return shops, however long ago it was sent.
+    supabase
+      .from("orders")
+      .select(ORDER_COLUMNS.replace("!orders_customer_id_fkey(", "!orders_customer_id_fkey!inner("))
+      .eq("status", "sent")
+      .eq("shop.sale_or_return", true)
+      .order("sent_at", { ascending: true }),
   ]);
   if (open.error) throw open.error;
   if (sent.error) throw sent.error;
   if (madeRows.error) throw madeRows.error;
+  if (shopOrders.error) throw shopOrders.error;
   if (noteRows.error) throw noteRows.error;
   // How many of each are noted as made so far this week, until they're counted into stock.
   const notedMade = new Map(madeRows.data.map((m) => [m.stock_item_id, m]));
   const openOrders = open.data as Order[];
   const sentOrders = sent.data as Order[];
+  // Orders with something still at a sale-or-return shop, by shop.
+  const shops = new Map<string, { name: string; orders: Order[] }>();
+  for (const order of shopOrders.data as unknown as Order[]) {
+    if (!isSaleOrReturn(order) || order.lines.every((l) => soldOf(l, true) >= l.quantity)) continue;
+    const shop = shops.get(order.shop!.id) ?? { name: order.shop!.name, orders: [] };
+    shop.orders.push(order);
+    shops.set(order.shop!.id, shop);
+  }
   // Saved customers (with their own prices), then anyone else orders have been for.
   const customers: OrderCustomer[] = (customerList.data ?? []).map((c) => ({
     name: c.name,
@@ -344,6 +375,42 @@ export default async function OrdersPage(props: PageProps<"/pod/orders">) {
         </PodForm>
       </PodPanel>
 
+      {shops.size > 0 && (
+        <PodPanel
+          small
+          title="With shops"
+          hint="Sale or return: stock shops have now and pay for once it’s sold. Open an order, tick what’s sold, then invoice it."
+        >
+          <div className="space-y-8">
+            {[...shops].map(([id, shop]) => (
+              <section key={id} className="space-y-3">
+                <h3 className="text-xl text-gold">{shop.name}</h3>
+                <ShopSales
+                  customerId={id}
+                  name={shop.name}
+                  orders={shop.orders.map((o) => ({
+                    id: o.id,
+                    sent: `Sent ${new Date(o.sent_at!).toLocaleDateString("en-AU", { timeZone: "Australia/Sydney", day: "numeric", month: "short" })}`,
+                    lines: o.lines.map((l) => {
+                      const item = items.get(l.stock_item_id);
+                      return {
+                        id: l.id,
+                        name: item?.name ?? "Unknown item",
+                        group: item?.group ?? "Other",
+                        quantity: l.quantity,
+                        invoiced: soldOf(l, true),
+                        sold: soldOf(l, false),
+                        price: Number(l.unit_price),
+                      };
+                    }),
+                  }))}
+                />
+              </section>
+            ))}
+          </div>
+        </PodPanel>
+      )}
+
       {justSavedId && <ScrollTo id={`order-${justSavedId}`} />}
       <PodPanel
         small
@@ -485,7 +552,7 @@ function OrderCard({
       <div className="px-4 pb-4 sm:px-6 sm:pb-6">
         {!sale && (
           <div>
-            <OrderStatus orderId={order.id} status={order.status} itemCount={itemCount(order)} invoice={order.invoice} paidOnline={!!web} />
+            <OrderStatus orderId={order.id} status={order.status} itemCount={itemCount(order)} invoice={order.invoice} paidOnline={!!web} saleOrReturn={isSaleOrReturn(order)} />
           </div>
         )}
 

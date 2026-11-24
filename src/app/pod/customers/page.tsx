@@ -12,6 +12,7 @@ export const metadata: Metadata = { title: "Customers" };
 
 type Customer = {
   id: string;
+  sale_or_return: boolean;
   name: string;
   contact: string | null;
   email: string | null;
@@ -39,7 +40,7 @@ export default async function CustomersPage() {
 
   const [groups, list, priceRows] = await Promise.all([
     getStockGroups(supabase),
-    supabase.from("customers").select("id, name, contact, email, phone, address, notes, invoice_postage, invoice_variety, invoice_layout, invoice_number_suffix, payment_terms_days, next_invoice_number").order("name"),
+    supabase.from("customers").select("id, name, contact, email, phone, address, notes, invoice_postage, invoice_variety, invoice_layout, invoice_number_suffix, payment_terms_days, next_invoice_number, sale_or_return").order("name"),
     supabase.from("customer_prices").select("customer_id, stock_item_id, price"),
   ]);
   if (list.error) throw list.error;
@@ -163,6 +164,10 @@ function CustomerFields({ customer }: { customer?: Customer }) {
       <label className="block">
         <span className="eyebrow mb-1 block text-xs text-cream/70">Notes</span>
         <textarea name="notes" rows={3} defaultValue={customer?.notes ?? ""} placeholder="Optional" className="pod-input py-2 text-sm" />
+      </label>
+      <label className="flex items-center gap-3 font-sans text-sm sm:col-span-2">
+        <input type="checkbox" name="sale_or_return" defaultChecked={customer?.sale_or_return} className="size-4 accent-[#8a5226]" />
+        Sale or return: they pay for what they sell (tick what’s sold on Orders › With shops, and only that is invoiced)
       </label>
       <label className="flex items-center gap-3 font-sans text-sm sm:col-span-2">
         <input type="checkbox" name="invoice_postage" defaultChecked={customer?.invoice_postage} className="size-4 accent-[#8a5226]" />

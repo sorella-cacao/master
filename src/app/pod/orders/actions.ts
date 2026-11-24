@@ -165,3 +165,25 @@ export async function setMadeThisWeek(week: string, stockItemId: string, made: n
   revalidatePath("/pod/orders");
   return {};
 }
+
+/** Marks how many of an order's line a sale-or-return shop has sold, ready to invoice. */
+export async function setSold(lineId: string, sold: number): Promise<{ error?: string }> {
+  const { supabase, isAdmin } = await getSession();
+  if (!isAdmin) return { error: "This account doesn't have access to the Pod." };
+  if (!Number.isInteger(sold) || sold < 0) return { error: "Use whole numbers, e.g. 3." };
+  const { error } = await supabase.rpc("pod_set_sold", { line: lineId, sold });
+  if (error) return { error: failed(error)?.error };
+  revalidatePath("/pod/orders");
+  return {};
+}
+
+/** Makes one invoice for everything a sale-or-return shop has sold, and opens it. */
+export async function invoiceSold(customerId: string): Promise<{ error?: string }> {
+  const { supabase, isAdmin } = await getSession();
+  if (!isAdmin) return { error: "This account doesn't have access to the Pod." };
+  const { data: id, error } = await supabase.rpc("pod_invoice_sold", { customer: customerId });
+  if (error) return { error: failed(error)?.error };
+  revalidatePath("/pod/invoices", "layout");
+  revalidatePath("/pod/orders");
+  redirect(`/pod/invoices/${id}`);
+}

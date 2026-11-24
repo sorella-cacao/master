@@ -28,6 +28,7 @@ const details = (data: FormData) => ({
   notes: text(data, "notes") || null,
   invoice_postage: data.get("invoice_postage") === "on",
   invoice_variety: data.get("invoice_variety") === "on",
+  sale_or_return: data.get("sale_or_return") === "on",
   invoice_layout: text(data, "invoice_layout") === "council" ? "council" : "standard",
   invoice_number_suffix: text(data, "invoice_number_suffix").toUpperCase() || null,
 });

@@ -105,7 +105,7 @@ export function MakeChecklist({ week, groups }: { week: string; groups: MakeGrou
                     cells={[
                       r.need,
                       ...(g.weighed ? [r.weight] : []),
-                      <MadeBox key={made[r.id]} name={r.name} made={made[r.id]} onSave={(quantity) => save(r.id, quantity)} />,
+                      <MadeBox key={made[r.id]} label={`${r.name} made so far`} value={made[r.id]} onSave={(quantity) => save(r.id, quantity)} />,
                       left,
                     ]}
                   />
@@ -119,14 +119,14 @@ export function MakeChecklist({ week, groups }: { week: string; groups: MakeGrou
   );
 }
 
-/** The box for how many are made so far; saves when you leave it or press Enter. */
-function MadeBox({ name, made, onSave }: { name: string; made: number; onSave: (quantity: number) => void }) {
+/** A box for how many (made so far, or sold); saves when you leave it or press Enter. */
+export function MadeBox({ label, value, max, onSave }: { label: string; value: number; max?: number; onSave: (quantity: number) => void }) {
   return (
     <input
       inputMode="numeric"
-      defaultValue={made || ""}
+      defaultValue={value || ""}
       placeholder="0"
-      aria-label={`${name} made so far`}
+      aria-label={label}
       onFocus={(e) => e.target.select()}
       onKeyDown={(e) => {
         if (e.key === "Enter") e.currentTarget.blur();
@@ -135,8 +135,9 @@ function MadeBox({ name, made, onSave }: { name: string; made: number; onSave: (
         e.target.value = e.target.value.replace(/\D/g, "").slice(0, 4);
       }}
       onBlur={(e) => {
-        const quantity = Number(e.target.value || 0);
-        if (quantity !== made) onSave(quantity);
+        const quantity = Math.min(Number(e.target.value || 0), max ?? Infinity);
+        e.target.value = quantity ? String(quantity) : "";
+        if (quantity !== value) onSave(quantity);
       }}
       className="w-full rounded-lg border border-white/15 bg-cacao-800 px-1.5 py-1 text-right text-sm text-cream placeholder:text-cream/40 focus:border-gold focus:outline-none"
     />

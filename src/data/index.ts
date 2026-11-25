@@ -9,7 +9,7 @@ import type { ContentBlock, Product, Promo, Variant, Workshop } from "./types";
 export { fromPrice } from "@/lib/format";
 
 const PRODUCT_COLUMNS =
-  "slug, title, image, option_name, subscription_discount, subscription_interval, label_size, label_default_flavour, ingredients_note, available_until, subheading, description, variants:product_variants(label, price, sold_out, ingredients, label_image, position)";
+  "slug, title, image, option_name, subscription_discount, subscription_interval, label_size, label_default_flavour, ingredients_note, available_until, subheading, description, variants:product_variants(label, price, sold_out, ingredients, note, label_image, position)";
 const WORKSHOP_COLUMNS =
   "slug, title, images, sold_out, option_name, description, variants:workshop_variants(label, price, sold_out, position)";
 
@@ -19,6 +19,7 @@ type VariantRow = {
   sold_out: boolean;
   position: number;
   ingredients?: string | null;
+  note?: string | null;
   label_image?: string | null;
 };
 
@@ -30,6 +31,7 @@ function toVariants(rows: VariantRow[]): Variant[] {
       price: Number(v.price),
       ...(v.sold_out && { soldOut: true }),
       ...(v.ingredients && { ingredients: v.ingredients }),
+      ...(v.note && { note: v.note }),
     }));
 }
 

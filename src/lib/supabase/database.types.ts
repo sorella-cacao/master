@@ -698,6 +698,7 @@ export type Database = {
           ingredients: string | null
           label: string
           label_image: string | null
+          note: string | null
           position: number
           price: number
           product_id: string
@@ -710,6 +711,7 @@ export type Database = {
           ingredients?: string | null
           label: string
           label_image?: string | null
+          note?: string | null
           position?: number
           price: number
           product_id: string
@@ -722,6 +724,7 @@ export type Database = {
           ingredients?: string | null
           label?: string
           label_image?: string | null
+          note?: string | null
           position?: number
           price?: number
           product_id?: string

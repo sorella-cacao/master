@@ -175,6 +175,7 @@ export async function saveVariant(_: SaveState, data: FormData) {
           price: price(data),
           sold_out: checked(data, "sold_out"),
           ingredients: optionalText(data, "ingredients"),
+          note: optionalText(data, "note"),
         })
         .eq("id", text(data, "id")),
     "Saved",
@@ -189,6 +190,7 @@ export async function addVariant(_: SaveState, data: FormData) {
       label: required(data, "label", "a name"),
       price: price(data),
       ingredients: optionalText(data, "ingredients"),
+      note: optionalText(data, "note"),
       position: await nextPosition(
         supabase
           .from("product_variants")

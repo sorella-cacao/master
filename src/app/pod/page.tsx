@@ -45,7 +45,7 @@ export default async function PodPage() {
     supabase
       .from("products")
       .select(
-        "id, slug, title, description, is_published, available_until, subheading, option_name, ingredients_note, options:product_variants(id, label, price, sold_out, ingredients, position)",
+        "id, slug, title, description, is_published, available_until, subheading, option_name, ingredients_note, options:product_variants(id, label, price, sold_out, ingredients, note, position)",
       )
       .order("position"),
     supabase
@@ -250,6 +250,7 @@ export default async function PodPage() {
                         label={option.label}
                         price={option.price}
                         ingredients={hasIngredients ? (option.ingredients ?? "") : undefined}
+                        note={hasIngredients ? (option.note ?? "") : undefined}
                         soldOut={option.sold_out}
                       />
                     </PodForm>
@@ -269,7 +270,7 @@ export default async function PodPage() {
                   <p className="eyebrow mb-4 text-cream/70">Add a {optionName}</p>
                   <PodForm action={addVariant} submitLabel={`Add ${optionName}`} resetOnSuccess>
                     <input type="hidden" name="product_id" value={product.id} />
-                    <OptionFields optionName={optionName} ingredients={hasIngredients ? "" : undefined} />
+                    <OptionFields optionName={optionName} ingredients={hasIngredients ? "" : undefined} note={hasIngredients ? "" : undefined} />
                   </PodForm>
                 </div>
               </div>
@@ -394,6 +395,7 @@ function OptionFields({
   label = "",
   price,
   ingredients,
+  note,
   soldOut,
 }: {
   optionName: string;
@@ -401,6 +403,8 @@ function OptionFields({
   price?: number;
   /** Omit for options without ingredients (sizes, tickets). */
   ingredients?: string;
+  /** Omit for options without one. */
+  note?: string;
   soldOut?: boolean;
 }) {
   return (
@@ -422,6 +426,11 @@ function OptionFields({
           />
         </Field>
       </div>
+      {note !== undefined && (
+        <Field label="Small note" hint="Shown under the name once it’s chosen, e.g. Currently blood orange & mandarin. Optional.">
+          <input name="note" defaultValue={note} className="pod-input" />
+        </Field>
+      )}
       {ingredients !== undefined && (
         <Field label="Ingredients" hint="Use * for certified organic and ** for ethically sourced.">
           <textarea name="ingredients" defaultValue={ingredients} rows={2} className="pod-input" />

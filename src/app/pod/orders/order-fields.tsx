@@ -142,7 +142,7 @@ export function OrderFields({
               value={pasted}
               onChange={(e) => setPasted(e.target.value)}
               rows={5}
-              placeholder={"e.g.\n6 x 50g Hazelnut\n2 x 108g Goat Milk\n75% Blood Orange small - 6"}
+              placeholder={"e.g.\n6 x 50g Hazelnut\n2 x 100g Goat Milk\n75% Blood Orange small - 6"}
               className="pod-input py-2 text-sm"
             />
           </label>

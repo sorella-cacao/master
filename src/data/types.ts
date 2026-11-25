@@ -7,6 +7,8 @@ export type Variant = {
   soldOut?: boolean;
   /** Shown under the option menu once this option is chosen. */
   ingredients?: string;
+  /** A small line under the option menu once it's chosen, e.g. which fruit is in season. */
+  note?: string;
 };
 
 /** A bar's printed labels, used to preview a customer's personalised wording. */

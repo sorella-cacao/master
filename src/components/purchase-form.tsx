@@ -101,7 +101,7 @@ export function PurchaseForm({
               const index = e.target.value === "" ? "" : Number(e.target.value);
               setVariantIndex(index);
             }}
-            className="w-full appearance-none rounded-xl border border-white/15 bg-cacao-800 bg-[url('data:image/svg+xml;utf8,<svg xmlns=%22http://www.w3.org/2000/svg%22 width=%2212%22 height=%228%22><path d=%22M1 1l5 5 5-5%22 fill=%22none%22 stroke=%22%23d9ad68%22 stroke-width=%221.5%22/></svg>')] bg-[length:12px] bg-[right_1.1rem_center] bg-no-repeat px-4 py-3.5 pr-10 font-sans text-base text-cream focus:border-gold focus:outline-none"
+            className="w-full appearance-none rounded-xl border border-white/15 bg-cacao-800 bg-[url('data:image/svg+xml;utf8,<svg xmlns=%22http://www.w3.org/2000/svg%22 width=%2212%22 height=%228%22><path d=%22M1 1l5 5 5-5%22 fill=%22none%22 stroke=%22%23d9ad68%22 stroke-width=%221.5%22/></svg>')] bg-[length:12px] bg-[right_1.1rem_center] bg-no-repeat px-4 py-3.5 pr-8 font-sans text-base text-cream focus:border-gold focus:outline-none"
           >
             <option value="">Select {optionName}</option>
             {variants.map((v, i) => (
@@ -113,6 +113,7 @@ export function PurchaseForm({
           </select>
         </label>
         <div aria-live="polite">
+          {variant?.note && <p className="mt-2 text-base italic text-gold">{variant.note}</p>}
           {variant?.ingredients && (
             <div className="mt-3 text-base text-cream/75">
               <p>

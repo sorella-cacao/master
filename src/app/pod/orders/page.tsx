@@ -495,15 +495,24 @@ function OrderCard({
         </p>
       </summary>
       <div className="px-4 pb-4 sm:px-6 sm:pb-6">
-        {!sale && (
+        {/* Odd buys still to make get the status buttons too, without an invoice. */}
+        {(!sale || order.status !== "sent") && (
           <div>
-            <OrderStatus orderId={order.id} status={order.status} itemCount={itemCount(order)} invoice={order.invoice} paidOnline={!!web} saleOrReturn={isSaleOrReturn(order)} />
+            <OrderStatus
+              orderId={order.id}
+              status={order.status}
+              itemCount={itemCount(order)}
+              invoice={order.invoice}
+              paidOnline={!!web}
+              saleOrReturn={isSaleOrReturn(order)}
+              noInvoice={!!sale}
+            />
           </div>
         )}
 
         {web && <WebOrderDetails web={web} />}
 
-        <div className={sale ? "" : "mt-4"}>
+        <div className={sale && order.status === "sent" ? "" : "mt-4"}>
           <ItemTable headings={["Item", "Qty", "Each", "Total"]} columnWidth="w-28">
             {order.lines.map((line) => {
               const item = items.get(line.stock_item_id);
@@ -531,7 +540,7 @@ function OrderCard({
             action={undoSale}
             submitLabel="Undo this sale"
             variant="quiet"
-            confirmMessage={`Remove this ${sale.toLowerCase()}? Its ${itemCount(order)} items go back into stock.`}
+            confirmMessage={`Remove this ${sale.toLowerCase()}?${order.status === "sent" ? ` Its ${itemCount(order)} items go back into stock.` : ""}`}
           >
             <input type="hidden" name="order_id" value={order.id} />
           </PodForm>

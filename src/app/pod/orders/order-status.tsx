@@ -22,6 +22,7 @@ export function OrderStatus({
   invoice,
   paidOnline = false,
   saleOrReturn = false,
+  noInvoice = false,
 }: {
   orderId: string;
   status: string;
@@ -31,6 +32,8 @@ export function OrderStatus({
   paidOnline?: boolean;
   /** Pays later for what they sell: invoiced from Stock › With shops rather than in full. */
   saleOrReturn?: boolean;
+  /** An odd buy (e.g. a spontaneous buy) still to make: no invoice. */
+  noInvoice?: boolean;
 }) {
   const [state, formAction, pending] = useActionState(setOrderStatus, undefined as SaveState);
   const { confirm, dialog } = useConfirm();
@@ -46,7 +49,7 @@ export function OrderStatus({
     data.set("status", next);
 
     // When sending an order without an invoice, offer to make the invoice too, then open it.
-    if (next === "sent" && !invoice && !paidOnline && !saleOrReturn && (await confirm("Generate the invoice now?", { yes: "Yes", no: "Not now" }))) {
+    if (next === "sent" && !invoice && !paidOnline && !saleOrReturn && !noInvoice && (await confirm("Generate the invoice now?", { yes: "Yes", no: "Not now" }))) {
       setInvoiceError("");
       startSending(async () => {
         const result = await setOrderStatus(undefined, data);
@@ -81,7 +84,7 @@ export function OrderStatus({
           </button>
         ))}
       </div>
-      {paidOnline ? null : saleOrReturn ? (
+      {paidOnline || noInvoice ? null : saleOrReturn ? (
         status === "sent" ? (
           <Link
             href={`/pod/stock#sold-${orderId}`}

@@ -101,7 +101,7 @@ export async function undoSale(_: SaveState, data: FormData): Promise<SaveState>
   const { error } = await supabase.rpc("pod_undo_sale", { order_id: String(data.get("order_id")) });
   if (error) return failed(error);
   refresh();
-  return { ok: "Removed, and put back in stock" };
+  return { ok: "Removed" };
 }
 
 /** Adds notes about a week's orders: one for each line. */

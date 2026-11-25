@@ -85,12 +85,23 @@ export function LabelMaker({
     return folder;
   }
 
-  async function make(chooseFolder = false) {
+  async function chooseFolder() {
+    try {
+      const folder = await pickFolder();
+      setStatus(`Labels will be saved in ${folder.name}.`);
+    } catch (error) {
+      // Closing the folder picker without choosing isn't an error worth showing.
+      if (!(error instanceof DOMException)) console.error(error);
+    }
+  }
+
+  /** Makes one size's labels and sends them to the printer. */
+  async function print(size: LabelChoice["size"]) {
     if (!/^\d{4}$/.test(digits)) return setStatus("Enter the first 4 digits of the batch number, e.g. 2610.");
     if (!bestBefore) return setStatus("Enter the best before date.");
     const count = (l: LabelChoice) => Number(copies[l.id] || 0);
-    const picked = labels.filter((l) => count(l) > 0);
-    if (!picked.length) return setStatus("Enter how many of each label you’d like.");
+    const picked = labels.filter((l) => l.size === size && count(l) > 0);
+    if (!picked.length) return setStatus(`Enter how many of each ${size} label you’d like.`);
     if (bestBefore <= today && !window.confirm("That best before date isn’t in the future. Make the labels anyway?")) return;
 
     setBusy(true);
@@ -99,7 +110,7 @@ export function LabelMaker({
       if (!folderPicker()) {
         return setStatus("This browser can’t open your Labels folder. Please use Chrome to make labels.");
       }
-      let folder = chooseFolder ? undefined : await remembered();
+      let folder = await remembered();
       if (folder && (await folder.requestPermission?.({ mode: "readwrite" })) !== "granted") folder = undefined;
       if (!folder) {
         setStatus("Choose your Labels folder (Sorella › Labels).");
@@ -195,7 +206,8 @@ export function LabelMaker({
           const ofSize = labels.filter((l) => l.size === size);
           if (!ofSize.length) return null;
           return (
-            <fieldset key={size} className="overflow-hidden rounded-xl border border-white/15">
+            <div key={size} className="space-y-3">
+            <fieldset className="overflow-hidden rounded-xl border border-white/15">
               <legend className="sr-only">{title} labels</legend>
               <p className="eyebrow border-b border-white/15 bg-white/5 px-3 py-1.5 text-cream/80">{title}</p>
               {ofSize.map((label, i) => (
@@ -213,24 +225,26 @@ export function LabelMaker({
                 </label>
               ))}
             </fieldset>
+            <button
+              type="button"
+              disabled={busy}
+              onClick={() => print(size)}
+              aria-label={`Print ${size} labels`}
+              className="eyebrow w-full rounded-full bg-caramel px-5 py-2.5 text-cacao-950 transition-colors hover:bg-gold disabled:opacity-60 sm:w-auto"
+            >
+              Print labels
+            </button>
+            </div>
           );
         })}
       </div>
 
       <div className="flex flex-wrap items-center gap-x-4 gap-y-2">
-        <button
-          type="button"
-          disabled={busy}
-          onClick={() => make()}
-          className="eyebrow rounded-full bg-caramel px-5 py-2.5 text-cacao-950 transition-colors hover:bg-gold disabled:opacity-60"
-        >
-          Make labels
-        </button>
         {canSaveToFolder && (
           <button
             type="button"
             disabled={busy}
-            onClick={() => make(true)}
+            onClick={chooseFolder}
             className="eyebrow rounded-full border border-white/20 px-4 py-2 text-cream/70 transition-colors hover:border-gold hover:text-gold disabled:opacity-60"
           >
             Choose a different folder

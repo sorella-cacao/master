@@ -1,7 +1,8 @@
 // Opens a Stripe Checkout payment page for the website's cart.
 //
 // The cart sends what's in it (product links, options, quantities, personalised labels) and the
-// delivery chosen (and a free postage code, if they have one); every price is looked up here from the catalogue, never taken from the browser.
+// delivery chosen (and a free postage code, if they have one); every price is looked up here, never
+// taken from the browser.
 // The priced cart is saved as a checkout, which the stripe-webhook function turns into an order
 // once Stripe says it's paid. Uses the STRIPE_SECRET_KEY secret. Called by anyone (no sign-in).
 

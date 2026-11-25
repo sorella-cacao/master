@@ -43,6 +43,17 @@ function remembered(handle?: FolderHandle): Promise<FolderHandle | undefined> {
 }
 
 /** "03NOV2026", like the folders in Labels › Print Runs. */
+/** The Canva folder inside the Labels folder, whether Labels or Sorella was picked. */
+async function canvaIn(folder: FolderHandle) {
+  const labels = await folder.getDirectoryHandle("Labels").catch(() => folder);
+  return labels.getDirectoryHandle("Canva").catch(() => undefined);
+}
+
+const wrongFolder = (folder: FolderHandle) =>
+  folder.name === "Canva"
+    ? "That’s the Canva folder itself. Go back one and choose the Labels folder it’s in (Sorella › Labels)."
+    : `There’s no Canva folder in ${folder.name}. Choose the Labels folder in Sorella (Sorella › Labels).`;
+
 /** What the back's batch number will say, e.g. "Batch # 18112684", or which side is missing. */
 function batchShown(label: LabelChoice, digits: string) {
   if (!label.backFile) return "Front only";
@@ -79,16 +90,17 @@ export function LabelMaker({
     () => false,
   );
 
+  /** Asks for the Labels folder (or Sorella, which holds it), and remembers it if it's the right one. */
   async function pickFolder() {
     const folder = await folderPicker()!({ id: "sorella-labels", mode: "readwrite" });
-    await remembered(folder);
+    if (await canvaIn(folder)) await remembered(folder);
     return folder;
   }
 
   async function chooseFolder() {
     try {
       const folder = await pickFolder();
-      setStatus(`Labels will be saved in ${folder.name}.`);
+      setStatus((await canvaIn(folder)) ? `Labels will be saved in ${folder.name}.` : wrongFolder(folder));
     } catch (error) {
       // Closing the folder picker without choosing isn't an error worth showing.
       if (!(error instanceof DOMException)) console.error(error);
@@ -112,6 +124,8 @@ export function LabelMaker({
       }
       let folder = await remembered();
       if (folder && (await folder.requestPermission?.({ mode: "readwrite" })) !== "granted") folder = undefined;
+      // A folder remembered from before that turns out to be the wrong one is asked for again.
+      if (folder && !(await canvaIn(folder))) folder = undefined;
       if (!folder) {
         setStatus("Choose your Labels folder (Sorella › Labels).");
         folder = await pickFolder();
@@ -119,7 +133,7 @@ export function LabelMaker({
       // If the Sorella folder itself was picked, use the Labels folder inside it.
       const labelsFolder = await folder.getDirectoryHandle("Labels").catch(() => folder!);
       const canva = await labelsFolder.getDirectoryHandle("Canva").catch(() => undefined);
-      if (!canva) return setStatus(`There’s no Canva folder in ${labelsFolder.name}. The Canva labels belong in Sorella › Labels › Canva.`);
+      if (!canva) return setStatus(wrongFolder(folder));
       const read = async (name: string) => (await (await canva.getFileHandle(name)).getFile()).arrayBuffer();
 
       const font = await (await fetch("/fonts/open-sans-400.ttf")).arrayBuffer();

@@ -5,7 +5,7 @@ import { formatPrice } from "@/lib/format";
 
 export type SaleGroup = {
   title: string;
-  items: { id: string; name: string; inStock: number; wholesale: number; retail: number }[];
+  items: { id: string; name: string; section: string | null; inStock: number; wholesale: number; retail: number }[];
 };
 
 type Line = { key: number; group: string; item: string; qty: string };
@@ -162,10 +162,23 @@ export function SaleFields({ kind, groups }: { kind: "odd" | "market"; groups: S
                   <option value="" disabled>
                     Choose…
                   </option>
-                  {group?.items.map((i) => (
-                    <option key={i.id} value={i.id}>
-                      {i.name} ({i.inStock} in stock)
-                    </option>
+                  {group?.items
+                    .filter((i) => !i.section)
+                    .map((i) => (
+                      <option key={i.id} value={i.id}>
+                        {i.name} ({i.inStock} in stock)
+                      </option>
+                    ))}
+                  {[...new Set(group?.items.flatMap((i) => i.section ?? []))].map((section) => (
+                    <optgroup key={section} label={section}>
+                      {group?.items
+                        .filter((i) => i.section === section)
+                        .map((i) => (
+                          <option key={i.id} value={i.id}>
+                            {i.name} ({i.inStock} in stock)
+                          </option>
+                        ))}
+                    </optgroup>
                   ))}
                 </select>
               </label>

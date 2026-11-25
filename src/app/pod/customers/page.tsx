@@ -1,6 +1,7 @@
 import type { Metadata } from "next";
+import { Fragment } from "react";
 import { formatPrice } from "@/lib/format";
-import { ItemRow, ItemTable } from "../item-table";
+import { ItemRow, ItemTable, SectionRow } from "../item-table";
 import { PodForm } from "../pod-form";
 import { PodNav } from "../pod-nav";
 import { PodPanel } from "../pod-panel";
@@ -82,9 +83,10 @@ export default async function CustomersPage() {
                         columnWidth="w-28"
                         collapsible
                       >
-                        {group.items.map((item) => (
+                        {group.items.map((item, i) => (
+                          <Fragment key={item.id}>
+                          <SectionRow item={item} previous={group.items[i - 1]} columns={3} />
                           <ItemRow
-                            key={item.id}
                             name={item.name}
                             cells={[
                               <span key="standard" className="text-cream/70">
@@ -101,6 +103,7 @@ export default async function CustomersPage() {
                               />,
                             ]}
                           />
+                          </Fragment>
                         ))}
                       </ItemTable>
                     ))}

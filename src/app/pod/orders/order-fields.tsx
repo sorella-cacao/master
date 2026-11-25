@@ -2,12 +2,12 @@
 
 import { Fragment, useEffect, useId, useRef, useState } from "react";
 import { formatPrice } from "@/lib/format";
-import { ItemName, ItemRow, ItemTable } from "../item-table";
+import { ItemName, ItemRow, ItemTable, SectionRow } from "../item-table";
 import { parseOrder } from "./parse-order";
 
 export type OrderGroup = {
   title: string;
-  items: { id: string; name: string; price: number; variety: string | null; parentId: string | null; hasVarieties: boolean }[];
+  items: { id: string; name: string; price: number; variety: string | null; parentId: string | null; hasVarieties: boolean; section: string | null }[];
 };
 
 /** A variety typed into the order (e.g. a Local Fruit), added as its own stock item when saved. */
@@ -193,6 +193,7 @@ export function OrderFields({
               const endsFamily = parent?.hasVarieties && (!next || (next.parentId ?? next.id) !== family);
               return (
                 <Fragment key={item.id}>
+                  <SectionRow item={item} previous={group.items[index - 1]} columns={3} />
                   <ItemRow
                     name={<ItemName item={item} />}
                     cells={[

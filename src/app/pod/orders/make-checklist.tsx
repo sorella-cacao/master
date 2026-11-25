@@ -1,8 +1,8 @@
 "use client";
 
-import { useOptimistic, useState, useTransition } from "react";
+import { Fragment, useOptimistic, useState, useTransition } from "react";
 import { useConfirm } from "../confirm-dialog";
-import { ItemRow, ItemTable } from "../item-table";
+import { ItemRow, ItemTable, SectionRow } from "../item-table";
 import { setMadeThisWeek } from "./actions";
 
 export type MakeGroup = {
@@ -10,7 +10,7 @@ export type MakeGroup = {
   /** Bars show how many to make; other things (Pure Cacao, bundles) also show their weight. */
   weighed: boolean;
   /** `need` is how many to make in all, and `made` how many are noted as made so far. */
-  rows: { id: string; name: string; need: number; made: number; accent: boolean; weight: string }[];
+  rows: { id: string; name: string; section: string | null; need: number; made: number; accent: boolean; weight: string }[];
 };
 
 const BAR_TOTALS = [
@@ -96,12 +96,13 @@ export function MakeChecklist({ week, groups }: { week: string; groups: MakeGrou
               highlight={highlight}
               collapsible
             >
-              {g.rows.map((r) => {
+              {g.rows.map((r, i) => {
                 const left = leftOf(r);
                 const done = left === 0;
                 return (
+                  <Fragment key={r.id}>
+                  <SectionRow item={r} previous={g.rows[i - 1]} columns={g.weighed ? 5 : 4} />
                   <ItemRow
-                    key={r.id}
                     done={done}
                     name={
                       <label className="flex cursor-pointer items-center gap-2">
@@ -124,6 +125,7 @@ export function MakeChecklist({ week, groups }: { week: string; groups: MakeGrou
                       made[r.id] > r.need ? <span className="inline-block">{made[r.id] - r.need} extra</span> : left,
                     ]}
                   />
+                  </Fragment>
                 );
               })}
             </ItemTable>

@@ -3,7 +3,7 @@ import Link from "next/link";
 import { Fragment } from "react";
 import { formatPrice } from "@/lib/format";
 import { addDays, isDate, mondayOf, shortDate, sydneyToday } from "@/lib/weeks";
-import { ItemRow, ItemTable } from "../item-table";
+import { ItemRow, ItemTable, SectionRow } from "../item-table";
 import { PodForm } from "../pod-form";
 import { PodNav } from "../pod-nav";
 import { PodPanel } from "../pod-panel";
@@ -107,6 +107,7 @@ function formGroups(groups: StockGroup[], order?: Order): OrderGroup[] {
           variety: i.variety,
           parentId: i.parentId,
           hasVarieties: i.hasVarieties,
+          section: i.section,
         })),
     }))
     .filter((g) => g.items.length);
@@ -191,10 +192,10 @@ export default async function OrdersPage(props: PageProps<"/pod/orders">) {
             ? Math.max(0, need - i.quantity + note.added + note.need_offset)
             : Math.max(0, need - Math.max(i.quantity, 0));
           const kg = toMake * itemKg(g.title, i.name, i.chocolateGrams);
-          return { id: i.id, name: i.name, base: i.baseChocolate, ordered: need, inStock: i.quantity, toMake, made: note?.quantity ?? 0, kg };
+          return { id: i.id, name: i.name, section: i.section, base: i.baseChocolate, ordered: need, inStock: i.quantity, toMake, made: note?.quantity ?? 0, kg };
         })
-        // Flavours made from a shared chocolate (e.g. 75% Dark) go last, so they can be totalled together.
-        .sort((a, b) => Number(!!a.base) - Number(!!b.base) || (a.base ?? "").localeCompare(b.base ?? "")),
+        // Flavours made from a shared chocolate (e.g. 75% Dark) go last, then any under a subtitle (Festive).
+        .sort((a, b) => Number(!!a.section) - Number(!!b.section) || Number(!!a.base) - Number(!!b.base) || (a.base ?? "").localeCompare(b.base ?? "")),
     }))
     .filter((g) => g.rows.length);
   const totalToMake = plan.reduce((n, g) => n + g.rows.reduce((m, r) => m + r.toMake, 0), 0);
@@ -261,6 +262,7 @@ export default async function OrdersPage(props: PageProps<"/pod/orders">) {
                     rows: g.rows.map((r) => ({
                       id: r.id,
                       name: r.name,
+                      section: r.section,
                       need: r.toMake,
                       made: r.made,
                       accent: !!r.base,
@@ -326,8 +328,11 @@ export default async function OrdersPage(props: PageProps<"/pod/orders">) {
                 headings={[g.title === "Pure Cacao" ? "Size" : "Flavour", "Ordered", "In stock"]}
                 collapsible
               >
-                {g.rows.map((r) => (
-                  <ItemRow key={r.id} name={r.name} cells={[r.ordered, r.inStock]} />
+                {g.rows.map((r, i) => (
+                  <Fragment key={r.id}>
+                    <SectionRow item={r} previous={g.rows[i - 1]} columns={3} />
+                    <ItemRow name={r.name} cells={[r.ordered, r.inStock]} />
+                  </Fragment>
                 ))}
               </ItemTable>
             ))}

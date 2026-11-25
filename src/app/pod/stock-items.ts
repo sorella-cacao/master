@@ -23,6 +23,8 @@ export type StockItem = {
   variety: string | null;
   /** False for things listed on orders but not counted in stock, like the Christmas bundles. */
   tracksStock: boolean;
+  /** The subtitle it's listed under, e.g. "Festive". */
+  section: string | null;
 };
 
 export type StockGroup = { productId: string; title: string; items: StockItem[] };
@@ -37,7 +39,7 @@ export const saleGroups = (groups: StockGroup[]) =>
       title: g.title,
       items: g.items
         .filter((i) => i.tracksStock)
-        .map((i) => ({ id: i.id, name: i.name, inStock: i.quantity, wholesale: i.wholesalePrice, retail: i.retailPrice ?? i.wholesalePrice })),
+        .map((i) => ({ id: i.id, name: i.name, section: i.section, inStock: i.quantity, wholesale: i.wholesalePrice, retail: i.retailPrice ?? i.wholesalePrice })),
     }))
     .filter((g) => g.items.length);
 
@@ -48,7 +50,7 @@ export const saleGroups = (groups: StockGroup[]) =>
 export async function getStockGroups(supabase: Db, { includeHidden = false, includeUntracked = false } = {}) {
   const { data, error } = await supabase
     .from("stock_items")
-    .select("id, name, quantity, wholesale_price, is_extra, is_active, position, chocolate_grams, base_chocolate, has_varieties, parent_id, tracks_stock, product:products(id, title, position), variant:product_variants(price)")
+    .select("id, name, quantity, wholesale_price, is_extra, is_active, position, chocolate_grams, base_chocolate, has_varieties, parent_id, tracks_stock, section, product:products(id, title, position), variant:product_variants(price)")
     .order("position");
   if (error) throw error;
 
@@ -75,6 +77,7 @@ export async function getStockGroups(supabase: Db, { includeHidden = false, incl
       parentId: row.parent_id,
       variety: row.parent_id ? row.name : null,
       tracksStock: row.tracks_stock,
+      section: row.section,
     });
   }
   // Varieties sit straight after the item they belong to, in name order.
@@ -85,7 +88,8 @@ export async function getStockGroups(supabase: Db, { includeHidden = false, incl
       ordered.push(item, ...varieties.filter((v) => v.parentId === item.id));
     }
     ordered.push(...varieties.filter((v) => !ordered.includes(v)));
-    group.items = ordered;
+    // Anything under a subtitle (Festive) comes after everything else.
+    group.items = ordered.sort((a, b) => Number(!!a.section) - Number(!!b.section));
   }
   return [...groups.values()].sort((a, b) => a.position - b.position);
 }

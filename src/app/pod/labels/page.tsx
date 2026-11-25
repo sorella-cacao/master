@@ -41,7 +41,7 @@ export default async function LabelsPage(props: PageProps<"/pod/labels">) {
         <LabelMaker
           key={made?.week}
           fromMade={made && { copies: made.copies, missing: made.missing, weekOf: shortDate(made.week) }}
-          labels={labels.map(({ id, size, name, frontFile, backFile, stamps }) => ({ id, size, name, frontFile, backFile, stamps }))}
+          labels={labels.map(({ id, size, name, frontFile, backFile, stamps, section }) => ({ id, size, name, frontFile, backFile, stamps, section }))}
           today={today}
           defaultBestBefore={addDays(today, 365)}
         />

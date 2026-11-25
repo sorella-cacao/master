@@ -1,9 +1,9 @@
 "use client";
 
-import { useState, useSyncExternalStore } from "react";
+import { Fragment, useState, useSyncExternalStore } from "react";
 import { type Stamp, stampLabel, stampText } from "./stamp";
 
-type LabelChoice = { id: string; size: "small" | "large"; name: string; frontFile: string; backFile: string; stamps: Stamp[] };
+type LabelChoice = { id: string; size: "small" | "large"; name: string; frontFile: string; backFile: string; stamps: Stamp[]; section: string | null };
 
 /** "28/10/2027" from "2027-10-28", as the labels print it. */
 const labelDate = (date: string) => `${date.slice(8, 10)}/${date.slice(5, 7)}/${date.slice(0, 4)}`;
@@ -225,7 +225,11 @@ export function LabelMaker({
               <legend className="sr-only">{title} labels</legend>
               <p className="eyebrow border-b border-white/15 bg-white/5 px-3 py-1.5 text-cream/80">{title}</p>
               {ofSize.map((label, i) => (
-                <label key={label.id} className={`flex items-center gap-3 px-3 py-2 font-sans text-sm ${i % 2 ? "" : "bg-white/[0.03]"}`}>
+                <Fragment key={label.id}>
+                {label.section && label.section !== ofSize[i - 1]?.section && (
+                  <p className="eyebrow border-t border-white/30 bg-white/5 px-3 py-1.5 text-xs text-gold">{label.section}</p>
+                )}
+                <label className={`flex items-center gap-3 px-3 py-2 font-sans text-sm ${i % 2 ? "" : "bg-white/[0.03]"}`}>
                   <input
                     inputMode="numeric"
                     value={copies[label.id] ?? ""}
@@ -237,6 +241,7 @@ export function LabelMaker({
                   <span className="flex-1">{label.name}</span>
                   <span className="tabular-nums text-cream/60">{batchShown(label, digits)}</span>
                 </label>
+                </Fragment>
               ))}
             </fieldset>
             <button

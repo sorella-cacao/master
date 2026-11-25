@@ -528,6 +528,7 @@ export type Database = {
           position: number
           serving_size: string
           servings_per_package: string
+          section: string | null
           size: string
           updated_at: string
         }
@@ -549,6 +550,7 @@ export type Database = {
           position?: number
           serving_size?: string
           servings_per_package?: string
+          section?: string | null
           size: string
           updated_at?: string
         }
@@ -570,6 +572,7 @@ export type Database = {
           position?: number
           serving_size?: string
           servings_per_package?: string
+          section?: string | null
           size?: string
           updated_at?: string
         }
@@ -931,6 +934,7 @@ export type Database = {
           position: number
           product_id: string
           quantity: number
+          section: string | null
           tracks_stock: boolean
           updated_at: string
           variant_id: string | null
@@ -950,6 +954,7 @@ export type Database = {
           position?: number
           product_id: string
           quantity?: number
+          section?: string | null
           tracks_stock?: boolean
           updated_at?: string
           variant_id?: string | null
@@ -969,6 +974,7 @@ export type Database = {
           position?: number
           product_id?: string
           quantity?: number
+          section?: string | null
           tracks_stock?: boolean
           updated_at?: string
           variant_id?: string | null

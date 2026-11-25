@@ -1,5 +1,6 @@
 import type { Metadata } from "next";
-import { ItemName, ItemRow, ItemTable } from "../item-table";
+import { Fragment } from "react";
+import { ItemName, ItemRow, ItemTable, SectionRow } from "../item-table";
 import { PodForm } from "../pod-form";
 import { PodNav } from "../pod-nav";
 import { PodPanel } from "../pod-panel";
@@ -58,9 +59,10 @@ export default async function StockPage() {
         <div className="space-y-3">
           {groups.map((group) => (
             <ItemTable key={group.productId} caption={group.title} headings={[itemHeading(group), "In stock"]} collapsible>
-              {group.items.map((item) => (
+              {group.items.map((item, i) => (
+                <Fragment key={item.id}>
+                <SectionRow item={item} previous={group.items[i - 1]} columns={2} />
                 <ItemRow
-                  key={item.id}
                   name={
                     <>
                       <ItemName item={item} />
@@ -77,6 +79,7 @@ export default async function StockPage() {
                     </span>,
                   ]}
                 />
+                </Fragment>
               ))}
             </ItemTable>
           ))}
@@ -211,9 +214,10 @@ function CountTables({ groups, name }: { groups: StockGroup[]; name: "made" | "c
           columnWidth="w-28"
           collapsible
         >
-          {group.items.map((item) => (
+          {group.items.map((item, i) => (
+            <Fragment key={item.id}>
+            <SectionRow item={item} previous={group.items[i - 1]} columns={3} />
             <ItemRow
-              key={item.id}
               name={<ItemName item={item} />}
               cells={[
                 item.quantity,
@@ -231,6 +235,7 @@ function CountTables({ groups, name }: { groups: StockGroup[]; name: "made" | "c
                 />,
               ]}
             />
+            </Fragment>
           ))}
         </ItemTable>
       ))}

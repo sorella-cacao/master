@@ -110,6 +110,21 @@ export function ItemRow({
   );
 }
 
+/**
+ * A subtitle row (e.g. "Festive") above the first item of each section; items without one have none.
+ * `columns` is how many columns the table has.
+ */
+export function SectionRow({ item, previous, columns }: { item: { section: string | null }; previous?: { section: string | null }; columns: number }) {
+  if (!item.section || item.section === previous?.section) return null;
+  return (
+    <tr className="border-t border-white/30">
+      <th scope="colgroup" colSpan={columns} className="eyebrow bg-white/5 px-3 py-1.5 text-left text-xs text-gold">
+        {item.section}
+      </th>
+    </tr>
+  );
+}
+
 /** An item's name for a table row; a variety (e.g. a Local Fruit) shows indented under its item. */
 export function ItemName({ item }: { item: { name: string; variety?: string | null } }) {
   if (!item.variety) return <>{item.name}</>;

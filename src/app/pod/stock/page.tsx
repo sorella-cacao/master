@@ -6,10 +6,11 @@ import { PodNav } from "../pod-nav";
 import { PodPanel } from "../pod-panel";
 import { getSession } from "../session";
 import { type StockGroup, getStockGroups, saleGroups } from "../stock-items";
-import { addMade, addOneOffFlavour, addToMainStock, recordSale, saveStockTake, setFlavourHidden } from "./actions";
+import { addMade, addOneOffFlavour, addToMainStock, recordSale, saveStockTake } from "./actions";
 import { SaleFields } from "./sale-fields";
 import { ShopSales } from "./shop-sales";
 import { getShops } from "./shops";
+import { SleepButton } from "./sleep-button";
 
 export const metadata: Metadata = { title: "Stock" };
 
@@ -43,7 +44,7 @@ export default async function StockPage() {
   const groups = allGroups
     .map((g) => ({ ...g, items: g.items.filter((i) => i.isActive) }))
     .filter((g) => g.items.length);
-  const hidden = allGroups.flatMap((g) => g.items.filter((i) => !i.isActive).map((i) => ({ ...i, title: g.title })));
+  const asleep = allGroups.reduce((n, g) => n + g.items.filter((i) => !i.isActive).length, 0);
 
   return (
     <div className="space-y-3">
@@ -117,9 +118,42 @@ export default async function StockPage() {
       </PodPanel>
 
       <PodPanel small
-        title="Add a one-off flavour"
-        hint="For a flavour you’re making that isn’t on the website. It appears in stock and orders, never in the shop."
+        title="Flavour list"
+        hint={`Put a flavour to sleep to take it out of stock and labels, and wake it to bring it back.${asleep ? ` ${asleep} asleep.` : ""}`}
       >
+        <div className="mb-8 space-y-3">
+          {allGroups.map((group) => (
+            <ItemTable key={group.productId} caption={group.title} headings={[itemHeading(group), "In stock", "Sleep"]} columnWidth="w-20 sm:w-28" collapsible>
+              {group.items.map((item, i) => (
+                <Fragment key={item.id}>
+                <SectionRow item={item} previous={group.items[i - 1]} columns={3} />
+                <ItemRow
+                  name={
+                    <span className={item.isActive ? "" : "text-cream/50"}>
+                      <ItemName item={item} />
+                      {!item.isActive && (
+                        <span className="eyebrow ml-2 rounded-full border border-white/20 px-2 py-0.5 text-[0.65rem]">Asleep</span>
+                      )}
+                    </span>
+                  }
+                  cells={[
+                    item.quantity,
+                    // A fruit sleeps and wakes with Local Fruit while that's asleep.
+                    item.sleepsWithParent ? (
+                      "–"
+                    ) : (
+                      <SleepButton key="sleep" id={item.id} name={`${item.name} (${group.title})`} asleep={!item.isActive} inStock={item.quantity} />
+                    ),
+                  ]}
+                />
+                </Fragment>
+              ))}
+            </ItemTable>
+          ))}
+        </div>
+
+        <h3 className="mb-1 text-xl">Add a one-off flavour</h3>
+        <p className="mb-4 text-cream/70">For a flavour you’re making that isn’t on the website. It appears in stock and orders, never in the shop.</p>
         <PodForm action={addOneOffFlavour} submitLabel="Add flavour" resetOnSuccess>
           <div className="grid gap-4 sm:grid-cols-[12rem_1fr]">
             <label className="block">
@@ -160,31 +194,10 @@ export default async function StockPage() {
                       >
                         <input type="hidden" name="id" value={item.id} />
                       </PodForm>
-                      <PodForm action={setFlavourHidden} submitLabel="Hide" variant="quiet" className="-mt-4">
-                        <input type="hidden" name="id" value={item.id} />
-                        <input type="hidden" name="hidden" value="true" />
-                      </PodForm>
                     </span>
                   </div>
                 )),
             )}
-          </div>
-        )}
-
-        {hidden.length > 0 && (
-          <div className="mt-8 space-y-2">
-            <p className="eyebrow text-cream/70">Hidden flavours</p>
-            {hidden.map((item) => (
-              <div key={item.id} className="flex flex-wrap items-center justify-between gap-x-4 border-t border-white/10 pt-2">
-                <span className="text-cream/70">
-                  {item.name} · {item.title}
-                </span>
-                <PodForm action={setFlavourHidden} submitLabel="Show again" variant="quiet" className="-mt-4">
-                  <input type="hidden" name="id" value={item.id} />
-                  <input type="hidden" name="hidden" value="false" />
-                </PodForm>
-              </div>
-            ))}
           </div>
         )}
       </PodPanel>

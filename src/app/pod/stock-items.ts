@@ -11,7 +11,10 @@ export type StockItem = {
   /** The website price, for market sales; one-off flavours have none. */
   retailPrice: number | null;
   isExtra: boolean;
+  /** Awake. One that's asleep (or whose parent is) is left out of stock lists and labels. */
   isActive: boolean;
+  /** Asleep only because the item it's a variety of is. */
+  sleepsWithParent: boolean;
   /** Grams of base chocolate in one, when it differs from the size's usual weight. */
   chocolateGrams: number | null;
   /** The chocolate it's made from (e.g. "75% Dark"), totalled together in the weekly plan. */
@@ -31,14 +34,14 @@ export type StockGroup = { productId: string; title: string; items: StockItem[] 
 
 /**
  * Sizes and flavours for the sale forms (odd buys, markets), with both prices (one-off flavours have
- * no website price, so use wholesale). Only what's counted in stock.
+ * no website price, so use wholesale). Only what's awake and counted in stock.
  */
 export const saleGroups = (groups: StockGroup[]) =>
   groups
     .map((g) => ({
       title: g.title,
       items: g.items
-        .filter((i) => i.tracksStock)
+        .filter((i) => i.isActive && i.tracksStock)
         .map((i) => ({ id: i.id, name: i.name, section: i.section, inStock: i.quantity, wholesale: i.wholesalePrice, retail: i.retailPrice ?? i.wholesalePrice })),
     }))
     .filter((g) => g.items.length);
@@ -55,9 +58,12 @@ export async function getStockGroups(supabase: Db, { includeHidden = false, incl
   if (error) throw error;
 
   const names = new Map(data.map((row) => [row.id, row.name]));
+  const asleep = new Set(data.filter((row) => !row.is_active).map((row) => row.id));
   const groups = new Map<string, StockGroup & { position: number }>();
   for (const row of data) {
-    if (!row.is_active && !includeHidden) continue;
+    const sleepsWithParent = row.is_active && !!row.parent_id && asleep.has(row.parent_id);
+    const isActive = row.is_active && !sleepsWithParent;
+    if (!isActive && !includeHidden) continue;
     if (!row.tracks_stock && !includeUntracked) continue;
     const product = row.product;
     if (!groups.has(product.id)) {
@@ -70,7 +76,8 @@ export async function getStockGroups(supabase: Db, { includeHidden = false, incl
       wholesalePrice: Number(row.wholesale_price),
       retailPrice: row.variant ? Number(row.variant.price) : null,
       isExtra: row.is_extra,
-      isActive: row.is_active,
+      isActive,
+      sleepsWithParent,
       chocolateGrams: row.chocolate_grams,
       baseChocolate: row.base_chocolate,
       hasVarieties: row.has_varieties,

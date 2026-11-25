@@ -85,18 +85,19 @@ export async function addOneOffFlavour(_: SaveState, data: FormData): Promise<Sa
   return { ok: `Added ${name}.` };
 }
 
-export async function setFlavourHidden(_: SaveState, data: FormData): Promise<SaveState> {
+/** Puts a flavour to sleep, out of stock lists, new orders and labels with its count kept; or wakes it up. */
+export async function setFlavourAsleep(id: string, asleep: boolean): Promise<{ error?: string }> {
   const { supabase, isAdmin } = await getSession();
-  if (!isAdmin) return NO_ACCESS;
-  const hidden = data.get("hidden") === "true";
-  const { error } = await supabase
-    .from("stock_items")
-    .update({ is_active: !hidden })
-    .eq("id", String(data.get("id")))
-    .eq("is_extra", true);
-  if (error) return failed(error);
+  if (!isAdmin) return { error: "This account doesn't have access to the Pod." };
+  const { error } = await supabase.from("stock_items").update({ is_active: !asleep }).eq("id", id);
+  if (error) {
+    console.error(error);
+    return { error: "Couldn't save. Please try again." };
+  }
   refresh();
-  return { ok: hidden ? "Hidden" : "Showing again" };
+  revalidatePath("/pod/labels");
+  revalidatePath("/pod/customers");
+  return {};
 }
 
 /** Makes a one-off flavour part of the main stock, so it's no longer listed as a one-off. */

@@ -3,6 +3,7 @@ import { addDays, isDate, shortDate, sydneyToday } from "@/lib/weeks";
 import { PodNav } from "../pod-nav";
 import { PodPanel } from "../pod-panel";
 import { getSession } from "../session";
+import { getStockGroups } from "../stock-items";
 import { labelsForMade } from "./from-made";
 import { getLabels } from "./label-data";
 import { LabelMaker } from "./label-maker";
@@ -20,7 +21,13 @@ export default async function LabelsPage(props: PageProps<"/pod/labels">) {
     );
   }
 
-  const labels = await getLabels(supabase);
+  const [allLabels, groups] = await Promise.all([
+    getLabels(supabase),
+    getStockGroups(supabase, { includeHidden: true, includeUntracked: true }),
+  ]);
+  // Labels for flavours that are asleep (Stock › Flavour list) are left out until they wake up.
+  const asleep = new Set(groups.flatMap((g) => g.items.filter((i) => !i.isActive).map((i) => i.id)));
+  const labels = allLabels.filter((l) => !l.stockItemId || !asleep.has(l.stockItemId));
   const today = sydneyToday();
   // "Convert to labels" on Orders: fill in what's been made in that week.
   const { week } = await props.searchParams;

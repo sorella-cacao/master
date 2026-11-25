@@ -1,7 +1,9 @@
 import Link from "next/link";
 import { blocksToText } from "@/lib/content";
+import { shortDate } from "@/lib/weeks";
 import type { ContentBlock } from "@/data/types";
 import {
+  addDiscountCode,
   addTicket,
   addVariant,
   deleteTicket,
@@ -14,7 +16,9 @@ import {
   saveTicket,
   saveVariant,
   saveWorkshop,
+  setDiscountCodeActive,
 } from "./actions";
+import { NewCodeFields } from "./discount-code-fields";
 import { PodForm } from "./pod-form";
 import { PodNav } from "./pod-nav";
 import { logOut } from "./login/actions";
@@ -37,7 +41,7 @@ export default async function PodPage() {
     );
   }
 
-  const [products, workshops, delivery, promo] = await Promise.all([
+  const [products, workshops, delivery, promo, codes, codeUses] = await Promise.all([
     supabase
       .from("products")
       .select(
@@ -53,10 +57,14 @@ export default async function PodPage() {
       .order("position"),
     supabase.from("delivery_options").select("id, name, description, price, free_over, is_active").order("position"),
     supabase.from("site_promo").select("enabled, product_id, strip_text, banner_title, banner_text").maybeSingle(),
+    supabase.from("discount_codes").select("code, max_uses, expires_on, is_active").order("created_at", { ascending: false }),
+    supabase.from("checkouts").select("discount_code").eq("status", "paid").not("discount_code", "is", null),
   ]);
   if (products.error) throw products.error;
   if (workshops.error) throw workshops.error;
   if (delivery.error) throw delivery.error;
+  if (codes.error) throw codes.error;
+  if (codeUses.error) throw codeUses.error;
   if (promo.error) throw promo.error;
 
   return (
@@ -156,6 +164,41 @@ export default async function PodPage() {
             </PodForm>
           </article>
         ))}
+
+        <article className="space-y-6 rounded-2xl border border-white/10 bg-cacao-950/40 p-6 sm:p-8">
+          <div>
+            <h3 className="text-2xl">Free postage codes</h3>
+            <p className="mt-1 text-cream/70">
+              Give someone a code to type into their cart, and their postage is free. A code is used once the order is paid.
+            </p>
+          </div>
+          {codes.data.length > 0 && (
+            <ul className="divide-y divide-white/10 border-y border-white/10">
+              {codes.data.map((c) => {
+                const uses = codeUses.data.filter((u) => u.discount_code === c.code).length;
+                return (
+                  <li key={c.code} className="flex flex-wrap items-center justify-between gap-x-6 gap-y-2 py-3">
+                    <div className={c.is_active ? "" : "opacity-60"}>
+                      <p className="font-sans text-lg font-medium tracking-wide">{c.code}</p>
+                      <p className="font-sans text-sm text-cream/70">
+                        {c.max_uses ? `Used ${uses} of ${c.max_uses}` : `Used ${uses} times, no limit`}
+                        {c.expires_on && ` · last day ${shortDate(c.expires_on)}`}
+                        {!c.is_active && " · switched off"}
+                      </p>
+                    </div>
+                    <PodForm action={setDiscountCodeActive} submitLabel={c.is_active ? "Switch off" : "Switch on"} variant="quiet" className="-mt-4">
+                      <input type="hidden" name="code" value={c.code} />
+                      <input type="hidden" name="active" value={c.is_active ? "false" : "true"} />
+                    </PodForm>
+                  </li>
+                );
+              })}
+            </ul>
+          )}
+          <PodForm action={addDiscountCode} submitLabel="Add code" resetOnSuccess>
+            <NewCodeFields />
+          </PodForm>
+        </article>
       </section>
 
       <section aria-labelledby="products-heading" className="space-y-8">

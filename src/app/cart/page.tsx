@@ -15,6 +15,7 @@ export default async function CartPage() {
     id: d.id,
     name: d.name,
     description: d.description,
+    needsAddress: d.needs_address,
     price: Number(d.price),
     freeOver: d.free_over === null ? null : Number(d.free_over),
   }));

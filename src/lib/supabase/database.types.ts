@@ -35,6 +35,7 @@ export type Database = {
         Row: {
           created_at: string
           delivery: Json | null
+          discount_code: string | null
           id: string
           items: Json
           label_fees: Json
@@ -47,6 +48,7 @@ export type Database = {
         Insert: {
           created_at?: string
           delivery?: Json | null
+          discount_code?: string | null
           id?: string
           items: Json
           label_fees?: Json
@@ -59,6 +61,7 @@ export type Database = {
         Update: {
           created_at?: string
           delivery?: Json | null
+          discount_code?: string | null
           id?: string
           items?: Json
           label_fees?: Json
@@ -392,6 +395,30 @@ export type Database = {
           payment_terms_days?: number
           phone?: string
           updated_at?: string
+        }
+        Relationships: []
+      }
+      discount_codes: {
+        Row: {
+          code: string
+          created_at: string
+          expires_on: string | null
+          is_active: boolean
+          max_uses: number | null
+        }
+        Insert: {
+          code: string
+          created_at?: string
+          expires_on?: string | null
+          is_active?: boolean
+          max_uses?: number | null
+        }
+        Update: {
+          code?: string
+          created_at?: string
+          expires_on?: string | null
+          is_active?: boolean
+          max_uses?: number | null
         }
         Relationships: []
       }

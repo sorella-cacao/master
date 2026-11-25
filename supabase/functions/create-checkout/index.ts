@@ -1,7 +1,7 @@
 // Opens a Stripe Checkout payment page for the website's cart.
 //
 // The cart sends what's in it (product links, options, quantities, personalised labels) and the
-// delivery chosen; every price is looked up here from the catalogue, never taken from the browser.
+// delivery chosen (and a free postage code, if they have one); every price is looked up here from the catalogue, never taken from the browser.
 // The priced cart is saved as a checkout, which the stripe-webhook function turns into an order
 // once Stripe says it's paid. Uses the STRIPE_SECRET_KEY secret. Called by anyone (no sign-in).
 
@@ -110,7 +110,7 @@ Deno.serve(async (req) => {
   if (req.method !== "POST") return json({ error: "Not allowed" }, 405);
   let checkoutId: string | undefined;
   try {
-    const { items: lines, deliveryId, site } = await req.json();
+    const { items: lines, deliveryId, site, code } = await req.json();
     if (!SITES.includes(site)) return json({ error: "Not allowed" }, 403);
 
     const items = await price(lines);
@@ -120,6 +120,7 @@ Deno.serve(async (req) => {
 
     // Delivery only for things that are posted or picked up, not workshop tickets.
     let delivery: { name: string; price: number; needs_address: boolean } | null = null;
+    let discountCode: string | null = null;
     if (products.length) {
       const { data: option } = await db
         .from("delivery_options")
@@ -130,12 +131,21 @@ Deno.serve(async (req) => {
       if (!option) throw new CartError("Please choose postage or pick up.");
       const free = option.free_over !== null && productsTotal >= Number(option.free_over);
       delivery = { name: option.name, price: free ? 0 : Number(option.price), needs_address: option.needs_address };
+      // A code makes postage free. It's left unused when there's no postage to pay anyway.
+      const typed = typeof code === "string" ? code.trim().toUpperCase().slice(0, 30) : "";
+      if (typed && delivery.needs_address && delivery.price > 0) {
+        const { data: valid, error } = await db.rpc("check_discount_code", { code: typed });
+        if (error) throw error;
+        if (!valid) throw new CartError("That code isn’t valid, or has already been used. Please remove it and try again.");
+        delivery.price = 0;
+        discountCode = typed;
+      }
     }
 
     const total = items.reduce((n, i) => n + i.unit_price * i.quantity, 0) + fees.reduce((n, f) => n + f.amount, 0) + (delivery?.price ?? 0);
     const { data: checkout, error } = await db
       .from("checkouts")
-      .insert({ items, label_fees: fees, delivery, total: Math.round(total * 100) / 100 })
+      .insert({ items, label_fees: fees, delivery, total: Math.round(total * 100) / 100, discount_code: discountCode })
       .select("id")
       .single();
     if (error) throw error;
@@ -150,6 +160,8 @@ Deno.serve(async (req) => {
       "phone_number_collection[enabled]": "true",
       locale: "en",
     });
+    // A payment page with a code closes sooner, so a code for one order isn't left open on several.
+    if (discountCode) params.set("expires_at", String(Math.floor(Date.now() / 1000) + 31 * 60));
     items.forEach((item, i) => {
       params.set(`line_items[${i}][quantity]`, String(item.quantity));
       params.set(`line_items[${i}][price_data][currency]`, "aud");

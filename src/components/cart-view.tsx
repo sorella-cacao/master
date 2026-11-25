@@ -7,7 +7,7 @@ import { formatPrice } from "@/lib/format";
 import { ButtonLink, buttonClass } from "./button";
 import { useCart } from "./cart";
 
-export type DeliveryOption = { id: string; name: string; description: string; price: number; freeOver: number | null };
+export type DeliveryOption = { id: string; name: string; description: string; needsAddress: boolean; price: number; freeOver: number | null };
 
 /** Workshop tickets aren't posted, so they don't need delivery. */
 const isWorkshop = (href: string) => href.startsWith("/workshops/");
@@ -15,6 +15,11 @@ const isWorkshop = (href: string) => href.startsWith("/workshops/");
 export function CartView({ deliveryOptions }: { deliveryOptions: DeliveryOption[] }) {
   const { items, labelFees, subtotal, setQuantity, removeItem } = useCart();
   const [deliveryId, setDeliveryId] = useState(deliveryOptions[0]?.id ?? "");
+  // A free postage code: what's typed, and the one accepted.
+  const [codeTyped, setCodeTyped] = useState("");
+  const [code, setCode] = useState("");
+  const [codeMessage, setCodeMessage] = useState("");
+  const [checkingCode, setCheckingCode] = useState(false);
   const [paying, setPaying] = useState(false);
   const [error, setError] = useState("");
 
@@ -23,10 +28,35 @@ export function CartView({ deliveryOptions }: { deliveryOptions: DeliveryOption[
   const productsTotal =
     items.filter((i) => !isWorkshop(i.href)).reduce((n, i) => n + i.unitPrice * i.quantity, 0) +
     labelFees.reduce((n, f) => n + f.amount, 0);
-  const deliveryPrice = (option: DeliveryOption) => (option.freeOver !== null && productsTotal >= option.freeOver ? 0 : option.price);
+  const fullPrice = (option: DeliveryOption) => (option.freeOver !== null && productsTotal >= option.freeOver ? 0 : option.price);
+  const deliveryPrice = (option: DeliveryOption) => (code && option.needsAddress ? 0 : fullPrice(option));
   const delivery = needsDelivery ? deliveryOptions.find((d) => d.id === deliveryId) : undefined;
   const total = subtotal + (delivery ? deliveryPrice(delivery) : 0);
   const hasSubscription = items.some((i) => i.frequency);
+
+  async function applyCode(e: React.FormEvent) {
+    e.preventDefault();
+    const typed = codeTyped.trim().toUpperCase();
+    if (!typed) return;
+    setCodeMessage("");
+    setCheckingCode(true);
+    try {
+      const res = await fetch(`${process.env.NEXT_PUBLIC_SUPABASE_URL}/rest/v1/rpc/check_discount_code`, {
+        method: "POST",
+        headers: { "Content-Type": "application/json", apikey: process.env.NEXT_PUBLIC_SUPABASE_PUBLISHABLE_KEY! },
+        body: JSON.stringify({ code: typed }),
+      });
+      if (!res.ok) throw new Error();
+      if (await res.json()) {
+        setCode(typed);
+        setCodeTyped("");
+      } else setCodeMessage("That code isn’t valid, or has already been used.");
+    } catch {
+      setCodeMessage("We couldn’t check that code. Please try again.");
+    } finally {
+      setCheckingCode(false);
+    }
+  }
 
   // Prices are checked again on the server, then the customer pays on Stripe's page.
   async function checkout() {
@@ -39,6 +69,7 @@ export function CartView({ deliveryOptions }: { deliveryOptions: DeliveryOption[
         body: JSON.stringify({
           site: window.location.origin,
           deliveryId: needsDelivery ? deliveryId : undefined,
+          code: code || undefined,
           items: items.map(({ href, variant, quantity, label, frequency }) => ({ href, variant, quantity, label, frequency })),
         }),
       });
@@ -158,6 +189,52 @@ export function CartView({ deliveryOptions }: { deliveryOptions: DeliveryOption[
             })}
           </div>
         </fieldset>
+      )}
+
+      {delivery?.needsAddress && fullPrice(delivery) > 0 && (
+        <div className="mt-6">
+          {code ? (
+            <p className="flex flex-wrap items-baseline gap-x-4 gap-y-1 text-lg" role="status">
+              <span>
+                Code <strong className="font-sans text-base font-medium tracking-wide text-gold">{code}</strong> added: free postage
+              </span>
+              <button type="button" onClick={() => setCode("")} className="eyebrow text-cream/60 hover:text-gold">
+                Remove
+              </button>
+            </p>
+          ) : (
+            <form onSubmit={applyCode} className="space-y-2">
+              <label htmlFor="discount-code" className="eyebrow block text-cream/70">
+                Discount code
+              </label>
+              <div className="flex max-w-md gap-3">
+                <input
+                  id="discount-code"
+                  value={codeTyped}
+                  onChange={(e) => {
+                    setCodeTyped(e.target.value);
+                    setCodeMessage("");
+                  }}
+                  maxLength={30}
+                  autoComplete="off"
+                  autoCapitalize="characters"
+                  spellCheck={false}
+                  className="min-w-0 flex-1 rounded-xl border border-white/15 bg-cacao-800 px-4 py-3 font-sans text-base uppercase text-cream focus:border-gold focus:outline-none"
+                />
+                <button
+                  type="submit"
+                  disabled={checkingCode || !codeTyped.trim()}
+                  className={`${buttonClass("outline")} disabled:cursor-not-allowed disabled:opacity-60`}
+                >
+                  {checkingCode ? "Checking…" : "Apply"}
+                </button>
+              </div>
+              <p role="status" className="text-base text-gold">
+                {codeMessage}
+              </p>
+            </form>
+          )}
+        </div>
       )}
 
       <div className="mt-8 flex flex-col items-end gap-4">

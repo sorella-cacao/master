@@ -107,6 +107,25 @@ export async function saveDeliveryOption(_: SaveState, data: FormData) {
   }, "Saved. The cart uses this straight away.");
 }
 
+/** A new free postage code. */
+export async function addDiscountCode(_: SaveState, data: FormData) {
+  return run((supabase) => {
+    const code = text(data, "code").toUpperCase();
+    if (!/^[A-Z0-9][A-Z0-9-]{3,29}$/.test(code)) throw new FormError("Use 4 to 30 letters, numbers and dashes, e.g. FREEPOST-XMAS.");
+    const uses = text(data, "max_uses");
+    if (uses && (!Number.isInteger(Number(uses)) || Number(uses) < 1)) throw new FormError("Enter how many times it can be used, or leave it empty for any number.");
+    return supabase.from("discount_codes").insert({ code, max_uses: uses ? Number(uses) : null, expires_on: eventDate(data, "expires_on") });
+  }, "Added. It works straight away.");
+}
+
+export async function setDiscountCodeActive(_: SaveState, data: FormData) {
+  const active = text(data, "active") === "true";
+  return run(
+    (supabase) => supabase.from("discount_codes").update({ is_active: active }).eq("code", text(data, "code")),
+    active ? "Switched on" : "Switched off",
+  );
+}
+
 // Products
 
 export async function saveProduct(_: SaveState, data: FormData) {

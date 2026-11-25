@@ -1,14 +1,15 @@
 import type { Metadata } from "next";
-import { addDays, sydneyToday } from "@/lib/weeks";
+import { addDays, isDate, shortDate, sydneyToday } from "@/lib/weeks";
 import { PodNav } from "../pod-nav";
 import { PodPanel } from "../pod-panel";
 import { getSession } from "../session";
+import { labelsForMade } from "./from-made";
 import { getLabels } from "./label-data";
 import { LabelMaker } from "./label-maker";
 
 export const metadata: Metadata = { title: "Labels" };
 
-export default async function LabelsPage() {
+export default async function LabelsPage(props: PageProps<"/pod/labels">) {
   const { supabase, email, isAdmin } = await getSession();
   if (!isAdmin) {
     return (
@@ -21,6 +22,9 @@ export default async function LabelsPage() {
 
   const labels = await getLabels(supabase);
   const today = sydneyToday();
+  // "Convert to labels" on Orders: fill in what's been made in that week.
+  const { week } = await props.searchParams;
+  const made = typeof week === "string" && isDate(week) ? { week, ...(await labelsForMade(supabase, labels, week)) } : null;
 
   return (
     <div className="space-y-6">
@@ -35,6 +39,8 @@ export default async function LabelsPage() {
         hint="Your Canva labels, from Sorella › Labels › Canva. Pick the best before date, the first 4 batch digits and how many of each: they’re stamped onto the backs and printed with their fronts. After changing a label in Canva, ask Claude to copy it across again."
       >
         <LabelMaker
+          key={made?.week}
+          fromMade={made && { copies: made.copies, missing: made.missing, weekOf: shortDate(made.week) }}
           labels={labels.map(({ id, size, name, frontFile, backFile, stamps }) => ({ id, size, name, frontFile, backFile, stamps }))}
           today={today}
           defaultBestBefore={addDays(today, 365)}

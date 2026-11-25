@@ -54,11 +54,22 @@ function batchShown(label: LabelChoice, digits: string) {
 const runFolderName = (today: string) =>
   `${today.slice(8, 10)}${["JAN", "FEB", "MAR", "APR", "MAY", "JUN", "JUL", "AUG", "SEP", "OCT", "NOV", "DEC"][Number(today.slice(5, 7)) - 1]}${today.slice(0, 4)}`;
 
-export function LabelMaker({ labels, today, defaultBestBefore }: { labels: LabelChoice[]; today: string; defaultBestBefore: string }) {
+export function LabelMaker({
+  labels,
+  today,
+  defaultBestBefore,
+  fromMade = null,
+}: {
+  labels: LabelChoice[];
+  today: string;
+  defaultBestBefore: string;
+  /** Filled in from what's made in a week on Orders: copies by label id, and anything made without a label. */
+  fromMade?: { copies: Record<string, string>; missing: string[]; weekOf: string } | null;
+}) {
   const [bestBefore, setBestBefore] = useState(defaultBestBefore);
   const [digits, setDigits] = useState(`${today.slice(8, 10)}${today.slice(5, 7)}`);
   // How many of each label to print, as typed.
-  const [copies, setCopies] = useState<Record<string, string>>({});
+  const [copies, setCopies] = useState<Record<string, string>>(fromMade?.copies ?? {});
   const [status, setStatus] = useState("");
   const [busy, setBusy] = useState(false);
   // Known only in the browser (false while rendering on the server).
@@ -147,6 +158,20 @@ export function LabelMaker({ labels, today, defaultBestBefore }: { labels: Label
 
   return (
     <div className="space-y-6">
+      {fromMade && (
+        <div className="space-y-1 rounded-xl border border-[#efb94f] bg-white/5 px-4 py-3 font-sans text-base">
+          <p>
+            {Object.keys(fromMade.copies).length
+              ? `Filled in with everything marked as made in the week of ${fromMade.weekOf}. Take out any you’ve already printed, then check the date and batch number.`
+              : `Nothing with a label is marked as made in the week of ${fromMade.weekOf} yet.`}
+          </p>
+          {fromMade.missing.length > 0 && (
+            <p>
+              <strong>No label for:</strong> {fromMade.missing.join(", ")}
+            </p>
+          )}
+        </div>
+      )}
       <div className="grid gap-4 sm:grid-cols-2">
         <label className="block">
           <span className="eyebrow mb-1 block text-xs text-cream/70">Best before</span>

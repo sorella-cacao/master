@@ -16,12 +16,14 @@ export type Label = {
   frontFile: string;
   backFile: string;
   stamps: Stamp[];
+  /** The flavour it's for. */
+  stockItemId: string | null;
 };
 
 export async function getLabels(supabase: Db): Promise<Label[]> {
   const { data, error } = await supabase
     .from("labels")
-    .select("id, size, name, front_file, back_file, stamps")
+    .select("id, size, name, front_file, back_file, stamps, stock_item_id")
     .or("front_file.neq.,back_file.neq.")
     .order("size", { ascending: false })
     .order("position");
@@ -33,5 +35,6 @@ export async function getLabels(supabase: Db): Promise<Label[]> {
     frontFile: l.front_file,
     backFile: l.back_file,
     stamps: l.stamps as Stamp[],
+    stockItemId: l.stock_item_id,
   }));
 }

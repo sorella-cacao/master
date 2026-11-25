@@ -15,6 +15,7 @@ import { deleteOrder, saveOrder, undoSale } from "./actions";
 import { type OrderCustomer, type OrderGroup, OrderFields } from "./order-fields";
 import { OrderNotes } from "./order-notes";
 import { OrderStatus } from "./order-status";
+import { ConvertToLabels } from "./convert-to-labels";
 import { MakeChecklist } from "./make-checklist";
 import { ScrollTo } from "./scroll-to";
 
@@ -308,6 +309,7 @@ export default async function OrdersPage(props: PageProps<"/pod/orders">) {
               carriedFrom: n.week_start < weekStart ? `week of ${shortDate(n.week_start)}` : null,
             }))}
           />
+          {makeList.length > 0 && <ConvertToLabels week={weekStart} />}
         </div>
       </PodPanel>
 

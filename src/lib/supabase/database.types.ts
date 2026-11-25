@@ -489,6 +489,7 @@ export type Database = {
           back_file: string
           front_file: string
           stamps: Json
+          stock_item_id: string | null
           id: string
           ingredient_notes: string
           ingredients: string
@@ -509,6 +510,7 @@ export type Database = {
           created_at?: string
           front_file?: string
           stamps?: Json
+          stock_item_id?: string | null
           id?: string
           ingredient_notes?: string
           ingredients?: string
@@ -536,6 +538,7 @@ export type Database = {
           may_contain?: string
           name?: string
           stamps?: Json
+          stock_item_id?: string | null
           nutrition?: Json
           position?: number
           serving_size?: string

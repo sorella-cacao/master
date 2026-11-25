@@ -18,6 +18,9 @@ const BAR_TOTALS = [
   { title: "Small Bar", label: "Small bars" },
 ];
 
+/** Saves still on their way, so leaving for Labels can wait for them. */
+export const savesInFlight = new Set<Promise<unknown>>();
+
 /**
  * The week's "To make" tables. Each row has a box for how many are made so far and shows how many
  * are left; its tick marks the lot as made. Saved as they're changed, and added to stock. Beside the tables is how many
@@ -35,8 +38,13 @@ export function MakeChecklist({ week, groups }: { week: string; groups: MakeGrou
   const save = (id: string, quantity: number) =>
     startTransition(async () => {
       setMade({ id, made: quantity });
-      const result = await setMadeThisWeek(week, id, quantity);
-      setError(result.error ?? "");
+      const request = setMadeThisWeek(week, id, quantity);
+      savesInFlight.add(request);
+      try {
+        setError((await request).error ?? "");
+      } finally {
+        savesInFlight.delete(request);
+      }
     });
   const { confirm, dialog } = useConfirm();
   // Unticking takes what was made back out of stock, so it asks first.

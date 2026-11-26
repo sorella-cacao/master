@@ -1,7 +1,8 @@
 // Puts an invoice email, with its PDF attached, in the Fastmail Drafts folder for
 // chocolate@sorellacacao.com.au to check and send. It never sends anything.
 //
-// Uses the API token in the FASTMAIL_API_TOKEN secret (it needs Email read/write
+// Ends with the signature saved in Fastmail for that address (Settings › Signatures), when the token
+// can read it. Uses the API token in the FASTMAIL_API_TOKEN secret (it needs Email read/write
 // access). Called by the Pod's "Email invoice" button with the signed-in admin's
 // access token.
 
@@ -32,6 +33,8 @@ async function isAdmin(req: Request) {
   return !!row;
 }
 
+const escape = (text: string) => text.replace(/&/g, "&amp;").replace(/</g, "&lt;").replace(/>/g, "&gt;");
+
 type Draft = { to: string; toName?: string; subject: string; text: string; filename: string; pdf: string };
 
 async function createDraft(token: string, draft: Draft) {
@@ -41,11 +44,11 @@ async function createDraft(token: string, draft: Draft) {
   const session = await sessionRes.json();
   const accountId: string = session.primaryAccounts["urn:ietf:params:jmap:mail"];
 
-  async function jmap(methodCalls: unknown[]) {
+  async function jmap(methodCalls: unknown[], extra: string[] = []) {
     const res = await fetch(session.apiUrl, {
       method: "POST",
       headers: { ...auth, "Content-Type": "application/json" },
-      body: JSON.stringify({ using: ["urn:ietf:params:jmap:core", "urn:ietf:params:jmap:mail"], methodCalls }),
+      body: JSON.stringify({ using: ["urn:ietf:params:jmap:core", "urn:ietf:params:jmap:mail", ...extra], methodCalls }),
     });
     if (!res.ok) throw new Error(`Fastmail request failed (${res.status}).`);
     const { methodResponses } = await res.json();
@@ -53,6 +56,18 @@ async function createDraft(token: string, draft: Draft) {
       if (name === "error") throw new Error(`Fastmail error: ${result.type}`);
     }
     return methodResponses;
+  }
+
+  /** The signature saved in Fastmail for the business address; none if it can't be read. */
+  async function getSignature(): Promise<{ text: string; html: string }> {
+    try {
+      const [[, identities]] = await jmap([["Identity/get", { accountId }, "identities"]], ["urn:ietf:params:jmap:submission"]);
+      const identity = identities.list.find((i: { email: string }) => i.email.toLowerCase() === FROM.email);
+      return { text: identity?.textSignature?.trim() ?? "", html: identity?.htmlSignature?.trim() ?? "" };
+    } catch (e) {
+      console.error("Couldn't read the signature:", e);
+      return { text: "", html: "" };
+    }
   }
 
   // Upload the PDF, then make the draft with it attached.
@@ -67,6 +82,13 @@ async function createDraft(token: string, draft: Draft) {
   const [[, drafts]] = await jmap([["Mailbox/query", { accountId, filter: { role: "drafts" } }, "drafts"]]);
   const draftsId: string | undefined = drafts.ids[0];
   if (!draftsId) throw new Error("Couldn't find the Drafts folder in Fastmail.");
+
+  const signature = await getSignature();
+  const text = signature.text ? `${draft.text}\n\n${signature.text}` : draft.text;
+  // With a designed signature (e.g. a logo), the email gets an HTML version too.
+  const html = signature.html
+    ? `<div style="font-family:sans-serif;">${escape(draft.text).replace(/\n/g, "<br>")}</div><br>${signature.html}`
+    : null;
 
   const [[, created]] = await jmap([
     [
@@ -84,11 +106,19 @@ async function createDraft(token: string, draft: Draft) {
               .filter(Boolean)
               .map((email, i) => ({ name: i === 0 ? (draft.toName ?? null) : null, email })),
             subject: draft.subject,
-            bodyValues: { text: { value: draft.text } },
+            bodyValues: { text: { value: text }, ...(html ? { html: { value: html } } : {}) },
             bodyStructure: {
               type: "multipart/mixed",
               subParts: [
-                { partId: "text", type: "text/plain" },
+                html
+                  ? {
+                      type: "multipart/alternative",
+                      subParts: [
+                        { partId: "text", type: "text/plain" },
+                        { partId: "html", type: "text/html" },
+                      ],
+                    }
+                  : { partId: "text", type: "text/plain" },
                 { blobId, type: "application/pdf", name: draft.filename, disposition: "attachment" },
               ],
             },

@@ -82,6 +82,8 @@ export function LabelMaker({
   // How many of each label to print, as typed.
   const [copies, setCopies] = useState<Record<string, string>>(fromMade?.copies ?? {});
   const [status, setStatus] = useState("");
+  // "Ingredients only" prints just the backs, "Logo only" just the fronts; otherwise both, in pairs.
+  const [only, setOnly] = useState<Record<LabelChoice["size"], "back" | "front" | null>>({ large: null, small: null });
   const [busy, setBusy] = useState(false);
   // Known only in the browser (false while rendering on the server).
   const canSaveToFolder = useSyncExternalStore(
@@ -112,8 +114,15 @@ export function LabelMaker({
     if (!/^\d{4}$/.test(digits)) return setStatus("Enter the first 4 digits of the batch number, e.g. 2610.");
     if (!bestBefore) return setStatus("Enter the best before date.");
     const count = (l: LabelChoice) => Number(copies[l.id] || 0);
-    const picked = labels.filter((l) => l.size === size && count(l) > 0);
-    if (!picked.length) return setStatus(`Enter how many of each ${size} label you’d like.`);
+    const side = only[size];
+    const wanted = labels.filter((l) => l.size === size && count(l) > 0);
+    if (!wanted.length) return setStatus(`Enter how many of each ${size} label you’d like.`);
+    // Which sides to print: a label without that side is left out.
+    const front = (l: LabelChoice) => (side === "back" ? "" : l.frontFile);
+    const back = (l: LabelChoice) => (side === "front" ? "" : l.backFile);
+    const picked = wanted.filter((l) => front(l) || back(l));
+    const skipped = wanted.filter((l) => !front(l) && !back(l)).map((l) => l.name);
+    if (!picked.length) return setStatus(`None of those have ${side === "back" ? "an ingredients side" : "a logo side"} to print.`);
     if (bestBefore <= today && !window.confirm("That best before date isn’t in the future. Make the labels anyway?")) return;
 
     setBusy(true);
@@ -141,8 +150,8 @@ export function LabelMaker({
       const files: { name: string; pdf: Blob }[] = [];
       for (const label of picked) {
         setStatus(`Making ${label.size} ${label.name}…`);
-        if (label.frontFile) files.push({ name: label.frontFile, pdf: new Blob([await read(label.frontFile)], { type: "application/pdf" }) });
-        if (label.backFile) {
+        if (front(label)) files.push({ name: label.frontFile, pdf: new Blob([await read(label.frontFile)], { type: "application/pdf" }) });
+        if (back(label)) {
           const stamped = await stampLabel(await read(label.backFile), label.stamps, date, digits, font);
           files.push({ name: label.backFile, pdf: new Blob([stamped as BlobPart], { type: "application/pdf" }) });
         }
@@ -159,13 +168,21 @@ export function LabelMaker({
       for (const { name, pdf } of files) await save(name, pdf);
       // The print list goes in last, once its PDFs are there: the print helper on the Mac prints each
       // label's front and back in pairs, then marks the list as printed.
-      const list = picked.map((l) => ({ file: l.backFile, front: l.frontFile, copies: count(l), size: l.size }));
+      const list = picked.map((l) => ({ file: back(l), front: front(l), copies: count(l), size: l.size }));
       const time = new Date().toTimeString().slice(0, 8).replaceAll(":", "");
       await save(`print-${time}.json`, new Blob([JSON.stringify({ labels: list }, null, 2)], { type: "application/json" }));
       const total = list.reduce((n, l) => n + l.copies, 0);
       setStatus(
         `Saved in ${labelsFolder.name} › Print Runs › ${runFolderName(today)}. Sending ${total} label${total === 1 ? "" : "s"} to the printer` +
-          `${list.some((l) => !l.file || !l.front) ? " (some only have a front or a back, so they print alone)" : ", each front with its back"}.`,
+          `${
+            side === "back"
+              ? ", ingredients only"
+              : side === "front"
+                ? ", logos only"
+                : list.some((l) => !l.file || !l.front)
+                  ? " (some only have a front or a back, so they print alone)"
+                  : ", each front with its back"
+          }.${skipped.length ? ` Left out (no ${side === "back" ? "ingredients" : "logo"} side): ${skipped.join(", ")}.` : ""}`,
       );
     } catch (error) {
       // Closing the folder picker without choosing isn't an error worth showing.
@@ -244,6 +261,25 @@ export function LabelMaker({
                 </Fragment>
               ))}
             </fieldset>
+            <div className="flex flex-wrap gap-x-5 gap-y-1 font-sans text-sm">
+              {(
+                [
+                  { side: "back", label: "Ingredients only" },
+                  { side: "front", label: "Logo only" },
+                ] as const
+              ).map((o) => (
+                <label key={o.side} className="flex cursor-pointer items-center gap-2">
+                  <input
+                    type="checkbox"
+                    checked={only[size] === o.side}
+                    // Ticking one unticks the other; with neither, fronts and backs print together.
+                    onChange={(e) => setOnly((all) => ({ ...all, [size]: e.target.checked ? o.side : null }))}
+                    className="size-4 accent-[#8a5226]"
+                  />
+                  {o.label}
+                </label>
+              ))}
+            </div>
             <button
               type="button"
               disabled={busy}

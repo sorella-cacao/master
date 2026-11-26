@@ -19,10 +19,17 @@ function refresh() {
   revalidatePath("/pod/orders");
 }
 
+/** Their email addresses, typed one per line or with commas between: kept as "a@x.com, b@y.com". */
+function emails(data: FormData) {
+  const list = text(data, "email").split(/[\s,;]+/).filter(Boolean);
+  if (list.some((e) => !/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(e))) return undefined;
+  return list.length ? [...new Set(list)].join(", ") : null;
+}
+
 const details = (data: FormData) => ({
   name: text(data, "name"),
   contact: text(data, "contact") || null,
-  email: text(data, "email") || null,
+  email: emails(data) ?? null,
   phone: text(data, "phone") || null,
   address: text(data, "address") || null,
   notes: text(data, "notes") || null,
@@ -52,6 +59,7 @@ export async function addCustomer(_: SaveState, data: FormData): Promise<SaveSta
   if (!isAdmin) return NO_ACCESS;
   const customer = details(data);
   if (!customer.name) return { error: "Enter the customer’s name." };
+  if (emails(data) === undefined) return { error: "Check the email addresses: one per line, e.g. shop@example.com." };
   const next = nextInvoiceNumber(data);
   if (!next) return { error: "Enter the next invoice number as a whole number, e.g. 1." };
   const terms = paymentTerms(data);
@@ -69,6 +77,7 @@ export async function saveCustomer(_: SaveState, data: FormData): Promise<SaveSt
   const id = text(data, "id");
   const customer = details(data);
   if (!customer.name) return { error: "Enter the customer’s name." };
+  if (emails(data) === undefined) return { error: "Check the email addresses: one per line, e.g. shop@example.com." };
 
   const prices: { customer_id: string; stock_item_id: string; price: number }[] = [];
   const standard: string[] = [];

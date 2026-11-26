@@ -138,7 +138,16 @@ function CustomerFields({ customer }: { customer?: Customer }) {
     <div className="grid gap-4 sm:grid-cols-2">
       <Field label="Business name" name="name" value={customer?.name} required />
       <Field label="Contact name" name="contact" value={customer?.contact} />
-      <Field label="Email" name="email" value={customer?.email} />
+      <label className="block">
+        <span className="eyebrow mb-1 block text-xs text-cream/70">Emails, one per line</span>
+        <textarea
+          name="email"
+          rows={2}
+          defaultValue={customer?.email?.split(/\s*,\s*/).join("\n") ?? ""}
+          placeholder="Invoices go to all of them"
+          className="pod-input py-2 text-sm"
+        />
+      </label>
       <Field label="Phone" name="phone" value={customer?.phone} />
       <Field label="Next invoice #" name="next_invoice_number" value={String(customer?.next_invoice_number ?? 1)} />
       <Field

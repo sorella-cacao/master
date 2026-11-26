@@ -198,5 +198,6 @@ async function knownEmail(supabase: Db, orderId: string, name: string) {
       .limit(1)
       .maybeSingle(),
   ]);
-  return customer.data?.email ?? earlier.data?.ship_email ?? "";
+  // A customer with several emails: the first one.
+  return customer.data?.email?.split(/\s*,\s*/)[0] ?? earlier.data?.ship_email ?? "";
 }

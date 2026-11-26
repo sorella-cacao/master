@@ -78,7 +78,11 @@ async function createDraft(token: string, draft: Draft) {
             mailboxIds: { [draftsId]: true },
             keywords: { $draft: true, $seen: true },
             from: [FROM],
-            to: [{ name: draft.toName ?? null, email: draft.to }],
+            // Everyone in "a@x.com, b@y.com"; the name goes with the first.
+            to: draft.to
+              .split(/[\s,;]+/)
+              .filter(Boolean)
+              .map((email, i) => ({ name: i === 0 ? (draft.toName ?? null) : null, email })),
             subject: draft.subject,
             bodyValues: { text: { value: draft.text } },
             bodyStructure: {

@@ -4,7 +4,8 @@
 The Pod saves each run's PDFs into Sorella/Labels/Print Runs/<date>/ (or Sorella/Print Runs/<date>/) and then a print list,
 print-HHMMSS.json: {"labels": [{"file", "front", "copies", "size"}]}: "file" is the stamped back
 (ingredients) and "front" the Canva front (logo), both in the run's folder, and either may be empty.
-Each label prints in pairs (front, back, front, back...), then the list is renamed
+Each label prints in pairs (front, back, front, back...); an "extra" (e.g. the council's label for
+Echo Point, also in the run's folder) prints after each pair. Then the list is renamed
 printed-HHMMSS.json (or failed-HHMMSS.json) so it never prints twice. Older lists name a "logo" in
 Sorella/Logos/Current Logos instead of a "front".
 
@@ -42,16 +43,17 @@ def print_list(path):
             front = path.parent / label["front"]
         else:
             front = LOGOS / label["logo"] if label.get("logo") else None
+        extra = path.parent / label["extra"] if label.get("extra") else None
         pair = []
-        for side in (front, back):
+        for side in (front, back, extra):
             if side and not side.is_file():
                 raise FileNotFoundError(f"{side.name} isn't in {side.parent.name}")
             if side:
                 pair.append(side)
-        if not pair:
+        if not pair or pair == [extra]:
             continue
         name = (back or front).stem
-        if len(pair) == 1:
+        if len([p for p in pair if p != extra]) == 1:
             log(f"{name} has only a {'back' if back else 'front'}, printing it alone")
         command = ["lp", "-d", PRINTER, "-o", f"PageSize={PAGE_SIZES[label['size']]}", "-t", f"{copies} x {name}"]
         command += [str(p) for p in pair] * copies
@@ -59,7 +61,7 @@ def print_list(path):
             log("Would run: " + " ".join(command[:8]) + f" ... ({len(pair) * copies} pages)")
         else:
             subprocess.run(command, check=True, capture_output=True, text=True)
-            log(f"Printed {copies} x {name}" + (" front and back" if len(pair) == 2 else ""))
+            log(f"Printed {copies} x {name}" + (" front and back" if front and back else "") + (f" with {extra.stem}" if extra else ""))
 
 
 def print_lists():

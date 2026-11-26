@@ -3,6 +3,9 @@
 import { Fragment, useState, useSyncExternalStore } from "react";
 import { type Stamp, stampLabel, stampText } from "./stamp";
 
+/** The council's own label for small bars sold at Echo Point, in Labels › Canva (from Canva "Small Label Council"). */
+const COUNCIL_LABEL = "Small Label Council.pdf";
+
 type LabelChoice = { id: string; size: "small" | "large"; name: string; frontFile: string; backFile: string; stamps: Stamp[]; section: string | null };
 
 /** "28/10/2027" from "2027-10-28", as the labels print it. */
@@ -84,6 +87,8 @@ export function LabelMaker({
   const [status, setStatus] = useState("");
   // "Ingredients only" prints just the backs, "Logo only" just the fronts; otherwise both, in pairs.
   const [only, setOnly] = useState<Record<LabelChoice["size"], "back" | "front" | null>>({ large: null, small: null });
+  // Small bars for Echo Point also get the council's label after each one.
+  const [echoPoint, setEchoPoint] = useState(false);
   const [busy, setBusy] = useState(false);
   // Known only in the browser (false while rendering on the server).
   const canSaveToFolder = useSyncExternalStore(
@@ -144,6 +149,11 @@ export function LabelMaker({
       const canva = await labelsFolder.getDirectoryHandle("Canva").catch(() => undefined);
       if (!canva) return setStatus(wrongFolder(folder));
       const read = async (name: string) => (await (await canva.getFileHandle(name)).getFile()).arrayBuffer();
+      const council = size === "small" && echoPoint ? COUNCIL_LABEL : "";
+      if (council) {
+        const there = await canva.getFileHandle(council).then(() => true, () => false);
+        if (!there) return setStatus(`“${council}” isn’t in Labels › Canva. Ask Claude to copy it across from Canva.`);
+      }
 
       const font = await (await fetch("/fonts/open-sans-400.ttf")).arrayBuffer();
       const date = labelDate(bestBefore);
@@ -165,10 +175,11 @@ export function LabelMaker({
         await writable.write(data);
         await writable.close();
       };
+      if (council) files.push({ name: council, pdf: new Blob([await read(council)], { type: "application/pdf" }) });
       for (const { name, pdf } of files) await save(name, pdf);
       // The print list goes in last, once its PDFs are there: the print helper on the Mac prints each
       // label's front and back in pairs, then marks the list as printed.
-      const list = picked.map((l) => ({ file: back(l), front: front(l), copies: count(l), size: l.size }));
+      const list = picked.map((l) => ({ file: back(l), front: front(l), ...(council && { extra: council }), copies: count(l), size: l.size }));
       const time = new Date().toTimeString().slice(0, 8).replaceAll(":", "");
       await save(`print-${time}.json`, new Blob([JSON.stringify({ labels: list }, null, 2)], { type: "application/json" }));
       const total = list.reduce((n, l) => n + l.copies, 0);
@@ -182,7 +193,7 @@ export function LabelMaker({
                 : list.some((l) => !l.file || !l.front)
                   ? " (some only have a front or a back, so they print alone)"
                   : ", each front with its back"
-          }.${skipped.length ? ` Left out (no ${side === "back" ? "ingredients" : "logo"} side): ${skipped.join(", ")}.` : ""}`,
+          }${council ? ", each followed by the Echo Point council label" : ""}.${skipped.length ? ` Left out (no ${side === "back" ? "ingredients" : "logo"} side): ${skipped.join(", ")}.` : ""}`,
       );
     } catch (error) {
       // Closing the folder picker without choosing isn't an error worth showing.
@@ -279,6 +290,12 @@ export function LabelMaker({
                   {o.label}
                 </label>
               ))}
+              {size === "small" && (
+                <label className="flex cursor-pointer items-center gap-2">
+                  <input type="checkbox" checked={echoPoint} onChange={(e) => setEchoPoint(e.target.checked)} className="size-4 accent-[#8a5226]" />
+                  Echo Point
+                </label>
+              )}
             </div>
             <button
               type="button"

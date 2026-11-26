@@ -15,6 +15,8 @@ import { deleteOrder, saveOrder, undoSale } from "./actions";
 import { type OrderCustomer, type OrderGroup, OrderFields } from "./order-fields";
 import { OrderNotes } from "./order-notes";
 import { OrderStatus } from "./order-status";
+import { type Invoice, getInvoice } from "../invoices/invoice-data";
+import { InvoiceEditor } from "../invoices/invoice-editor";
 import { ConvertToLabels } from "./convert-to-labels";
 import { MakeChecklist } from "./make-checklist";
 import { ScrollTo } from "./scroll-to";
@@ -34,7 +36,7 @@ type Order = {
   ship_tracking: string | null;
   ship_emailed_at: string | null;
   lines: Line[];
-  invoice: { id: string; number: number; number_suffix: string | null; number_label: string | null } | null;
+  invoice: { id: string; number: number; number_suffix: string | null; number_label: string | null; emailed_at: string | null } | null;
   shop: { id: string; name: string; sale_or_return: boolean } | null;
   /** Paid on the website: who bought it and how it gets to them. */
   web: WebOrder | null;
@@ -53,7 +55,7 @@ type WebOrder = {
 };
 
 const ORDER_COLUMNS =
-  "id, customer, kind, needed_by, status, note, sent_at, ship_carrier, ship_tracking, ship_emailed_at, lines:order_lines(stock_item_id, quantity, unit_price), invoice:invoices!invoices_order_id_fkey(id, number, number_suffix, number_label), shop:customers!orders_customer_id_fkey(id, name, sale_or_return), web:web_orders(name, email, phone, address, delivery, delivery_price, total, paid_at, items, label_fees)";
+  "id, customer, kind, needed_by, status, note, sent_at, ship_carrier, ship_tracking, ship_emailed_at, lines:order_lines(stock_item_id, quantity, unit_price), invoice:invoices!invoices_order_id_fkey(id, number, number_suffix, number_label, emailed_at), shop:customers!orders_customer_id_fkey(id, name, sale_or_return), web:web_orders(name, email, phone, address, delivery, delivery_price, total, paid_at, items, label_fees)";
 
 /** Whether the customer pays later for what they sell, rather than for the whole order. */
 const isSaleOrReturn = (order: Order) => !!order.shop?.sale_or_return && !order.invoice;
@@ -127,7 +129,7 @@ export default async function OrdersPage(props: PageProps<"/pod/orders">) {
     );
   }
 
-  const { week, saved: savedParam } = await props.searchParams;
+  const { week, saved: savedParam, invoice: invoiceParam } = await props.searchParams;
   const justSavedId = typeof savedParam === "string" ? savedParam : null;
   const today = sydneyToday();
   const thisMonday = mondayOf(today);
@@ -164,6 +166,11 @@ export default async function OrdersPage(props: PageProps<"/pod/orders">) {
   const notedMade = new Map(madeRows.data.map((m) => [m.stock_item_id, m]));
   const openOrders = open.data as Order[];
   const sentOrders = sent.data as Order[];
+  // Straight after "Generate invoice", the invoice opens up under its order to check and email it here
+  // (until it's emailed); otherwise orders show a link to it, as usual.
+  const justInvoiced = invoiceParam ? [...openOrders, ...sentOrders].find((o) => o.id === justSavedId && o.invoice && !o.invoice.emailed_at) : undefined;
+  const openInvoice = justInvoiced ? await getInvoice(supabase, justInvoiced.invoice!.id) : null;
+  const toEmail = new Map(openInvoice?.orderId ? [[openInvoice.orderId, openInvoice]] : []);
   // Saved customers (with their own prices), then anyone else orders have been for.
   const customers: OrderCustomer[] = (customerList.data ?? []).map((c) => ({
     name: c.name,
@@ -377,7 +384,7 @@ export default async function OrdersPage(props: PageProps<"/pod/orders">) {
           </p>
           {openOrders.length === 0 && sentOrders.length === 0 && <p className="text-xl text-cream/70">No orders yet.</p>}
           {openOrders.map((order) => (
-            <OrderCard key={order.id} order={order} items={items} today={today} justSaved={order.id === justSavedId}>
+            <OrderCard key={order.id} order={order} items={items} today={today} justSaved={order.id === justSavedId} invoice={toEmail.get(order.id)}>
               {/* Website orders are as paid for: changes and refunds are made in Stripe. */}
               {!order.web && (
                 <details className="mt-5 border-t border-white/10 pt-4">
@@ -411,7 +418,7 @@ export default async function OrdersPage(props: PageProps<"/pod/orders">) {
             </OrderCard>
           ))}
           {sentOrders.map((order) => (
-            <OrderCard key={order.id} order={order} items={items} today={today}>
+            <OrderCard key={order.id} order={order} items={items} today={today} justSaved={order.id === justSavedId} invoice={toEmail.get(order.id)}>
               {order.kind === "order" && (
                 <PodForm
                   action={deleteOrder}
@@ -451,6 +458,7 @@ function OrderCard({
   items,
   today,
   justSaved = false,
+  invoice,
   children,
 }: {
   order: Order;
@@ -458,6 +466,8 @@ function OrderCard({
   today: string;
   /** Just added: shown opened up and outlined, and scrolled to. */
   justSaved?: boolean;
+  /** Its invoice, while it's still to be emailed: opened up below the order. */
+  invoice?: Invoice;
   children?: React.ReactNode;
 }) {
   const overdue = order.status !== "sent" && order.needed_by && order.needed_by < today;
@@ -520,6 +530,7 @@ function OrderCard({
               saleOrReturn={isSaleOrReturn(order)}
               noInvoice={!!sale}
               shipping={shipping}
+              invoiceBelow={!!invoice}
             />
           </div>
         )}
@@ -565,6 +576,11 @@ function OrderCard({
           >
             <input type="hidden" name="order_id" value={order.id} />
           </PodForm>
+        )}
+        {invoice && (
+          <div className="pod-card mt-5 rounded-xl p-4 sm:p-6">
+            <InvoiceEditor invoice={invoice} inOrders />
+          </div>
         )}
         {children}
       </div>

@@ -24,6 +24,7 @@ export function OrderStatus({
   saleOrReturn = false,
   noInvoice = false,
   shipping,
+  invoiceBelow = false,
 }: {
   orderId: string;
   status: string;
@@ -37,6 +38,8 @@ export function OrderStatus({
   noInvoice?: boolean;
   /** Shown in place of the invoice: "Email shipping", for website orders and spontaneous buys. */
   shipping?: React.ReactNode;
+  /** Its invoice is open below the order, so there's no link to it here. */
+  invoiceBelow?: boolean;
 }) {
   const [state, formAction, pending] = useActionState(setOrderStatus, undefined as SaveState);
   const { confirm, dialog } = useConfirm();
@@ -62,6 +65,7 @@ export function OrderStatus({
         }
         const invoiceData = new FormData();
         invoiceData.set("order_id", orderId);
+        invoiceData.set("from", "orders");
         await createInvoice(invoiceData);
       });
       return;
@@ -96,7 +100,7 @@ export function OrderStatus({
             Tick what’s sold
           </Link>
         ) : null
-      ) : invoice ? (
+      ) : invoiceBelow ? null : invoice ? (
         <Link
           href={`/pod/invoices/${invoice.id}`}
           className="eyebrow rounded-full border border-white/20 px-4 py-2 text-cream/70 transition-colors hover:border-gold hover:text-gold"
@@ -106,6 +110,7 @@ export function OrderStatus({
       ) : (
         <form action={createInvoice}>
           <input type="hidden" name="order_id" value={orderId} />
+          <input type="hidden" name="from" value="orders" />
           <button
             type="submit"
             className="eyebrow rounded-full border border-white/20 px-4 py-2 text-cream/70 transition-colors hover:border-gold hover:text-gold"

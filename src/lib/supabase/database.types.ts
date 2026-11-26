@@ -428,6 +428,7 @@ export type Database = {
           created_at: string
           customer_id: string | null
           due_on: string
+          emailed_at: string | null
           id: string
           issued_on: string
           notes: string | null
@@ -445,6 +446,7 @@ export type Database = {
           created_at?: string
           customer_id?: string | null
           due_on: string
+          emailed_at?: string | null
           id?: string
           issued_on: string
           notes?: string | null
@@ -462,6 +464,7 @@ export type Database = {
           created_at?: string
           customer_id?: string | null
           due_on?: string
+          emailed_at?: string | null
           id?: string
           issued_on?: string
           notes?: string | null

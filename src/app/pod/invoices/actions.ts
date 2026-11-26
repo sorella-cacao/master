@@ -33,6 +33,8 @@ export async function createInvoice(data: FormData) {
   const { data: id, error } = await supabase.rpc("pod_create_invoice", { order_id: text(data, "order_id") });
   if (error) throw error;
   refresh();
+  // From Orders, it opens under its order there, to check and email without leaving.
+  if (text(data, "from") === "orders") redirect(`/pod/orders?saved=${text(data, "order_id")}&invoice=1`);
   redirect(`/pod/invoices/${id}`);
 }
 
@@ -100,7 +102,8 @@ export async function deleteInvoice(_: SaveState, data: FormData): Promise<SaveS
   const { error } = await supabase.from("invoices").delete().eq("id", text(data, "invoice_id"));
   if (error) return failed(error);
   refresh();
-  redirect("/pod/invoices");
+  const order = text(data, "back_to_order");
+  redirect(order ? `/pod/orders?saved=${order}` : "/pod/invoices");
 }
 
 export async function saveInvoiceSettings(_: SaveState, data: FormData): Promise<SaveState> {
@@ -168,6 +171,9 @@ export async function emailInvoice(invoiceId: string): Promise<SaveState> {
     console.error(error);
     return { error: body?.error ?? "Couldn't make the email. Please try again." };
   }
+  // Emailed: on Orders it's filed away under its order as a link, like before.
+  await supabase.from("invoices").update({ emailed_at: new Date().toISOString() }).eq("id", invoiceId);
+  refresh();
   return { ok: "Draft ready in Fastmail" };
 }
 

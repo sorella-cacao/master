@@ -32,6 +32,16 @@ export const SAMPLES: Record<string, { values: Record<string, string>; receipts:
     },
   },
   order_posted: { values: { ...PERSON, address: ADDRESS, total: "$67.00" }, receipts: { items: ORDER } },
+  order_shipped: {
+    values: {
+      ...PERSON,
+      carrier: "Australia Post",
+      tracking_number: "33LPK1234567",
+      tracking_link: "https://auspost.com.au/mypost/track/details/33LPK1234567",
+      address: ADDRESS,
+    },
+    receipts: { items: ORDER },
+  },
   order_ready: {
     values: { ...PERSON, total: "$51.00" },
     receipts: { items: { ...ORDER, extras: [ORDER.extras[0], { name: "Pick up in Lawson", amount: 0 }], total: 51 } },

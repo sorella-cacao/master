@@ -22,6 +22,10 @@ const money = (n: number) => `$${Number(n).toFixed(2)}`;
 const escape = (text: string) =>
   text.replace(/&/g, "&amp;").replace(/</g, "&lt;").replace(/>/g, "&gt;").replace(/"/g, "&quot;");
 
+/** Web addresses in (already escaped) text become links, e.g. a parcel's tracking page. */
+const linkify = (html: string) =>
+  html.replace(/https?:\/\/[^\s<]+[^\s<.,;:!?)]/g, (url) => `<a href="${url}" style="color:${C.gold};">${url}</a>`);
+
 /** The receipt in the plain-text version of an email. */
 export function receiptText(r: Receipt) {
   const rows = r.lines.map(
@@ -73,7 +77,7 @@ export function emailHtml(subject: string, text: string, receipts: Record<string
       .split(/\n\s*\n/)
       .map((p) => p.trim())
       .filter(Boolean)
-      .map((p) => `<p style="margin:0 0 18px 0;">${escape(p).replace(/\n/g, "<br>")}</p>`)
+      .map((p) => `<p style="margin:0 0 18px 0;">${linkify(escape(p)).replace(/\n/g, "<br>")}</p>`)
       .join("\n");
   const body = text
     .replace(/\r\n/g, "\n")

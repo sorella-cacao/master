@@ -5,13 +5,15 @@ import { PodPanel } from "../pod-panel";
 import { getSession } from "../session";
 import { deleteMessage, saveReply } from "./actions";
 import { ReplyPreview } from "./preview";
+import { ShipForm } from "./ship-form";
+import { linesReceipt, webReceipt } from "../../../../supabase/functions/_shared/shipping";
 
 export const metadata: Metadata = { title: "Replies" };
 
 const when = (iso: string) =>
   new Date(iso).toLocaleString("en-AU", { timeZone: "Australia/Sydney", day: "numeric", month: "short", hour: "numeric", minute: "2-digit" });
 
-export default async function RepliesPage() {
+export default async function RepliesPage(props: PageProps<"/pod/replies">) {
   const { supabase, email, isAdmin } = await getSession();
   if (!isAdmin) {
     return (
@@ -31,6 +33,10 @@ export default async function RepliesPage() {
   if (messages.error) throw messages.error;
   if (sent.error) throw sent.error;
   const names = new Map(templates.data.map((t) => [t.key, t.name]));
+  // "Email shipping" on Orders opens this page for that order.
+  const { ship } = await props.searchParams;
+  const shipping = typeof ship === "string" ? await shippingOrder(supabase, ship) : null;
+  const shipTemplate = templates.data.find((t) => t.key === "order_shipped");
 
   return (
     <div className="space-y-6">
@@ -38,6 +44,20 @@ export default async function RepliesPage() {
         <h1 className="font-script text-6xl text-gold sm:text-7xl">The Pod</h1>
         <PodNav current="/pod/replies" />
       </header>
+
+      {shipping && shipTemplate && (
+        <PodPanel open title={`Email shipping · ${shipping.customer}`} hint="Choose the carrier and type the tracking number. The email shows how it will look.">
+          <ShipForm
+            orderId={shipping.id}
+            template={shipTemplate}
+            defaults={shipping.defaults}
+            receipt={shipping.receipt}
+            address={shipping.address}
+            emailedAt={shipping.emailedAt}
+          />
+        </PodPanel>
+      )}
+      {typeof ship === "string" && !shipping && <p className="text-gold">That order isn’t a website order or spontaneous buy, or it no longer exists.</p>}
 
       <div className="space-y-2">
         {templates.data.map((template) => (
@@ -113,4 +133,50 @@ export default async function RepliesPage() {
       </PodPanel>
     </div>
   );
+}
+
+type Db = Awaited<ReturnType<typeof getSession>>["supabase"];
+
+/** A website order or spontaneous buy to email shipping for: who it's to, and its receipt. */
+async function shippingOrder(supabase: Db, id: string) {
+  const { data: order } = await supabase
+    .from("orders")
+    .select(
+      "id, customer, kind, ship_email, ship_carrier, ship_tracking, ship_emailed_at, lines:order_lines(quantity, unit_price, item:stock_items(name, parent:stock_items!stock_items_parent_id_fkey(name), product:products(title))), web:web_orders(name, email, address, delivery, delivery_price, items, label_fees)",
+    )
+    .eq("id", id)
+    .maybeSingle();
+  if (!order || (order.kind !== "web" && order.kind !== "spontaneous")) return null;
+  const web = order.web as {
+    name: string;
+    email: string;
+    address: string;
+    delivery: string;
+    delivery_price: number;
+    items: { title: string; variant: string; quantity: number; unit_price: number; label: string | null; workshop: boolean }[];
+    label_fees: { label: string; amount: number }[] | null;
+  } | null;
+  const receipt = web
+    ? webReceipt(web)
+    : linesReceipt(
+        order.lines.map((l) => {
+          // A fruit under Local Fruit is named like "75% Dark & Local Fig".
+          const parent = [l.item?.parent].flat()[0];
+          return {
+          name: `${l.item?.product?.title ?? "Item"}, ${parent ? parent.name.replace("Fruit", l.item?.name ?? "") : (l.item?.name ?? "")}`,
+          quantity: l.quantity,
+          unit_price: l.unit_price,
+          };
+        }),
+      );
+  // A spontaneous buy without a name is called "Spontaneous buy": leave the name to be typed.
+  const name = web?.name || (order.customer === "Spontaneous buy" ? "" : order.customer);
+  return {
+    id: order.id,
+    customer: order.customer,
+    receipt,
+    address: web?.address ?? "",
+    emailedAt: order.ship_emailed_at ? when(order.ship_emailed_at) : null,
+    defaults: { name, email: order.ship_email ?? web?.email ?? "", carrier: order.ship_carrier ?? "", tracking: order.ship_tracking ?? "" },
+  };
 }

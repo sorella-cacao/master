@@ -43,6 +43,25 @@ export async function sendTestReply(key: string, subject: string, body: string):
   return { ok: `Test sent to ${data.to}. Check your inbox.` };
 }
 
+/** Emails an order's carrier and tracking number to the customer, and keeps them on the order. */
+export async function sendShippingEmail(
+  orderId: string,
+  fields: { name: string; email: string; carrier: string; tracking: string },
+): Promise<SaveState> {
+  const { supabase, isAdmin } = await getSession();
+  if (!isAdmin) return NO_ACCESS;
+  const { data, error } = await supabase.functions.invoke<{ sent?: boolean; to?: string; error?: string }>("shipping-email", {
+    body: { orderId, ...fields },
+  });
+  if (error || !data?.sent) {
+    const reason = error && "context" in error ? await (error.context as Response).json().catch(() => null) : null;
+    return { error: reason?.error ?? data?.error ?? "Couldn't send it. Please try again." };
+  }
+  revalidatePath("/pod/orders");
+  revalidatePath("/pod/replies");
+  return { ok: `Sent to ${data.to}.` };
+}
+
 export async function deleteMessage(_: SaveState, data: FormData): Promise<SaveState> {
   const { supabase, isAdmin } = await getSession();
   if (!isAdmin) return NO_ACCESS;

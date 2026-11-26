@@ -23,6 +23,7 @@ export function OrderStatus({
   paidOnline = false,
   saleOrReturn = false,
   noInvoice = false,
+  shipping,
 }: {
   orderId: string;
   status: string;
@@ -34,6 +35,8 @@ export function OrderStatus({
   saleOrReturn?: boolean;
   /** An odd buy (e.g. a spontaneous buy) still to make: no invoice. */
   noInvoice?: boolean;
+  /** Shown in place of the invoice: "Email shipping", for website orders and spontaneous buys. */
+  shipping?: React.ReactNode;
 }) {
   const [state, formAction, pending] = useActionState(setOrderStatus, undefined as SaveState);
   const { confirm, dialog } = useConfirm();
@@ -84,7 +87,7 @@ export function OrderStatus({
           </button>
         ))}
       </div>
-      {paidOnline || noInvoice ? null : saleOrReturn ? (
+      {paidOnline || noInvoice ? (shipping ?? null) : saleOrReturn ? (
         status === "sent" ? (
           <Link
             href={`/pod/stock#sold-${orderId}`}

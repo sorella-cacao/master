@@ -30,6 +30,9 @@ type Order = {
   status: string;
   note: string | null;
   sent_at: string | null;
+  ship_carrier: string | null;
+  ship_tracking: string | null;
+  ship_emailed_at: string | null;
   lines: Line[];
   invoice: { id: string; number: number; number_suffix: string | null; number_label: string | null } | null;
   shop: { id: string; name: string; sale_or_return: boolean } | null;
@@ -50,7 +53,7 @@ type WebOrder = {
 };
 
 const ORDER_COLUMNS =
-  "id, customer, kind, needed_by, status, note, sent_at, lines:order_lines(stock_item_id, quantity, unit_price), invoice:invoices!invoices_order_id_fkey(id, number, number_suffix, number_label), shop:customers!orders_customer_id_fkey(id, name, sale_or_return), web:web_orders(name, email, phone, address, delivery, delivery_price, total, paid_at, items, label_fees)";
+  "id, customer, kind, needed_by, status, note, sent_at, ship_carrier, ship_tracking, ship_emailed_at, lines:order_lines(stock_item_id, quantity, unit_price), invoice:invoices!invoices_order_id_fkey(id, number, number_suffix, number_label), shop:customers!orders_customer_id_fkey(id, name, sale_or_return), web:web_orders(name, email, phone, address, delivery, delivery_price, total, paid_at, items, label_fees)";
 
 /** Whether the customer pays later for what they sell, rather than for the whole order. */
 const isSaleOrReturn = (order: Order) => !!order.shop?.sale_or_return && !order.invoice;
@@ -460,6 +463,16 @@ function OrderCard({
   const overdue = order.status !== "sent" && order.needed_by && order.needed_by < today;
   const sale = SALE_KINDS[order.kind];
   const { web } = order;
+  // Posted website orders (they have an address) and spontaneous buys get their tracking emailed.
+  const shipping =
+    (web && web.address) || order.kind === "spontaneous" ? (
+      <Link
+        href={`/pod/replies?ship=${order.id}`}
+        className="eyebrow rounded-full border border-white/20 px-4 py-2 text-cream/70 transition-colors hover:border-gold hover:text-gold"
+      >
+        {order.ship_emailed_at ? "Shipping emailed ✓" : "Email shipping"}
+      </Link>
+    ) : null;
   return (
     <details
       id={`order-${order.id}`}
@@ -506,8 +519,16 @@ function OrderCard({
               paidOnline={!!web}
               saleOrReturn={isSaleOrReturn(order)}
               noInvoice={!!sale}
+              shipping={shipping}
             />
           </div>
+        )}
+        {/* A spontaneous buy that's sent has no status buttons, but can still have its shipping emailed. */}
+        {sale && order.status === "sent" && shipping && <div>{shipping}</div>}
+        {order.ship_emailed_at && (
+          <p className="mt-2 font-sans text-sm text-cream/80">
+            Tracking emailed: {order.ship_carrier} {order.ship_tracking}
+          </p>
         )}
 
         {web && <WebOrderDetails web={web} />}

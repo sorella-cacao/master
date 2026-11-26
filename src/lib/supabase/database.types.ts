@@ -654,6 +654,10 @@ export type Database = {
           needed_by: string | null
           note: string | null
           sent_at: string | null
+          ship_carrier: string | null
+          ship_email: string | null
+          ship_emailed_at: string | null
+          ship_tracking: string | null
           status: string
           updated_at: string
         }
@@ -666,6 +670,10 @@ export type Database = {
           needed_by?: string | null
           note?: string | null
           sent_at?: string | null
+          ship_carrier?: string | null
+          ship_email?: string | null
+          ship_emailed_at?: string | null
+          ship_tracking?: string | null
           status?: string
           updated_at?: string
         }
@@ -678,6 +686,10 @@ export type Database = {
           needed_by?: string | null
           note?: string | null
           sent_at?: string | null
+          ship_carrier?: string | null
+          ship_email?: string | null
+          ship_emailed_at?: string | null
+          ship_tracking?: string | null
           status?: string
           updated_at?: string
         }

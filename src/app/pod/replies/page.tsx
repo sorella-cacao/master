@@ -139,13 +139,14 @@ type Db = Awaited<ReturnType<typeof getSession>>["supabase"];
 
 /** A website order or spontaneous buy to email shipping for: who it's to, and its receipt. */
 async function shippingOrder(supabase: Db, id: string) {
-  const { data: order } = await supabase
+  const { data: order, error } = await supabase
     .from("orders")
     .select(
-      "id, customer, kind, ship_email, ship_carrier, ship_tracking, ship_emailed_at, lines:order_lines(quantity, unit_price, item:stock_items(name, parent:stock_items!stock_items_parent_id_fkey(name), product:products(title))), web:web_orders(name, email, address, delivery, delivery_price, items, label_fees)",
+      "id, customer, kind, ship_email, ship_carrier, ship_tracking, ship_emailed_at, lines:order_lines(quantity, unit_price, item:stock_items(name, parent:stock_items!parent_id(name), product:products(title))), web:web_orders(name, email, address, delivery, delivery_price, items, label_fees)",
     )
     .eq("id", id)
     .maybeSingle();
+  if (error) throw error;
   if (!order || (order.kind !== "web" && order.kind !== "spontaneous")) return null;
   const web = order.web as {
     name: string;

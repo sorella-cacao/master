@@ -55,13 +55,14 @@ Deno.serve(async (req) => {
   if (!carrier) return json({ error: "Choose the carrier." }, 400);
   if (!tracking) return json({ error: "Enter the tracking number." }, 400);
 
-  const { data: order } = await db
+  const { data: order, error: orderError } = await db
     .from("orders")
     .select(
-      "id, customer, kind, lines:order_lines(quantity, unit_price, item:stock_items(name, parent:stock_items!stock_items_parent_id_fkey(name), product:products(title))), web:web_orders(name, address, delivery, delivery_price, items, label_fees)",
+      "id, customer, kind, lines:order_lines(quantity, unit_price, item:stock_items(name, parent:stock_items!parent_id(name), product:products(title))), web:web_orders(name, address, delivery, delivery_price, items, label_fees)",
     )
     .eq("id", orderId)
     .maybeSingle();
+  if (orderError) console.error(orderError);
   if (!order) return json({ error: "That order no longer exists." }, 404);
   if (order.kind !== "web" && order.kind !== "spontaneous") return json({ error: "Shipping emails are for website orders and spontaneous buys." }, 400);
 

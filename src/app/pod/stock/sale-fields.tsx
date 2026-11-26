@@ -103,6 +103,13 @@ export function SaleFields({ kind, groups }: { kind: "odd" | "market"; groups: S
         )}
       </div>
 
+      {oddType === "spontaneous" && kind === "odd" && (
+        <label className="block sm:max-w-md">
+          <span className="eyebrow mb-2 block text-cream/70">Their email</span>
+          <input name="email" type="email" placeholder="Optional, for tracking" autoComplete="off" className="pod-input" />
+        </label>
+      )}
+
       {kind === "odd" && (
         <fieldset className="space-y-2">
           <legend className="eyebrow mb-2 block text-cream/70">Made yet?</legend>

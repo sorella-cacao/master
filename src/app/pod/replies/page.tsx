@@ -177,6 +177,25 @@ async function shippingOrder(supabase: Db, id: string) {
     receipt,
     address: web?.address ?? "",
     emailedAt: order.ship_emailed_at ? when(order.ship_emailed_at) : null,
-    defaults: { name, email: order.ship_email ?? web?.email ?? "", carrier: order.ship_carrier ?? "", tracking: order.ship_tracking ?? "" },
+    defaults: { name, email: order.ship_email ?? web?.email ?? (await knownEmail(supabase, order.id, name)), carrier: order.ship_carrier ?? "", tracking: order.ship_tracking ?? "" },
   };
+}
+
+/** An email already used for this person: on their customer details, or on another order's shipping email. */
+async function knownEmail(supabase: Db, orderId: string, name: string) {
+  if (!name) return "";
+  const exact = name.replace(/[%_\\]/g, "\\$&"); // so "%" or "_" in a name aren't wildcards
+  const [customer, earlier] = await Promise.all([
+    supabase.from("customers").select("email").ilike("name", exact).not("email", "is", null).neq("email", "").limit(1).maybeSingle(),
+    supabase
+      .from("orders")
+      .select("ship_email")
+      .ilike("customer", exact)
+      .neq("id", orderId)
+      .not("ship_email", "is", null)
+      .order("created_at", { ascending: false })
+      .limit(1)
+      .maybeSingle(),
+  ]);
+  return customer.data?.email ?? earlier.data?.ship_email ?? "";
 }

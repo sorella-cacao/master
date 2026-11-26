@@ -132,7 +132,10 @@ export async function recordSale(_: SaveState, data: FormData): Promise<SaveStat
   // Odd buys can still need making: then they're an open order, taken off stock once sent.
   const made = kind === "market" || data.get("made") !== "no";
 
-  const { error } = await supabase.rpc("pod_record_sale", {
+  const email = kind === "spontaneous" ? String(data.get("email") ?? "").trim() : "";
+  if (email && !/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email)) return { error: "Check their email address." };
+
+  const { data: saleId, error } = await supabase.rpc("pod_record_sale", {
     kind,
     customer: String(data.get("customer") ?? ""),
     note: String(data.get("note") ?? ""),
@@ -141,6 +144,8 @@ export async function recordSale(_: SaveState, data: FormData): Promise<SaveStat
     made,
   });
   if (error) return failed(error);
+  // Kept for "Email shipping" on the order.
+  if (email) await supabase.from("orders").update({ ship_email: email }).eq("id", saleId);
   refresh();
   const total = quantities.reduce((n, q) => n + q, 0);
   return {

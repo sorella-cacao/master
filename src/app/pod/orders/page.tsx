@@ -196,7 +196,7 @@ export default async function OrdersPage(props: PageProps<"/pod/orders">) {
         .filter((i) => ordered.has(i.id))
         .map((i) => {
           const need = ordered.get(i.id)!;
-          // What's made this week is already in stock, so it's put back to show the week's full amount.
+          // Bars a note already added to stock (before Made became a note only) are put back to show the week's full amount.
           const note = notedMade.get(i.id);
           const toMake = note
             ? Math.max(0, need - i.quantity + note.added + note.need_offset)

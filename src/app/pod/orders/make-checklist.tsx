@@ -23,7 +23,8 @@ export const savesInFlight = new Set<Promise<unknown>>();
 
 /**
  * The week's "To make" tables. Each row has a box for how many are made so far and shows how many
- * are left; its tick marks the lot as made. Saved as they're changed, and added to stock. Beside the tables is how many
+ * are left; its tick marks the lot as made. Saved as they're changed; stock goes up only through Stock › Add what
+ * I made this week. Beside the tables is how many
  * large and small bars are still left to make.
  */
 export function MakeChecklist({ week, groups }: { week: string; groups: MakeGroup[] }) {
@@ -47,10 +48,10 @@ export function MakeChecklist({ week, groups }: { week: string; groups: MakeGrou
       }
     });
   const { confirm, dialog } = useConfirm();
-  // Unticking takes what was made back out of stock, so it asks first.
+  // Unticking clears what was noted as made, so it asks first.
   async function tick(r: { id: string; name: string; need: number }, checked: boolean) {
     if (checked) return save(r.id, r.need);
-    if (await confirm(`Untick ${r.name}?`, { yes: "Yes", no: "No" }, `The ${made[r.id]} you made come back off your stock.`)) save(r.id, 0);
+    if (await confirm(`Untick ${r.name}?`, { yes: "Yes", no: "No" }, `This clears the ${made[r.id]} noted as made.`)) save(r.id, 0);
   }
   const leftOf = (r: { id: string; need: number }) => Math.max(0, r.need - made[r.id]);
 
